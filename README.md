@@ -1,5 +1,15 @@
 # Inmobly
 
+> ⚠️ **Pivô de arquitetura em andamento.** O modelo original abaixo (`template/` +
+> `control-plane/`) é **um projeto Firebase isolado por corretor**. Está sendo
+> substituído por um **SaaS self-service multi-tenant** — um único projeto
+> (`inmobly-project`, Blaze), signup automatizado, checkout integrado. A jornada
+> nova (login → tour → planos → checkout) já está em [`app/`](app/README.md).
+> `template/` e `control-plane/` continuam aqui como referência/histórico, não
+> foram apagados — mas **não são mais o caminho de desenvolvimento ativo**. Ver
+> [`app/README.md`](app/README.md) pro que falta (principalmente: migrar o
+> CMS/catálogo do modelo isolado pro multi-tenant).
+
 Template white-label para corretores de imóveis de Assunção e região, produto da Punto Alto, extraído do projeto Nando Barros. Cada corretor recebe um site estático próprio (HTML/CSS/JS puro, sem frameworks) com:
 
 - **Home** (`index.html`) — hero, destaques do catálogo, por que escolher o corretor, sobre, depoimentos, FAQ, formulário de leads e WhatsApp em todo lugar

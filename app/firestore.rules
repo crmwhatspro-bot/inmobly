@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // E-mails da equipe Punto Alto com acesso total (mesma allowlist
+    // do antigo control-plane/firestore.rules — copiar aqui também).
+    function isTeam() {
+      return request.auth != null && request.auth.token.email in [
+        'crmwhatspro@gmail.com'
+        // adicionar outros e-mails da equipe Punto Alto aqui
+      ];
+    }
+
+    // tenantId vem de custom claim, setado por app/functions/criarConta.js
+    // no momento do signup — não existe mais "projeto isolado por
+    // broker", um único usuário só enxerga o próprio tenant.
+    function isTenantAdmin(tenantId) {
+      return request.auth != null && request.auth.token.tenantId == tenantId;
+    }
+
+    match /brokers/{tenantId} {
+      allow read: if isTeam() || isTenantAdmin(tenantId);
+      allow create, delete: if isTeam();
+      // corretor só pode mexer no próprio `usage` (auto-relato de
+      // quantidade de imóveis) — plano/status/billing só a equipe ou
+      // o stripeWebhook (que roda com Admin SDK, ignora rules).
+      allow update: if isTeam()
+                    || (
+                      isTenantAdmin(tenantId) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usage', 'updatedAt']) &&
+                      request.resource.data.usage.imoveisCount is int &&
+                      request.resource.data.usage.imoveisCount >= 0
+                    );
+
+      match /purchases/{purchaseId} {
+        allow read: if isTeam() || isTenantAdmin(tenantId);
+        allow write: if isTeam();
+      }
+
+      // Catálogo — leitura pública (visitante do site não tem conta),
+      // escrita só do admin daquele tenant.
+      match /imoveis/{imovelId} {
+        allow read: if true;
+        allow write: if isTenantAdmin(tenantId);
+
+        match /fotos/{fotoId} {
+          allow read: if true;
+          allow write: if isTenantAdmin(tenantId);
+        }
+      }
+
+      match /leads/{leadId} {
+        allow create: if request.resource.data.keys().hasAll(['name', 'email', 'createdAt']);
+        allow read, update, delete: if isTeam() || isTenantAdmin(tenantId);
+      }
+
+      match /leads_imovel/{leadId} {
+        allow create: if request.resource.data.keys().hasAll(['name', 'email', 'createdAt']);
+        allow read, update, delete: if isTeam() || isTenantAdmin(tenantId);
+      }
+    }
+
+  }
+}

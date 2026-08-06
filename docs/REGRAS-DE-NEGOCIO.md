@@ -5,6 +5,16 @@ Inmobly (produto da Punto Alto) — planos, limites, billing e produtos avulsos.
 Qualquer mudança aqui deve ser revisada contra o schema do Firestore e as regras de
 segurança antes de virar código.
 
+> ⚠️ **Pivô de arquitetura**: a seção 1 (custo por broker) foi calculada pro modelo
+> antigo — **um projeto Firebase isolado por corretor no plano Spark gratuito**.
+> Com o pivô pra SaaS multi-tenant (ver [`../app/README.md`](../app/README.md)), a
+> premissa de custo ~$0 por broker **não vale mais como estava**: agora é um projeto
+> único em Blaze, com todos os tenants dividindo a mesma cota de Firestore — o
+> "noisy neighbor" (um broker com catálogo grande consumindo a cota de todos) é um
+> risco novo que não existia antes. **Números de planos/preços nas seções 4 e 7
+> continuam valendo como referência**; o cálculo de margem que os validou precisa
+> ser refeito.
+
 ---
 
 ## 1. Custo por broker (infraestrutura)

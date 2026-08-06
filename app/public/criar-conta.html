@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criar conta — Inmobly</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="center-screen">
+  <div class="card">
+    <div class="card__logo">Inmobly<span>.</span></div>
+    <h1>Vamos criar sua conta</h1>
+    <p class="sub">30 segundos. Seu site já nasce no ar, com o trial de 14 dias ativado.</p>
+
+    <form id="formConta">
+      <div class="field">
+        <label for="nome">Seu nome / nome do negócio</label>
+        <input type="text" id="nome" required placeholder="Ex: João Silva Imóveis" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="slug">Endereço do seu site</label>
+        <input type="text" id="slug" required placeholder="joao-silva" pattern="[a-z0-9-]+"
+               autocomplete="off" spellcheck="false">
+        <p class="field__hint">inmobly.app/<strong id="slugPreview">seu-slug</strong> — só letras minúsculas, números e hífen</p>
+        <p class="field__error" id="slugError"></p>
+      </div>
+
+      <button class="btn btn--primary btn--block" type="submit" id="btnCriar">Criar minha conta →</button>
+      <p class="msg" id="contaMsg"></p>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="js/criar-conta.js"></script>
+</body>
+</html>

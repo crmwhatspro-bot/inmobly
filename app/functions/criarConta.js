@@ -1,0 +1,76 @@
+/* ══════════════════════════════════════════════════════
+   criarConta — signup self-service: cria brokers/{slug} e seta o
+   custom claim tenantId no usuário autenticado.
+   ------------------------------------------------------
+   onCall (não onRequest) porque agora é tudo o mesmo projeto — o SDK
+   do cliente já manda o auth context automaticamente, sem precisar
+   do idToken manual que criarCheckoutSession precisava no modelo
+   antigo (cross-project).
+
+   Trial: 14 dias, sem cartão, 6 imóveis (ver docs/REGRAS-DE-NEGOCIO.md).
+
+   ⚠️  NÃO TESTADO CONTRA INFRA REAL.
+   ══════════════════════════════════════════════════════ */
+
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { db, auth } = require('./admin');
+
+const TRIAL_DIAS = 14;
+const TRIAL_LIMITE_IMOVEIS = 6;
+const SLUG_REGEX = /^[a-z0-9-]{3,40}$/;
+
+exports.criarConta = onCall(
+  { region: 'southamerica-east1' },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'É preciso estar logado.');
+    }
+    const { uid, token } = request.auth;
+    const email = token.email;
+
+    const nome = String(request.data?.nome || '').trim();
+    const slug = String(request.data?.slug || '').trim().toLowerCase();
+
+    if (!nome) throw new HttpsError('invalid-argument', 'Nome é obrigatório.');
+    if (!SLUG_REGEX.test(slug)) {
+      throw new HttpsError('invalid-argument', 'Endereço inválido — só letras minúsculas, números e hífen, 3 a 40 caracteres.');
+    }
+
+    const ref = db.doc('brokers/' + slug);
+
+    // Transação: evita dois signups simultâneos pegarem o mesmo slug.
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.exists) {
+        throw new HttpsError('already-exists', 'Esse endereço já está em uso.');
+      }
+
+      const agora = new Date();
+      const trialEndsAt = new Date(agora.getTime() + TRIAL_DIAS * 24 * 60 * 60 * 1000);
+
+      tx.set(ref, {
+        name: nome,
+        email,
+        plan: 'trial',
+        status: 'trialing',
+        trialEndsAt,
+        imoveisLimit: TRIAL_LIMITE_IMOVEIS,
+        domainIncluded: false,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        usage: { imoveisCount: 0, imoveisUpdatedAt: agora },
+        customDomainStatus: 'none',
+        onboardingCompleted: false,
+        createdAt: agora,
+        updatedAt: agora,
+      });
+    });
+
+    // Custom claim — é o que as firestore.rules (isTenantAdmin) e o
+    // resto do app usam pra saber a qual tenant esse usuário pertence.
+    // Só entra no ID token depois de um refresh forçado no cliente.
+    await auth.setCustomUserClaims(uid, { tenantId: slug });
+
+    return { tenantId: slug };
+  }
+);

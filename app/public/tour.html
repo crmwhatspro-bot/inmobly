@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bem-vindo — Inmobly</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="tour">
+  <div class="tour__dots" id="tourDots"></div>
+
+  <div class="tour__slide" data-slide="1">
+    <div class="tour__icon" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </div>
+    <h2>Seu site já está no ar</h2>
+    <p>Criamos sua página e seu catálogo automaticamente. Nada pra instalar, nada pra configurar — já pode compartilhar o link com seus clientes.</p>
+  </div>
+
+  <div class="tour__slide hidden" data-slide="2">
+    <div class="tour__icon" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <h2>Cadastre imóveis do celular</h2>
+    <p>Tire as fotos, suba pelo painel e pronto — o imóvel aparece no seu catálogo em segundos, sem precisar de ninguém pra publicar por você.</p>
+  </div>
+
+  <div class="tour__slide hidden" data-slide="3">
+    <div class="tour__icon" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <h2>Página própria por empreendimento</h2>
+    <p>Quando um projeto merece mais destaque, você pode encomendar uma landing page sob medida — vendida à parte, direto do seu painel.</p>
+  </div>
+
+  <div class="tour__slide hidden" data-slide="4">
+    <div class="tour__icon" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <h2>Pronto pra começar?</h2>
+    <p>Seu trial de 14 dias já está ativo — até 6 imóveis, sem cartão de crédito. Dá pra ver os planos quando quiser.</p>
+  </div>
+
+  <div class="tour__nav">
+    <button class="btn btn--ghost" id="btnVoltar" hidden>← Voltar</button>
+    <button class="btn btn--primary" id="btnAvancar">Continuar →</button>
+  </div>
+
+  <div class="tour__skip">
+    <button id="btnPular">Pular e ver planos</button>
+  </div>
+</div>
+
+<script type="module" src="js/tour.js"></script>
+</body>
+</html>

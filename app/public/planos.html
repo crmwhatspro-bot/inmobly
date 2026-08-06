@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planos — Inmobly</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="card__logo" style="margin:0;">Inmobly<span>.</span></div>
+  <a href="painel.html" class="btn btn--ghost">Ir pro meu painel →</a>
+</header>
+
+<div class="planos-wrap">
+  <div class="planos-head">
+    <h1>Escolha seu plano</h1>
+    <p id="statusAtual">Carregando seu status...</p>
+  </div>
+
+  <div class="planos-grid">
+    <div class="plano-card">
+      <h3>Starter</h3>
+      <div class="plano-card__preco">USD 79<small>/mês</small></div>
+      <ul>
+        <li>Até 40 imóveis</li>
+        <li>Site + catálogo CMS</li>
+        <li>Domínio inmobly.app</li>
+      </ul>
+      <button class="btn btn--primary" data-plano="inmobly_starter_monthly">Assinar Starter</button>
+    </div>
+
+    <div class="plano-card plano-card--destaque">
+      <span class="plano-card__badge">Mais popular</span>
+      <h3>Pro</h3>
+      <div class="plano-card__preco">USD 129<small>/mês</small></div>
+      <ul>
+        <li>Imóveis ilimitados</li>
+        <li>Site + catálogo CMS</li>
+        <li>Domínio próprio incluído</li>
+      </ul>
+      <button class="btn btn--primary" data-plano="inmobly_pro_monthly">Assinar Pro</button>
+    </div>
+  </div>
+
+  <p style="text-align:center; color:var(--muted); font-size:0.85rem; margin-top:2rem;">
+    Página de Emprendimento sob medida e configuração de domínio próprio (pro plano Starter) são produtos avulsos, comprados quando você precisar — direto do seu painel.
+  </p>
+
+  <p class="msg" id="planosMsg"></p>
+</div>
+
+<script type="module" src="js/planos.js"></script>
+</body>
+</html>

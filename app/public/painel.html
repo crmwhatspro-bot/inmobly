@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu painel — Inmobly</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="card__logo" style="margin:0;">Inmobly<span>.</span></div>
+  <div style="display:flex; gap:0.75rem; align-items:center;">
+    <span id="userEmail" style="color:var(--muted); font-size:0.85rem;"></span>
+    <button class="btn btn--ghost" id="btnSair">Sair</button>
+  </div>
+</header>
+
+<div class="painel-wrap">
+  <div class="status-card">
+    <h1 style="margin:0 0 0.25rem;" id="nomeNegocio">—</h1>
+    <p style="color:var(--muted); font-size:0.85rem; margin:0 0 1.5rem;">inmobly.app/<span id="slugAtual">—</span></p>
+
+    <dl>
+      <dt>Plano</dt><dd id="planoAtual">—</dd>
+      <dt>Imóveis</dt><dd id="imoveisAtual">—</dd>
+      <dt>Domínio</dt><dd id="dominioAtual">—</dd>
+    </dl>
+
+    <div style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <a href="planos.html" class="btn btn--primary">Ver / trocar plano</a>
+    </div>
+
+    <p style="color:var(--muted); font-size:0.78rem; margin-top:2rem; padding-top:1.5rem; border-top:1px dashed var(--line);">
+      O CMS completo (cadastro de imóveis, fotos, catálogo) ainda está na versão antiga por corretor — essa tela é um placeholder até o admin ser migrado pro modelo multi-tenant.
+    </p>
+  </div>
+</div>
+
+<script type="module" src="js/painel.js"></script>
+</body>
+</html>
