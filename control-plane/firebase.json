@@ -11,7 +11,7 @@
     }
   ],
   "hosting": {
-    "site": "paim-control",
+    "site": "inmobly-control",
     "public": "painel",
     "cleanUrls": true,
     "trailingSlash": false,

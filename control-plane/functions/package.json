@@ -1,5 +1,5 @@
 {
-  "name": "paim-control-functions",
+  "name": "inmobly-control-functions",
   "engines": { "node": "20" },
   "main": "index.js",
   "dependencies": {

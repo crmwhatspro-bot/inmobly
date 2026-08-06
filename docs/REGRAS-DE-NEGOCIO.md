@@ -1,9 +1,9 @@
-# PAIm — Regras de Negócio
+# Inmobly — Regras de Negócio
 
 Documento vivo. Registra as decisões de modelo de negócio que influenciam o build do
-PAIm (Punto Alto Imóveis) — planos, limites, billing e produtos avulsos. Qualquer
-mudança aqui deve ser revisada contra o schema do Firestore e as regras de segurança
-antes de virar código.
+Inmobly (produto da Punto Alto) — planos, limites, billing e produtos avulsos.
+Qualquer mudança aqui deve ser revisada contra o schema do Firestore e as regras de
+segurança antes de virar código.
 
 ---
 
@@ -59,11 +59,20 @@ feature-flags por plano.
 | **Starter** | até 40 | `*.web.app` | ~USD 79/mês |
 | **Pro** | ilimitado | próprio, incluído | ~USD 129/mês |
 
-Comportamento em downgrade ou expiração de trial sem conversão: **os imóveis
-excedentes ficam ocultos do catálogo público, mas preservados e inativos no admin**
-— nada é apagado. Voltar a assinar (ou fazer upgrade) reativa tudo na hora. Evita
-perda de dados e mantém incentivo claro para reativar, em vez de bloquear o site
-inteiro.
+Comportamento em downgrade, `past_due`/`unpaid` (pagamento falhou) ou expiração de
+trial sem conversão: **os imóveis excedentes ficam ocultos do catálogo público, mas
+preservados e visíveis (sinalizados) no admin** — nada é apagado, e o campo `ativo`
+que o corretor controla manualmente não é tocado pelo sistema. Voltar a assinar (ou
+regularizar o pagamento) reativa tudo na hora. Evita perda de dados e mantém
+incentivo claro para reativar, em vez de bloquear o site inteiro.
+
+**`unpaid` é tratado igual a `past_due`** — ambos reduzem o limite efetivo pro nível
+do trial (6 imóveis) até a assinatura ser regularizada. Implementado em
+`template/js/plano.js` (`limiteEfetivo()`), consumido por `imoveis.js` (corta o
+catálogo público) e `admin-imoveis.js` (sinaliza os imóveis acima do limite com um
+banner + badge, e bloqueia criar novos enquanto estiver acima). Edição/exclusão dos
+imóveis já existentes continua liberada mesmo em `past_due` — bloquear isso também
+faria o corretor não conseguir nem corrigir a própria situação.
 
 ## 5. Produtos avulsos — disponíveis para qualquer plano, inclusive Trial
 
@@ -72,10 +81,17 @@ imóveis" ou "domínio" entra aqui, não numa tier de assinatura — mantém a e
 planos simples e permite adicionar novos produtos depois sem reabrir a tabela de
 planos.
 
-| Produto | Cobrança | Preço indicativo | Por quê |
+| Produto | Cobrança | Preço | Por quê |
 |---|---|---|---|
-| **Página de Emprendimento** (estilo Nobile Inn) | Única | a partir de USD 590 | Projeto de landing page sob medida (copy própria em 3 idiomas, narrativa de investimento, tipologias, galeria) — trabalho real de design/copy, não uma feature que se liga. Preço "a partir de" porque a complexidade varia muito (um lançamento residencial simples vs. um pitch de investimento hoteleiro como o Nobile Inn). |
+| **Página de Emprendimento** (estilo Nobile Inn) | Única | **USD 200** (preço de lançamento, 50% off) · preço de tabela USD 400 | Projeto de landing page sob medida (copy própria em 3 idiomas, narrativa de investimento, tipologias, galeria) — trabalho real de design/copy, não uma feature que se liga. Preço de lançamento enquanto o Inmobly ainda tem zero assinantes — objetivo é validar demanda do produto, não maximizar ticket. Subir de volta pra USD 400 (ou próximo disso) depois de ter tração, removendo o desconto em vez de recriar o Price no Stripe. |
 | **Configuração de domínio próprio** | Única | USD 39 | Trabalho pontual (registros DNS + cadastro no Firebase Hosting); SSL renova sozinho depois, não sobra tarefa recorrente. Cobrar recorrente por algo sem custo recorrente corroeria a confiança do cliente sem motivo. |
+
+> Nota de implementação: no Stripe, o Price da Página de Emprendimento deve ser
+> criado no valor de tabela (USD 400) e o desconto de lançamento aplicado via
+> **Coupon/Promotion Code de 50%**, não como um Price separado de USD 200. Preços no
+> Stripe são imutáveis — se o valor "real" mudar direto no Price, perde-se
+> continuidade de relatório e fica mais difícil remover o desconto depois sem
+> recriar objetos. Ver lista de produtos Stripe.
 
 ### Por que "Página de Emprendimento" não vira recorrente
 
@@ -114,7 +130,7 @@ o Firebase devolve registros DNS, e emite SSL grátis sozinho quando o DNS propa
       imóveis do plano (bloqueia criação? mostra banner de upgrade?).
 - [x] ~~Definir o schema exato do documento central de billing (`brokers/{slug}`) e como
       ele replica `config/plan` para o Firestore de cada broker~~ — resolvido em
-      `control-plane/` (projeto Firebase novo e dedicado `paim-control`, schema e
+      `control-plane/` (projeto Firebase novo e dedicado `inmobly-control`, schema e
       Cloud Function de sync documentados em `control-plane/README.md`).
 - [ ] Politica de reembolso / cancelamento de "Página de Emprendimento" já paga mas
       não entregue.
@@ -122,6 +138,6 @@ o Firebase devolve registros DNS, e emite SSL grátis sozinho quando o DNS propa
       em `brokers/{slug}` quando uma assinatura muda) — o control-plane já tem o lado
       de *sync pra fora* (central → broker) pronto, falta o lado que recebe o evento
       do Stripe e decide o que escrever.
-- [ ] Criar de fato o projeto `paim-control` no Firebase e testar o
+- [ ] Criar de fato o projeto `inmobly-control` no Firebase e testar o
       `syncPlanoParaBroker` contra infraestrutura real — o que existe hoje foi
       desenhado e revisado, não executado.

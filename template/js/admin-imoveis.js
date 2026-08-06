@@ -9,6 +9,7 @@ import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
   query, orderBy, serverTimestamp, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { carregarConfigPlano, limiteEfetivo } from './plano.js';
 
 const MAX_FOTOS      = 16;
 const MAX_DATAURL    = 950_000; // ~712KB binário — folga no limite de 1MiB do doc
@@ -35,6 +36,17 @@ let fotos   = [];          // [{ id?: string (já salva), data: dataURL }]
 let removidas = [];        // ids de fotos existentes a apagar
 let capaIdx = 0;
 let carregou = false;
+let configPlano = null;    // config/plan sincronizado pelo control-plane
+
+// ativos, na mesma ordem da lista (createdAt desc) — os que ficam depois
+// do limite do plano são os que somem do catálogo público (ver imoveis.js)
+function separarPorLimite() {
+  const ativos = imoveis.filter(i => i.ativo !== false);
+  const limite = limiteEfetivo(configPlano);
+  const visiveis = Number.isFinite(limite) ? ativos.slice(0, limite) : ativos;
+  const acimaDoLimite = new Set(ativos.slice(visiveis.length).map(i => i.id));
+  return { limite, ativos, acimaDoLimite };
+}
 
 // ════════════════════════════════════════════════
 // Menu do painel (sidebar / barra inferior)
@@ -122,7 +134,10 @@ const TIPO_LABEL = {
 async function carregarLista() {
   carregou = true;
   try {
-    const snap = await getDocs(query(collection(db, 'imoveis'), orderBy('createdAt', 'desc')));
+    const [snap] = await Promise.all([
+      getDocs(query(collection(db, 'imoveis'), orderBy('createdAt', 'desc'))),
+      carregarConfigPlano().then(c => { configPlano = c; }),
+    ]);
     imoveis = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderLista();
   } catch (e) {
@@ -133,6 +148,15 @@ async function carregarLista() {
 
 function renderLista() {
   countEl.textContent = imoveis.length === 1 ? '1 imóvel' : `${imoveis.length} imóveis`;
+
+  const { limite, ativos, acimaDoLimite } = separarPorLimite();
+  const banner = $('imv-plano-banner');
+  if (acimaDoLimite.size > 0) {
+    banner.hidden = false;
+    banner.textContent = `${acimaDoLimite.size} imóve${acimaDoLimite.size === 1 ? 'l está' : 'is estão'} acima do limite do plano (${ativos.length} de ${limite}) e não aparece${acimaDoLimite.size === 1 ? '' : 'm'} no site público — nada foi apagado, faça upgrade ou regularize a assinatura para reativar.`;
+  } else {
+    banner.hidden = true;
+  }
 
   if (!imoveis.length) {
     listaEl.innerHTML = '<p class="admin-empty">Nenhum imóvel cadastrado ainda.<br>Toque em “Novo Imóvel” para começar.</p>';
@@ -146,14 +170,16 @@ function renderLista() {
     const img = imv.capa
       ? `<img src="${imv.capa}" alt="" loading="lazy">`
       : `<div class="imv-noimg"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>`;
+    const imvAcimaDoLimite = acimaDoLimite.has(imv.id);
     return `
-      <article class="imv-admin-card ${imv.ativo === false ? 'imv-admin-card--inativo' : ''}">
+      <article class="imv-admin-card ${imv.ativo === false || imvAcimaDoLimite ? 'imv-admin-card--inativo' : ''}">
         <div class="imv-admin-card__media">
           ${img}
           <div class="imv-admin-card__badges">
             <span class="imv-admin-badge imv-admin-badge--${imv.operacao === 'aluguel' ? 'aluguel' : 'venda'}">${OP_LABEL[imv.operacao] || 'Venda'}</span>
             ${imv.destaque ? '<span class="imv-admin-badge imv-admin-badge--destaque">Destaque</span>' : ''}
             ${imv.ativo === false ? '<span class="imv-admin-badge imv-admin-badge--inativo">Inativo</span>' : ''}
+            ${imvAcimaDoLimite ? '<span class="imv-admin-badge imv-admin-badge--limite">Acima do limite</span>' : ''}
           </div>
         </div>
         <div class="imv-admin-card__body">
@@ -191,7 +217,14 @@ listaEl.addEventListener('click', async (e) => {
   }
 });
 
-$('imv-novo-btn').addEventListener('click', () => abrirEditor(null));
+$('imv-novo-btn').addEventListener('click', () => {
+  const { limite, ativos } = separarPorLimite();
+  if (Number.isFinite(limite) && ativos.length >= limite) {
+    alert(`Limite do plano atingido (${ativos.length} de ${limite} imóveis). Para publicar mais, é preciso fazer upgrade ou regularizar a assinatura.`);
+    return;
+  }
+  abrirEditor(null);
+});
 $('imv-voltar-btn').addEventListener('click', fecharEditor);
 $('imv-cancelar-btn').addEventListener('click', fecharEditor);
 

@@ -1,15 +1,15 @@
 /* ══════════════════════════════════════════════════════
-   PAIm Control Plane — sync de plano pro Firestore de cada broker
+   Inmobly Control Plane — sync de plano pro Firestore de cada broker
    ------------------------------------------------------
    Gatilho: qualquer escrita em brokers/{slug} no projeto central
-   (paim-control). Se plano/status/limite/domínio mudou, busca a
+   (inmobly-control). Se plano/status/limite/domínio mudou, busca a
    service account daquele broker no Secret Manager e escreve
    config/plan no Firestore do projeto DAQUELE broker — é essa
    leitura local que o admin.js e as firestore.rules de cada
    broker usam pra saber o limite atual, sem chamada entre
    projetos em tempo real.
 
-   ⚠️  NÃO TESTADO CONTRA INFRA REAL — projeto paim-control e os
+   ⚠️  NÃO TESTADO CONTRA INFRA REAL — projeto inmobly-control e os
    secrets por broker ainda não existem. Revisar antes do primeiro
    deploy.
 
@@ -20,12 +20,12 @@
      2. Cadastrar como secret no projeto central:
           gcloud secrets create broker-sa-<slug> \
             --data-file=<caminho-da-key.json> \
-            --project=paim-control
+            --project=inmobly-control
      3. Dar ao runtime da function permissão de leitura do secret:
           gcloud secrets add-iam-policy-binding broker-sa-<slug> \
             --member="serviceAccount:<function-runtime-sa>" \
             --role="roles/secretmanager.secretAccessor" \
-            --project=paim-control
+            --project=inmobly-control
    ══════════════════════════════════════════════════════ */
 
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
@@ -33,7 +33,7 @@ const { initializeApp: initAdmin, getApps, cert } = require('firebase-admin/app'
 const { getFirestore } = require('firebase-admin/firestore');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
-initAdmin(); // app default — projeto central (paim-control)
+initAdmin(); // app default — projeto central (inmobly-control)
 
 const secretClient = new SecretManagerServiceClient();
 
@@ -49,7 +49,7 @@ function mudou(antes, depois) {
 }
 
 async function buscarServiceAccount(slug) {
-  const nome = `projects/paim-control/secrets/broker-sa-${slug}/versions/latest`;
+  const nome = `projects/inmobly-control/secrets/broker-sa-${slug}/versions/latest`;
   const [versao] = await secretClient.accessSecretVersion({ name: nome });
   return JSON.parse(versao.payload.data.toString('utf8'));
 }

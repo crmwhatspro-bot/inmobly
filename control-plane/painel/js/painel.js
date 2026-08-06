@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════════════
-   PAIm — Painel interno da Punto Alto
-   Lista todos os brokers (clientes do PAIm), com filtro por
+   Inmobly — Painel interno da Punto Alto
+   Lista todos os brokers (clientes do Inmobly), com filtro por
    status, estimativa de uso do plano Spark e detalhe com links
    diretos pro site/admin/Firebase Console/Stripe de cada um.
 

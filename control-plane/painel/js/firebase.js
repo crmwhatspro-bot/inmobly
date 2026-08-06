@@ -1,8 +1,8 @@
 /* ══════════════════════════════════════════════════════
-   PAIm Control Plane — init do Firebase
+   Inmobly Control Plane — init do Firebase
    Diferente de template/js/firebase.js: aqui não tem build.js
    nem {{PLACEHOLDER}} porque só existe UM projeto central
-   (paim-control), não um por cliente.
+   (inmobly-control), não um por cliente.
 
    PREENCHER depois de criar o projeto no Firebase Console:
    Configurações do projeto → Seus apps → Web app → SDK setup
@@ -15,7 +15,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 const firebaseConfig = {
   apiKey:            'PREENCHER',
   authDomain:        'PREENCHER',
-  projectId:         'paim-control',
+  projectId:         'inmobly-control',
   storageBucket:     'PREENCHER',
   messagingSenderId: 'PREENCHER',
   appId:             'PREENCHER',

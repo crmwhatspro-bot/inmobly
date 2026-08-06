@@ -1,7 +1,7 @@
-# PAIm Control Plane
+# Inmobly Control Plane
 
 Projeto Firebase **central e único** (não é um por broker) — guarda a fonte da
-verdade de plano/billing de todos os clientes do PAIm e roda o painel interno da
+verdade de plano/billing de todos os clientes do Inmobly e roda o painel interno da
 Punto Alto (`painel/`). É o único projeto pago (Blaze) de toda a arquitetura, porque
 o sync de plano exige Cloud Functions.
 
@@ -9,7 +9,7 @@ Ver [`../docs/REGRAS-DE-NEGOCIO.md`](../docs/REGRAS-DE-NEGOCIO.md) para o contex
 planos/limites que esse projeto aplica.
 
 ⚠️ **Nada aqui foi testado contra infraestrutura real ainda** — o projeto
-`paim-control` e os secrets por broker ainda não existem. Este diretório é a
+`inmobly-control` e os secrets por broker ainda não existem. Este diretório é a
 estrutura + primeira versão do código, revisar antes do primeiro deploy.
 
 ## Estrutura
@@ -53,7 +53,7 @@ brokers/{slug}/purchases/{id}     // histórico de produtos avulsos
 ## Setup (quando for para produção)
 
 1. Criar o projeto no [Firebase Console](https://console.firebase.google.com) — nome
-   sugerido `paim-control` (pode precisar de sufixo, ID de projeto é global).
+   sugerido `inmobly-control` (pode precisar de sufixo, ID de projeto é global).
 2. Ativar plano **Blaze** (obrigatório para Cloud Functions).
 3. Authentication → ativar provedor **Google**.
 4. Registrar um app Web e colar os valores em `painel/js/firebase.js`

@@ -1,6 +1,6 @@
-# PAIm — Punto Alto Imóveis
+# Inmobly
 
-Template white-label para corretores de imóveis de Assunção e região, extraído do projeto Nando Barros. Cada corretor recebe um site estático próprio (HTML/CSS/JS puro, sem frameworks) com:
+Template white-label para corretores de imóveis de Assunção e região, produto da Punto Alto, extraído do projeto Nando Barros. Cada corretor recebe um site estático próprio (HTML/CSS/JS puro, sem frameworks) com:
 
 - **Home** (`index.html`) — hero, destaques do catálogo, por que escolher o corretor, sobre, depoimentos, FAQ, formulário de leads e WhatsApp em todo lugar
 - **Catálogo** (`imoveis.html`) — listagem com filtros (operação, tipo, cidade, quartos, busca + modal de filtros avançados) e modal de detalhe com galeria; conteúdo vem do Firestore

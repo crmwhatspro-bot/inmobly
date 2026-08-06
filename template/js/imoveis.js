@@ -6,6 +6,7 @@
 import { db } from './firebase.js';
 import { collection, query, where, getDocs, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { carregarConfigPlano, limiteEfetivo } from './plano.js';
 
 // ── Strings traduzidas para conteúdo gerado via JS ──
 const STR = {
@@ -161,10 +162,20 @@ let cache = null;
 
 async function carregarImoveis() {
   if (cache) return cache;
-  const snap = await getDocs(query(collection(db, 'imoveis'), where('ativo', '==', true)));
-  cache = snap.docs
+  const [snap, configPlano] = await Promise.all([
+    getDocs(query(collection(db, 'imoveis'), where('ativo', '==', true))),
+    carregarConfigPlano(),
+  ]);
+  const todos = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+  // Acima do limite do plano (ou assinatura em past_due/canceled), os
+  // excedentes somem do site público — continuam existindo no Firestore
+  // e visíveis no admin, nada é apagado. Mantém a mesma ordenação (mais
+  // recentes primeiro), só corta o final da lista.
+  const limite = limiteEfetivo(configPlano);
+  cache = Number.isFinite(limite) ? todos.slice(0, limite) : todos;
   return cache;
 }
 

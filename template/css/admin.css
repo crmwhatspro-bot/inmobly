@@ -326,6 +326,16 @@ body {
 .imv-toolbar__count { font-size: var(--text-xs); color: var(--clr-text-light-2); }
 .imv-toolbar .btn svg { flex-shrink: 0; }
 
+.imv-plano-banner {
+  background: rgba(180, 83, 9, 0.12);
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  color: #B45309;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--text-sm);
+  margin-bottom: var(--sp-4);
+}
+
 /* ── Lista de imóveis (admin) ─────────────────── */
 .imv-admin-list {
   display: grid;
@@ -373,6 +383,7 @@ body {
 .imv-admin-badge--aluguel  { background: var(--clr-primary-light); }
 .imv-admin-badge--inativo  { background: var(--clr-error); }
 .imv-admin-badge--destaque { background: var(--clr-success); }
+.imv-admin-badge--limite   { background: #B45309; }
 
 .imv-admin-card__body {
   padding: var(--sp-4);
