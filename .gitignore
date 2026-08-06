@@ -1,0 +1,13 @@
+# sites gerados — sempre reproduzíveis a partir de template/ + brokers/*.json
+dist/
+
+# Firebase
+.firebase/
+*.log
+
+# Node
+node_modules/
+
+# SO
+.DS_Store
+Thumbs.db

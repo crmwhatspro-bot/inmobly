@@ -1,0 +1,5 @@
+{
+  "projects": {
+    "default": "{{FB_PROJECT_ID}}"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "_comentario": "Corretora fictícia para testar o template. NÃO deployar.",
+
+  "broker": {
+    "name": "Maria Benítez",
+    "firstName": "Maria",
+    "slug": "exemplo",
+    "photo": ""
+  },
+
+  "site": {
+    "domain": "https://exemplo-imoveis.web.app",
+    "cityDefault": { "pt": "Assunção", "es": "Asunción", "en": "Asunción" },
+    "defaultLang": "pt"
+  },
+
+  "contact": {
+    "whatsapp": "595981000000",
+    "waTextHome": "Olá Maria, quero saber mais sobre os imóveis!",
+    "waTextImoveis": "Olá Maria, quero saber mais sobre os imóveis!",
+    "email": "contato@exemplo-imoveis.com",
+    "instagram": "https://www.instagram.com/exemplo.imoveis/",
+    "facebook": ""
+  },
+
+  "admin": {
+    "email": "maria.exemplo@gmail.com"
+  },
+
+  "theme": {
+    "primary": "#14532D",
+    "accent": "#B45309",
+    "fontDisplay": "Plus Jakarta Sans",
+    "fontBody": "DM Sans"
+  },
+
+  "firebase": {
+    "apiKey": "AIzaSyEXEMPLO_NAO_REAL_0000000000000000",
+    "authDomain": "exemplo-imoveis.firebaseapp.com",
+    "projectId": "exemplo-imoveis",
+    "storageBucket": "exemplo-imoveis.firebasestorage.app",
+    "messagingSenderId": "000000000000",
+    "appId": "1:000000000000:web:0000000000000000000000",
+    "measurementId": ""
+  },
+
+  "texts": {
+    "stats": { "years": "12", "deals": "150" },
+    "bio": {
+      "pt": "Maria Benítez trabalha com imóveis em Assunção há mais de 12 anos. Conhece o mercado da capital de ponta a ponta e acompanha cada cliente pessoalmente — da primeira visita à entrega das chaves.",
+      "es": "Maria Benítez trabaja con inmuebles en Asunción hace más de 12 años. Conoce el mercado de la capital de punta a punta y acompaña a cada cliente personalmente — de la primera visita a la entrega de llaves.",
+      "en": "Maria Benítez has worked in Asunción real estate for over 12 years. She knows the capital's market inside out and personally guides every client — from the first visit to the handover of keys."
+    },
+    "testimonials": [
+      {
+        "name": "Carlos Souza",
+        "origin": "São Paulo, Brasil",
+        "text": {
+          "pt": "A Maria encontrou exatamente o que eu procurava e cuidou de toda a documentação. Processo tranquilo do início ao fim.",
+          "es": "Maria encontró exactamente lo que buscaba y se ocupó de toda la documentación. Un proceso tranquilo de principio a fin.",
+          "en": "Maria found exactly what I was looking for and handled all the paperwork. A smooth process from start to finish."
+        }
+      },
+      {
+        "name": "Ana Giménez",
+        "origin": "Asunción, Paraguay",
+        "text": {
+          "pt": "Vendi meu apartamento em poucas semanas, com preço justo e zero dor de cabeça.",
+          "es": "Vendí mi departamento en pocas semanas, con precio justo y cero dolores de cabeza.",
+          "en": "I sold my apartment in a few weeks, at a fair price and with zero headaches."
+        }
+      },
+      {
+        "name": "Pedro Lima",
+        "origin": "Curitiba, Brasil",
+        "text": {
+          "pt": "Comprei um imóvel para investir sem sair do Brasil. Acompanhamento impecável pelo WhatsApp.",
+          "es": "Compré un inmueble para invertir sin salir de Brasil. Acompañamiento impecable por WhatsApp.",
+          "en": "I bought an investment property without leaving Brazil. Impeccable support over WhatsApp."
+        }
+      }
+    ]
+  }
+}

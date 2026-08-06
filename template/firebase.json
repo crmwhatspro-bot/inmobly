@@ -1,0 +1,41 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "site": "{{FB_PROJECT_ID}}",
+    "public": ".",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".env*",
+      "node_modules/**",
+      ".git/**",
+      "*.md"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(woff2|webp|avif)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      },
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Frame-Options",        "value": "SAMEORIGIN" },
+          { "key": "X-Content-Type-Options",  "value": "nosniff" },
+          { "key": "Referrer-Policy",         "value": "strict-origin-when-cross-origin" }
+        ]
+      }
+    ],
+    "rewrites": [
+      { "source": "/admin/**", "destination": "/admin/index.html" }
+    ]
+  }
+}

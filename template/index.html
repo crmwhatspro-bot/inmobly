@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="{{DEFAULT_LANG}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ── SEO Primário ──────────────────────────── -->
+  <title>Imóveis em {{CITY_DEFAULT}} e Região | {{BROKER_NAME}}</title>
+  <meta name="description" content="Compra, venda e aluguel de imóveis em {{CITY_DEFAULT}} e região com {{BROKER_NAME}}. Apartamentos, casas, terrenos e comerciais — acompanhamento completo do início ao fim.">
+  <meta name="author"  content="{{BROKER_NAME}}">
+  <meta name="robots"  content="index, follow">
+  <link rel="canonical" href="{{DOMAIN}}/">
+
+  <!-- ── Open Graph ────────────────────────────── -->
+  <meta property="og:type"         content="website">
+  <meta property="og:locale"       content="pt_BR">
+  <meta property="og:site_name"    content="{{BROKER_NAME}}">
+  <meta property="og:url"          content="{{DOMAIN}}/">
+  <meta property="og:title"        content="Imóveis em {{CITY_DEFAULT}} e Região | {{BROKER_NAME}}">
+  <meta property="og:description"  content="Compra, venda e aluguel de imóveis em {{CITY_DEFAULT}} e região — com acompanhamento completo do início ao fim.">
+  <meta property="og:image"        content="{{DOMAIN}}/img/hero-assuncao.webp">
+  <meta property="og:image:width"  content="1440">
+  <meta property="og:image:height" content="900">
+  <meta property="og:image:alt"    content="Skyline de {{CITY_DEFAULT}}, Paraguai — {{BROKER_NAME}}">
+
+  <!-- ── Twitter / X Card ─────────────────────── -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Imóveis em {{CITY_DEFAULT}} e Região | {{BROKER_NAME}}">
+  <meta name="twitter:description" content="Compra, venda e aluguel de imóveis em {{CITY_DEFAULT}} e região — com acompanhamento completo do início ao fim.">
+  <meta name="twitter:image"       content="{{DOMAIN}}/img/hero-assuncao.webp">
+
+  <!-- ── Preload LCP ───────────────────────────── -->
+  <link rel="preload" as="image" href="img/hero-assuncao.webp" fetchpriority="high">
+
+  <!-- ── Fontes ────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="{{FONTS_CSS_URL}}" rel="stylesheet">
+
+  <!-- ── CSS ───────────────────────────────────── -->
+  <link rel="stylesheet" href="css/tokens.css?v={{V}}">
+  <link rel="stylesheet" href="css/base.css?v={{V}}">
+  <link rel="stylesheet" href="css/components.css?v={{V}}">
+  <link rel="stylesheet" href="css/animations.css?v={{V}}">
+  <link rel="stylesheet" href="css/imoveis.css?v={{V}}">
+
+  <!-- ── Schema.org ────────────────────────────── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "@id": "{{DOMAIN}}/#agent",
+    "name": "{{BROKER_NAME}}",
+    "description": "Compra, venda e aluguel de imóveis em {{CITY_DEFAULT}} e região, Paraguai.",
+    "url": "{{DOMAIN}}",
+    "image": "{{DOMAIN}}/img/corretor-1.webp",
+    "telephone": "+{{WHATSAPP}}",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "{{CITY_DEFAULT}}",
+      "addressCountry": "PY"
+    },
+    "areaServed": { "@type": "Country", "name": "Paraguay" },
+    "knowsLanguage": ["pt", "es", "en"]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       NAVBAR
+  ═══════════════════════════════════════════ -->
+  <header class="navbar" id="navbar">
+    <div class="container navbar__inner">
+
+      <a href="/" class="navbar__logo">
+        {{BROKER_NAME}} <span data-i18n="nav.logo-span">Imóveis</span>
+      </a>
+
+      <nav aria-label="Principal">
+        <ul class="navbar__nav">
+          <li><a href="imoveis.html" data-i18n="nav.imoveis">Imóveis</a></li>
+          <li><a href="#porque" data-i18n="nav.why">Vantagens</a></li>
+          <li><a href="#sobre" data-i18n="nav.about">Sobre</a></li>
+          <li><a href="#faq" data-i18n="nav.faq">Dúvidas</a></li>
+          <li><a href="#contato" data-i18n="nav.contact">Contato</a></li>
+        </ul>
+      </nav>
+
+      <div class="navbar__actions">
+        <div class="lang-switcher" aria-label="Idioma">
+          <button data-lang="pt" aria-label="Português">PT</button>
+          <button data-lang="es" aria-label="Español">ES</button>
+          <button data-lang="en" aria-label="English">EN</button>
+        </div>
+        <a href="https://wa.me/{{WHATSAPP}}?text={{WA_TEXT_HOME_ENC}}"
+           target="_blank" rel="noopener"
+           class="btn btn--whatsapp btn--sm"
+           data-i18n="nav.cta"
+           onclick="trackEvents && trackEvents.whatsappClick('navbar')">Falar com {{BROKER_FIRST_NAME}}</a>
+
+        <button class="navbar__burger" aria-label="Menu" aria-expanded="false" aria-controls="drawer">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Mobile drawer -->
+  <nav class="navbar__drawer" id="drawer" aria-label="Menu mobile">
+    <a href="imoveis.html" data-i18n="nav.imoveis">Imóveis</a>
+    <a href="#porque"  data-i18n="nav.why">Vantagens</a>
+    <a href="#sobre"   data-i18n="nav.about">Sobre</a>
+    <a href="#faq"     data-i18n="nav.faq">Dúvidas</a>
+    <a href="#contato" data-i18n="nav.contact">Contato</a>
+    <div class="lang-switcher" style="margin-top: auto;">
+      <button data-lang="pt">PT</button>
+      <button data-lang="es">ES</button>
+      <button data-lang="en">EN</button>
+    </div>
+    <a href="https://wa.me/{{WHATSAPP}}?text={{WA_TEXT_HOME_ENC}}"
+       target="_blank" rel="noopener"
+       class="btn btn--whatsapp btn--md"
+       data-i18n="nav.cta"
+       onclick="trackEvents && trackEvents.whatsappClick('drawer')">Falar com {{BROKER_FIRST_NAME}}</a>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════ -->
+  <section class="hero" aria-label="Apresentação">
+
+    <div class="hero__bg">
+      <img src="img/hero-assuncao.webp"
+           alt="Skyline de {{CITY_DEFAULT}}, Paraguai"
+           class="hero__bg-img"
+           width="1440" height="900"
+           loading="eager">
+    </div>
+    <div class="hero__overlay"></div>
+
+    <div class="container hero__content">
+
+      <div class="hero__label" data-reveal="blur">
+        <span class="badge badge--light">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span data-i18n="hero.label">Imóveis em {{CITY_DEFAULT}} e região</span>
+        </span>
+      </div>
+
+      <h1 class="hero__title" data-reveal="blur" data-delay="100" data-i18n="hero.title">
+        Encontre o imóvel certo em <em>{{CITY_DEFAULT}}</em> com quem conhece cada bairro.
+      </h1>
+
+      <p class="hero__subtitle" data-reveal="up" data-delay="250" data-i18n="hero.subtitle">
+        Compra, venda e aluguel de imóveis no Paraguai com acompanhamento completo — do primeiro contato às chaves na mão.
+      </p>
+
+      <div class="hero__actions" data-reveal="up" data-delay="400">
+        <a href="https://wa.me/{{WHATSAPP}}?text={{WA_TEXT_HOME_ENC}}"
+           target="_blank" rel="noopener"
+           class="btn btn--whatsapp btn--lg"
+           onclick="trackEvents && trackEvents.whatsappClick('hero'); trackEvents && trackEvents.ctaClick('hero_primary')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          <span data-i18n="hero.cta1">Falar com {{BROKER_FIRST_NAME}}</span>
+        </a>
+        <a href="imoveis.html" class="btn btn--outline-light btn--lg" data-i18n="hero.cta2"
+           onclick="trackEvents && trackEvents.ctaClick('hero_secondary')">
+          Ver imóveis
+        </a>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       BARRA DE CREDENCIAIS
+  ═══════════════════════════════════════════ -->
+  <section class="section--alt" aria-label="Credenciais">
+    <div class="container">
+      <div class="creds-bar" data-stagger data-stagger-step="100">
+        <div class="cred-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <span data-i18n="creds.exp"><em>{{STATS_YEARS}}+ anos</em> de mercado imobiliário</span>
+        </div>
+        <div class="cred-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span data-i18n="creds.deals"><em>{{STATS_DEALS}}+</em> negócios fechados</span>
+        </div>
+        <div class="cred-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span data-i18n="creds.atend"><em>Atendimento</em> em português e espanhol</span>
+        </div>
+        <div class="cred-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span data-i18n="creds.usd">Imóveis e renda em <em>dólares</em></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       IMÓVEIS EM DESTAQUE (gerenciados pelo admin)
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="imoveis-home" aria-labelledby="imoveis-home-titulo">
+    <div class="container">
+
+      <div class="section-header" data-reveal="up">
+        <span class="section-label t-label" data-i18n="home.imoveis.label">Imóveis selecionados</span>
+        <h2 class="t-display-md" id="imoveis-home-titulo" data-i18n="home.imoveis.title">Oportunidades disponíveis agora</h2>
+        <div class="divider"></div>
+        <p class="t-body-lg" style="max-width: 640px; margin-top: 1.5rem;" data-i18n="home.imoveis.subtitle">
+          Uma seleção de imóveis que {{BROKER_FIRST_NAME}} acompanha pessoalmente em {{CITY_DEFAULT}} e região.
+        </p>
+      </div>
+
+      <div class="imv-grid" id="destaques-grid" style="margin-top: 0;">
+        <div class="imv-skeleton" aria-hidden="true"></div>
+        <div class="imv-skeleton" aria-hidden="true"></div>
+        <div class="imv-skeleton" aria-hidden="true"></div>
+      </div>
+
+      <div class="imv-destaque-cta" data-reveal="up">
+        <a href="imoveis.html" class="btn btn--primary btn--md" data-i18n="home.imoveis.btn"
+           onclick="trackEvents && trackEvents.ctaClick('home_imoveis')">
+          Ver todos os imóveis
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       POR QUE ESCOLHER
+  ═══════════════════════════════════════════ -->
+  <section class="section section--alt" id="porque" aria-labelledby="porque-titulo">
+    <div class="container">
+
+      <div class="section-header" data-reveal="up">
+        <span class="section-label t-label" data-i18n="why.label">Por que escolher</span>
+        <h2 class="t-display-md" id="porque-titulo" data-i18n="why.title">Por que fechar negócio com {{BROKER_FIRST_NAME}}?</h2>
+        <div class="divider"></div>
+      </div>
+
+      <div class="grid-2" data-stagger data-stagger-step="100">
+
+        <div class="card">
+          <span class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </span>
+          <h3 class="card__title t-heading" data-i18n="why.c1.title">Acompanhamento completo</h3>
+          <p class="card__body" data-i18n="why.c1.body">Da primeira visita à assinatura: busca personalizada, negociação e formalização com você em cada etapa.</p>
+        </div>
+
+        <div class="card">
+          <span class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </span>
+          <h3 class="card__title t-heading" data-i18n="why.c2.title">Documentação segura</h3>
+          <p class="card__body" data-i18n="why.c2.body">Análise de contrato e verificação de documentação com profissionais de confiança — sem cláusulas que custam caro depois.</p>
+        </div>
+
+        <div class="card">
+          <span class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          </span>
+          <h3 class="card__title t-heading" data-i18n="why.c3.title">Conhecimento local</h3>
+          <p class="card__body" data-i18n="why.c3.body">Cada bairro tem seu perfil, seu momento e seu preço justo. Você decide com informação de quem vive o mercado todos os dias.</p>
+        </div>
+
+        <div class="card">
+          <span class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </span>
+          <h3 class="card__title t-heading" data-i18n="why.c4.title">Negociação direta</h3>
+          <p class="card__body" data-i18n="why.c4.body">Contato direto com proprietários e incorporadoras — sem intermediários que encarecem a operação.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SOBRE
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="sobre" aria-labelledby="sobre-titulo">
+    <div class="container">
+
+      <div class="section-header" data-reveal="up">
+        <span class="section-label t-label" data-i18n="about.label">Quem te atende</span>
+        <h2 class="t-display-md" id="sobre-titulo" data-i18n="about.title">Conheça {{BROKER_FIRST_NAME}}</h2>
+        <div class="divider"></div>
+      </div>
+
+      <div class="grid-2" style="align-items: center; gap: 4rem;">
+
+        <div data-reveal="left">
+          <div style="border-radius: var(--radius-2xl); overflow: hidden; aspect-ratio: 3/4;">
+            <img src="img/corretor-1.webp"
+                 alt="{{BROKER_NAME}} — corretor de imóveis em {{CITY_DEFAULT}}, Paraguai"
+                 width="600" height="800" loading="lazy"
+                 style="width:100%; height:100%; object-fit:cover; display:block;">
+          </div>
+        </div>
+
+        <div data-reveal="right">
+          <p class="t-body-lg" style="margin-bottom: 1.25rem;" data-i18n="about.bio">
+            {{BIO_PT}}
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       DEPOIMENTOS
+  ═══════════════════════════════════════════ -->
+  <section class="section section--alt" id="depoimentos" aria-labelledby="depoimentos-titulo">
+    <div class="container">
+
+      <div class="section-header" data-reveal="up">
+        <span class="section-label t-label" data-i18n="depo.label">Quem já comprou</span>
+        <h2 class="t-display-md" id="depoimentos-titulo" data-i18n="depo.title">O que dizem os clientes</h2>
+        <div class="divider"></div>
+      </div>
+
+      <div class="grid-3" data-stagger data-stagger-step="120">
+        <div class="testimonial">
+          <div class="testimonial__quote">"</div>
+          <p class="testimonial__text" data-i18n="depo.t1">{{TESTIMONIAL_1_TEXT_PT}}</p>
+          <div class="testimonial__author">
+            <div class="testimonial__avatar" style="background: var(--clr-bg-alt);"></div>
+            <div>
+              <p class="testimonial__name">{{TESTIMONIAL_1_NAME}}</p>
+              <p class="testimonial__role">{{TESTIMONIAL_1_ORIGIN}}</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial">
+          <div class="testimonial__quote">"</div>
+          <p class="testimonial__text" data-i18n="depo.t2">{{TESTIMONIAL_2_TEXT_PT}}</p>
+          <div class="testimonial__author">
+            <div class="testimonial__avatar" style="background: var(--clr-bg-alt);"></div>
+            <div>
+              <p class="testimonial__name">{{TESTIMONIAL_2_NAME}}</p>
+              <p class="testimonial__role">{{TESTIMONIAL_2_ORIGIN}}</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial">
+          <div class="testimonial__quote">"</div>
+          <p class="testimonial__text" data-i18n="depo.t3">{{TESTIMONIAL_3_TEXT_PT}}</p>
+          <div class="testimonial__author">
+            <div class="testimonial__avatar" style="background: var(--clr-bg-alt);"></div>
+            <div>
+              <p class="testimonial__name">{{TESTIMONIAL_3_NAME}}</p>
+              <p class="testimonial__role">{{TESTIMONIAL_3_ORIGIN}}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       FAQ
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="faq" aria-labelledby="faq-titulo">
+    <div class="container">
+
+      <div class="section-header" data-reveal="up">
+        <span class="section-label t-label" data-i18n="faq.label">Dúvidas</span>
+        <h2 class="t-display-md" id="faq-titulo" data-i18n="faq.title">Perguntas frequentes</h2>
+        <div class="divider"></div>
+      </div>
+
+      <div class="accordion" style="max-width: 760px; margin-inline: auto;" data-reveal="up" data-delay="100">
+
+        <div class="accordion-item">
+          <button class="accordion-trigger">
+            <span data-i18n="faq.q1">Estrangeiro pode comprar imóvel no Paraguai?</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body" data-i18n="faq.a1">
+            Sim. Estrangeiros têm os mesmos direitos de propriedade que paraguaios e podem comprar imóveis em seu próprio nome, com escritura registrada. Não é necessário ter residência para comprar.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <button class="accordion-trigger">
+            <span data-i18n="faq.q2">Preciso estar no Paraguai para comprar ou alugar?</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body" data-i18n="faq.a2">
+            O processo pode começar 100% à distância — busca, fotos, vídeos e negociação pelo WhatsApp. Para a escritura, alguns cartórios aceitam procuração; quando necessário, organizamos tudo para resolver em uma única viagem.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <button class="accordion-trigger">
+            <span data-i18n="faq.q3">Quais custos existem além do preço do imóvel?</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body" data-i18n="faq.a3">
+            Em geral: custos de escritura e registro, eventuais taxas de transferência e a comissão imobiliária (no Paraguai, normalmente paga pelo proprietário ou incorporadora). Antes de qualquer assinatura, você recebe a conta completa, sem surpresas.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <button class="accordion-trigger">
+            <span data-i18n="faq.q4">Os valores são em dólares ou guaranis?</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="accordion-body" data-i18n="faq.a4">
+            O mercado de compra e venda trabalha majoritariamente em dólares americanos; aluguéis podem ser em dólares ou guaranis. Os anúncios deste site exibem valores em US$.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       CTA FINAL
+  ═══════════════════════════════════════════ -->
+  <section class="section section--darker" aria-labelledby="cta-titulo">
+    <div class="container" style="text-align: center; max-width: 680px;">
+
+      <h2 class="t-display-md" id="cta-titulo" style="color: white;" data-reveal="up" data-i18n="cta.title">
+        Não encontrou o que procura?
+      </h2>
+      <p class="t-body-lg" style="color: var(--clr-text-light); margin-top: 1.25rem; margin-bottom: 2.5rem;" data-reveal="up" data-delay="100" data-i18n="cta.subtitle">
+        As melhores oportunidades raramente aparecem na internet. Conte a {{BROKER_FIRST_NAME}} o que você busca — e receba opções selecionadas para o seu perfil.
+      </p>
+
+      <div data-reveal="up" data-delay="200">
+        <a href="https://wa.me/{{WHATSAPP}}?text={{WA_TEXT_HOME_ENC}}"
+           target="_blank" rel="noopener"
+           class="btn btn--whatsapp btn--lg"
+           onclick="trackEvents && trackEvents.whatsappClick('cta_final')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          <span data-i18n="cta.btn">Chamar no WhatsApp</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       FORMULÁRIO DE CONTATO
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="contato" aria-labelledby="form-titulo">
+    <div class="container">
+
+      <div class="section-header" data-reveal="up" style="text-align: center;">
+        <span class="section-label t-label" data-i18n="form.label">Entre em contato</span>
+        <h2 class="t-display-md" id="form-titulo" data-i18n="form.title">Ou envie uma mensagem</h2>
+        <div class="divider" style="margin-inline: auto;"></div>
+      </div>
+
+      <div style="max-width: 680px; margin-inline: auto;" data-reveal="up" data-delay="100">
+        <form class="form-grid form-grid--2" data-form-id="home" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="name" data-i18n="form.name">Nome completo</label>
+            <input class="form-input" type="text" id="name" name="name" required autocomplete="name" placeholder="Seu nome">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email" data-i18n="form.email">E-mail</label>
+            <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="seu@email.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="whatsapp" data-i18n="form.whatsapp">WhatsApp</label>
+            <input class="form-input" type="tel" id="whatsapp" name="whatsapp" autocomplete="tel" placeholder="+55 11 99999-9999">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="interesse" data-i18n="form.interest">O que você procura?</label>
+            <select class="form-select" id="interesse" name="interesse">
+              <option value="" data-i18n="form.select">Selecione...</option>
+              <option value="comprar" data-i18n="form.opt.comprar">Quero comprar</option>
+              <option value="alugar" data-i18n="form.opt.alugar">Quero alugar</option>
+              <option value="investir" data-i18n="form.opt.investir">Quero investir</option>
+              <option value="vender" data-i18n="form.opt.vender">Quero vender meu imóvel</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="mensagem" data-i18n="form.message">Mensagem</label>
+            <textarea class="form-textarea" id="mensagem" name="mensagem" placeholder="Escreva sua mensagem..."></textarea>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <button type="submit" class="btn btn--primary btn--lg" style="width: 100%;" data-i18n="form.submit">
+              Enviar mensagem
+            </button>
+          </div>
+
+          <div class="form-success" style="grid-column: 1 / -1;" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;color:#22c55e" aria-hidden="true"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span data-i18n="form.success">Mensagem enviada! {{BROKER_FIRST_NAME}} entrará em contato em breve.</span>
+          </div>
+          <div class="form-error" style="grid-column: 1 / -1;" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;color:#f87171" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span data-i18n="form.error">Erro ao enviar. Tente novamente ou fale pelo WhatsApp.</span>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="footer" aria-label="Rodapé">
+    <div class="container">
+
+      <div class="footer__grid">
+
+        <div>
+          <p class="footer__logo">{{BROKER_NAME}} <span data-i18n="nav.logo-span">Imóveis</span></p>
+          <p class="footer__desc" data-i18n="footer.desc">{{CITY_DEFAULT}}, Paraguai · Compra, venda e aluguel de imóveis com acompanhamento completo.</p>
+        </div>
+
+        <div>
+          <p class="footer__heading" data-i18n="footer.links">Links</p>
+          <ul class="footer__links">
+            <li><a href="imoveis.html" data-i18n="nav.imoveis">Imóveis</a></li>
+            <li><a href="#porque" data-i18n="nav.why">Vantagens</a></li>
+            <li><a href="#sobre" data-i18n="nav.about">Sobre</a></li>
+            <li><a href="#faq" data-i18n="nav.faq">Dúvidas</a></li>
+            <li><a href="#contato" data-i18n="nav.contact">Contato</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="footer__heading" data-i18n="footer.contact">Contato</p>
+          <ul class="footer__links">
+            <li>
+              <a href="https://wa.me/{{WHATSAPP}}" target="_blank" rel="noopener"
+                 onclick="trackEvents && trackEvents.whatsappClick('footer')">
+                WhatsApp
+              </a>
+            </li>
+            <!-- IF:CONTACT_EMAIL -->
+            <li>
+              <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>
+            </li>
+            <!-- ENDIF:CONTACT_EMAIL -->
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer__bottom">
+        <span>© {{YEAR}} {{BROKER_NAME}}. <span data-i18n="footer.rights">Todos os direitos reservados.</span></span>
+        <div class="footer__socials">
+          <!-- IF:INSTAGRAM_URL -->
+          <a href="{{INSTAGRAM_URL}}" target="_blank" rel="noopener" aria-label="Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+          </a>
+          <!-- ENDIF:INSTAGRAM_URL -->
+          <!-- IF:FACEBOOK_URL -->
+          <a href="{{FACEBOOK_URL}}" target="_blank" rel="noopener" aria-label="Facebook">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+          </a>
+          <!-- ENDIF:FACEBOOK_URL -->
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════
+       WHATSAPP FAB
+  ═══════════════════════════════════════════ -->
+  <div class="fab-whatsapp">
+    <span class="fab-whatsapp__tooltip" data-i18n="nav.cta">Falar com {{BROKER_FIRST_NAME}}</span>
+    <a href="https://wa.me/{{WHATSAPP}}?text={{WA_TEXT_HOME_ENC}}"
+       target="_blank" rel="noopener"
+       class="fab-whatsapp__btn"
+       aria-label="Falar com {{BROKER_FIRST_NAME}} pelo WhatsApp"
+       onclick="trackEvents && trackEvents.whatsappClick('fab')">
+      <span class="fab-whatsapp__pulse" aria-hidden="true"></span>
+      <span class="fab-whatsapp__pulse" aria-hidden="true"></span>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    </a>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════
+       SCRIPTS
+  ═══════════════════════════════════════════ -->
+  <script src="js/main.js?v={{V}}" defer></script>
+  <script src="js/animations.js?v={{V}}" defer></script>
+  <script src="js/torch.js?v={{V}}" defer></script>
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/form.js?v={{V}}"></script>
+  <script type="module" src="js/imoveis.js?v={{V}}"></script>
+
+</body>
+</html>

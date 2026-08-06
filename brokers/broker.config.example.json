@@ -1,0 +1,71 @@
+{
+  "_comentario": "Copie este arquivo para brokers/<slug>.config.json e preencha. Campos _comentario são ignorados.",
+
+  "broker": {
+    "name": "Nome Completo do Corretor",
+    "firstName": "Nome",
+    "slug": "nome-corretor",
+    "_comentario_photo": "Caminho local da foto (3:4, min 600x800, webp). Opcional — sem ela fica uma imagem genérica.",
+    "photo": ""
+  },
+
+  "site": {
+    "_comentario_domain": "Sem barra no final. Antes do domínio próprio, use https://<projectId>.web.app",
+    "domain": "https://exemplo.com.py",
+    "_comentario_cityDefault": "Cidade base nos 3 idiomas (pt/es/en).",
+    "cityDefault": { "pt": "Assunção", "es": "Asunción", "en": "Asunción" },
+    "defaultLang": "pt"
+  },
+
+  "contact": {
+    "_comentario_whatsapp": "Somente dígitos, com DDI 595. Ex.: 595981123456",
+    "whatsapp": "595981123456",
+    "_comentario_waText": "Texto pré-preenchido dos botões de WhatsApp (texto puro — o build codifica a URL).",
+    "waTextHome": "Olá Nome, quero saber mais sobre os imóveis!",
+    "waTextImoveis": "Olá Nome, quero saber mais sobre os imóveis!",
+    "_comentario_opcionais": "email / instagram / facebook vazios = o bloco some do site.",
+    "email": "",
+    "instagram": "",
+    "facebook": ""
+  },
+
+  "admin": {
+    "_comentario": "Conta GOOGLE que acessa o /admin (o login é com Google). Mesmo e-mail vai para as firestore.rules.",
+    "email": "corretor@gmail.com"
+  },
+
+  "theme": {
+    "_comentario": "Cores em hex de 6 dígitos. As variações (dark/light/ghost/glow) são derivadas automaticamente.",
+    "primary": "#1B3A5C",
+    "accent": "#C8922A",
+    "_comentario_fontes": "Nomes de famílias do Google Fonts.",
+    "fontDisplay": "Plus Jakarta Sans",
+    "fontBody": "DM Sans"
+  },
+
+  "firebase": {
+    "_comentario": "Firebase Console → Configurações do projeto → Seus apps → SDK setup and configuration.",
+    "apiKey": "",
+    "authDomain": "",
+    "projectId": "",
+    "storageBucket": "",
+    "messagingSenderId": "",
+    "appId": "",
+    "measurementId": ""
+  },
+
+  "texts": {
+    "_comentario": "Tudo aqui é opcional — o que faltar vira [PREENCHER: ...] no site gerado (listado no fim do build).",
+    "stats": { "years": "10", "deals": "100" },
+    "bio": {
+      "pt": "",
+      "es": "",
+      "en": ""
+    },
+    "testimonials": [
+      { "name": "", "origin": "", "text": { "pt": "", "es": "", "en": "" } },
+      { "name": "", "origin": "", "text": { "pt": "", "es": "", "en": "" } },
+      { "name": "", "origin": "", "text": { "pt": "", "es": "", "en": "" } }
+    ]
+  }
+}
