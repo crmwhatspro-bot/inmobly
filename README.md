@@ -65,3 +65,23 @@ Sirva `dist/exemplo` com qualquer servidor estático para conferir o visual. Sem
 ## Manutenção do template
 
 Alterações de comportamento/estilo são feitas **em `template/`** e regeradas para todos os corretores (rodar o build de cada config com `--force` e redeployar). Nunca edite `dist/` à mão.
+
+## Regras de negócio
+
+Planos, limites de trial, moeda/gateway de pagamento e produtos avulsos (incluindo a
+"Página de Emprendimento" bespoke) estão documentados em
+[`docs/REGRAS-DE-NEGOCIO.md`](docs/REGRAS-DE-NEGOCIO.md). Qualquer mudança em limite
+de plano ou preço deve ser refletida lá antes de virar código.
+
+## Página de Emprendimento (produto avulso, estilo Nobile Inn)
+
+Landing page bespoke por projeto, vendida à parte da assinatura (ver regras de
+negócio acima). Antes de montar o design/copy, use
+[`tools/prep-emprendimento.html`](tools/prep-emprendimento.html) — ferramenta interna
+(não faz parte do site do corretor) que conecta direto no Firestore público do
+projeto do broker e:
+
+- **Se o imóvel selecionado já tem fotos no CMS**, baixa todas prontas para reaproveitar na galeria da página bespoke (saem em 900px, o mesmo padrão já usado em produção).
+- **Se não tem fotos ainda**, gera e baixa placeholders no tamanho exato de cada seção (hero, galeria, foto do corretor), com a especificação em px gravada na própria imagem — para a equipe saber exatamente o que fotografar/produzir antes de montar a página.
+
+Basta colar o bloco `firebase` do `brokers/<slug>.config.json` na ferramenta — a leitura de `imoveis` e `imoveis/{id}/fotos` é pública nas rules, não precisa de login.

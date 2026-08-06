@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAIm · Preparar página de emprendimento</title>
+<style>
+  :root {
+    --bg: #0F172A; --surface: #1A2438; --line: #2A3752; --text: #E7ECF5;
+    --muted: #8B98B2; --accent: #C8922A; --ok: #22C55E; --err: #EF4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', system-ui, sans-serif; padding: 2rem 1.25rem 5rem;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .sub { color: var(--muted); margin-bottom: 2rem; font-size: 0.92rem; }
+  h2 { font-size: 1.05rem; margin: 2.5rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1.5rem;
+  }
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin: 0.9rem 0 0.3rem; }
+  label:first-child { margin-top: 0; }
+  input, select, textarea {
+    width: 100%; background: #0B1428; border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text); padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: inherit;
+  }
+  textarea { min-height: 100px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+  button {
+    cursor: pointer; border: none; border-radius: 8px; padding: 0.65rem 1.1rem;
+    font-size: 0.88rem; font-weight: 600; font-family: inherit; margin-top: 1.25rem;
+  }
+  .btn-primary { background: var(--accent); color: #1a1200; }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .msg { font-size: 0.85rem; margin-top: 0.75rem; }
+  .msg--err { color: var(--err); }
+  .msg--ok { color: var(--ok); }
+  .imv-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 260px; overflow-y: auto; margin-top: 1rem; }
+  .imv-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    background: #0B1428; border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.6rem 0.9rem; cursor: pointer; font-size: 0.88rem;
+  }
+  .imv-item:hover { border-color: var(--accent); }
+  .imv-item.is-selected { border-color: var(--accent); background: rgba(200,146,42,0.1); }
+  .imv-item small { color: var(--muted); display: block; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+  .photo-cell { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0B1428; }
+  .photo-cell img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+  .photo-cell .meta { padding: 0.4rem 0.5rem; font-size: 0.7rem; color: var(--muted); display: flex; justify-content: space-between; }
+  .photo-cell a { color: var(--accent); text-decoration: none; }
+  table.spec { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+  table.spec th, table.spec td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--line); }
+  table.spec th { color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pill { display: inline-block; background: var(--accent); color: #1a1200; font-size: 0.7rem; font-weight: 700;
+          padding: 0.15rem 0.5rem; border-radius: 999px; margin-left: 0.5rem; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Preparar página de emprendimento</h1>
+  <p class="sub">
+    Ferramenta interna Punto Alto — não é parte do site do broker. Puxa as fotos já
+    cadastradas de um imóvel no CMS (via <code>imoveis/{id}/fotos</code>, leitura
+    pública, sem necessidade de login) para reaproveitar na página bespoke estilo
+    Nobile Inn. Se o imóvel ainda não tem fotos, gera os placeholders com o tamanho
+    ideal para a equipe saber exatamente o que produzir/fotografar.
+  </p>
+
+  <!-- ── 1. Conectar ao projeto do broker ─────────────────── -->
+  <div class="card">
+    <label for="cfgPaste">Cole o bloco <code>firebase</code> do config do broker (brokers/&lt;slug&gt;.config.json)</label>
+    <textarea id="cfgPaste" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}'></textarea>
+    <button class="btn-primary" id="btnConnect">Conectar</button>
+    <div class="msg" id="connectMsg"></div>
+  </div>
+
+  <!-- ── 2. Escolher o imóvel ──────────────────────────────── -->
+  <div id="stepImovel" class="hidden">
+    <h2>1. Escolha o imóvel</h2>
+    <div class="card">
+      <button class="btn-ghost" id="btnLoadImoveis">Carregar imóveis do catálogo</button>
+      <div class="imv-list" id="imvList"></div>
+      <div class="msg" id="imvMsg"></div>
+    </div>
+  </div>
+
+  <!-- ── 3a. Fotos existentes ──────────────────────────────── -->
+  <div id="stepFotos" class="hidden">
+    <h2>2. Fotos existentes deste imóvel <span class="pill" id="fotosCount"></span></h2>
+    <div class="card">
+      <p class="sub" style="margin-bottom:0.5rem;">
+        Fotos do CMS saem a <strong>900px de largura</strong> — ótimo para a seção de
+        galeria da página bespoke. Para o hero (fundo full-bleed), o ideal é
+        1440px+; se a melhor foto disponível aqui for a única opção, ela ainda
+        funciona (o hero usa <code>object-fit/background-size: cover</code>), mas o
+        resultado fica mais nítido com uma imagem maior.
+      </p>
+      <button class="btn-primary" id="btnDownloadAll">Baixar todas as fotos</button>
+      <div class="photo-grid" id="photoGrid"></div>
+    </div>
+  </div>
+
+  <!-- ── 3b. Sem fotos → placeholders ──────────────────────── -->
+  <div id="stepPlaceholder" class="hidden">
+    <h2>2. Sem fotos cadastradas ainda — spec de imagens necessárias</h2>
+    <div class="card">
+      <p class="sub" style="margin-bottom:0.5rem;">
+        Nenhuma foto encontrada em <code>imoveis/{id}/fotos</code> para este imóvel.
+        Tamanhos abaixo são os mesmos já usados em produção (verificados nos arquivos
+        reais do projeto de referência) — não são um chute.
+      </p>
+      <table class="spec">
+        <thead><tr><th>Seção</th><th>Tamanho mínimo</th><th>Proporção</th><th>Formato</th></tr></thead>
+        <tbody>
+          <tr><td>Hero (fundo full-bleed)</td><td>1440 × 810px</td><td>16:9</td><td>WebP</td></tr>
+          <tr><td>Galeria (grid, ~6 fotos)</td><td>900 × 630px</td><td>~10:7</td><td>WebP</td></tr>
+          <tr><td>Foto do corretor (se usada na seção de confiança)</td><td>600 × 800px</td><td>3:4 (retrato)</td><td>WebP</td></tr>
+        </tbody>
+      </table>
+      <button class="btn-primary" id="btnDownloadPlaceholders">Baixar placeholders com o tamanho certo</button>
+      <p class="sub" style="margin-top:0.75rem;">
+        Os arquivos baixados têm o tamanho e a proporção exatos, com o nome da seção
+        gravado na própria imagem — usar como canvas de referência no editor, ou
+        entregar para quem for fotografar/renderizar como especificação visual direta.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, collection, getDocs, query, orderBy, limit as fsLimit }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const $ = (id) => document.getElementById(id);
+
+  let db = null;
+  let imoveisCache = [];
+  let fotosAtuais = [];
+  let imovelSelecionado = null;
+
+  // ── 1. Conectar ──────────────────────────────────────────
+  $('btnConnect').addEventListener('click', () => {
+    const msg = $('connectMsg');
+    msg.textContent = '';
+    msg.className = 'msg';
+    let cfg;
+    try {
+      cfg = JSON.parse($('cfgPaste').value);
+    } catch (e) {
+      msg.textContent = 'JSON inválido: ' + e.message;
+      msg.className = 'msg msg--err';
+      return;
+    }
+    const obrigatorios = ['apiKey', 'authDomain', 'projectId'];
+    const faltando = obrigatorios.filter(k => !cfg[k]);
+    if (faltando.length) {
+      msg.textContent = 'Faltando no config: ' + faltando.join(', ');
+      msg.className = 'msg msg--err';
+      return;
+    }
+    try {
+      const app = initializeApp(cfg, 'prep-emprendimento-' + Date.now());
+      db = getFirestore(app);
+      msg.textContent = 'Conectado a "' + cfg.projectId + '".';
+      msg.className = 'msg msg--ok';
+      $('stepImovel').classList.remove('hidden');
+    } catch (e) {
+      msg.textContent = 'Erro ao conectar: ' + e.message;
+      msg.className = 'msg msg--err';
+    }
+  });
+
+  // ── 2. Listar imóveis (leitura pública, sem login) ────────
+  $('btnLoadImoveis').addEventListener('click', async () => {
+    const msg = $('imvMsg');
+    const list = $('imvList');
+    msg.textContent = 'Carregando...';
+    msg.className = 'msg';
+    list.innerHTML = '';
+    try {
+      const snap = await getDocs(query(collection(db, 'imoveis'), fsLimit(200)));
+      imoveisCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!imoveisCache.length) {
+        msg.textContent = 'Nenhum imóvel encontrado neste projeto.';
+        msg.className = 'msg msg--err';
+        return;
+      }
+      msg.textContent = imoveisCache.length + ' imóveis encontrados.';
+      msg.className = 'msg msg--ok';
+      list.innerHTML = imoveisCache.map(imv => `
+        <div class="imv-item" data-id="${imv.id}">
+          <span>${imv.titulo || '(sem título)'}<small>${imv.cidade || ''} ${imv.bairro ? '· ' + imv.bairro : ''} · ${imv.fotosCount || 0} fotos</small></span>
+        </div>
+      `).join('');
+    } catch (e) {
+      msg.textContent = 'Erro ao carregar: ' + e.message;
+      msg.className = 'msg msg--err';
+    }
+  });
+
+  $('imvList').addEventListener('click', async (e) => {
+    const item = e.target.closest('.imv-item');
+    if (!item) return;
+    document.querySelectorAll('.imv-item').forEach(el => el.classList.remove('is-selected'));
+    item.classList.add('is-selected');
+    imovelSelecionado = imoveisCache.find(i => i.id === item.dataset.id);
+    await carregarFotos(imovelSelecionado.id);
+  });
+
+  // ── 3. Carregar fotos do imóvel selecionado ───────────────
+  async function carregarFotos(imovelId) {
+    $('stepFotos').classList.add('hidden');
+    $('stepPlaceholder').classList.add('hidden');
+
+    const snap = await getDocs(query(collection(db, 'imoveis', imovelId, 'fotos'), orderBy('ordem')));
+    fotosAtuais = snap.docs.map(d => ({ id: d.id, data: d.data().data }));
+
+    if (fotosAtuais.length) {
+      $('fotosCount').textContent = fotosAtuais.length + ' foto(s)';
+      const grid = $('photoGrid');
+      grid.innerHTML = fotosAtuais.map((f, i) => {
+        const nome = slugify(imovelSelecionado.titulo || 'imovel') + '-foto-' + (i + 1) + '.webp';
+        return `
+          <div class="photo-cell">
+            <img src="${f.data}" alt="Foto ${i + 1}">
+            <div class="meta">
+              <span>#${i + 1}</span>
+              <a href="${f.data}" download="${nome}">baixar</a>
+            </div>
+          </div>`;
+      }).join('');
+      $('stepFotos').classList.remove('hidden');
+    } else {
+      $('stepPlaceholder').classList.remove('hidden');
+    }
+  }
+
+  $('btnDownloadAll').addEventListener('click', () => {
+    fotosAtuais.forEach((f, i) => {
+      const nome = slugify(imovelSelecionado.titulo || 'imovel') + '-foto-' + (i + 1) + '.webp';
+      const a = document.createElement('a');
+      a.href = f.data;
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  });
+
+  // ── 4. Gerar placeholders com o tamanho certo (canvas) ────
+  const PLACEHOLDERS = [
+    { nome: 'hero',    w: 1440, h: 810, label: 'HERO — 1440×810px (16:9)' },
+    { nome: 'galeria-1', w: 900, h: 630, label: 'GALERIA — 900×630px' },
+    { nome: 'galeria-2', w: 900, h: 630, label: 'GALERIA — 900×630px' },
+    { nome: 'galeria-3', w: 900, h: 630, label: 'GALERIA — 900×630px' },
+    { nome: 'galeria-4', w: 900, h: 630, label: 'GALERIA — 900×630px' },
+    { nome: 'galeria-5', w: 900, h: 630, label: 'GALERIA — 900×630px' },
+    { nome: 'galeria-6', w: 900, h: 630, label: 'GALERIA — 900×630px' },
+    { nome: 'corretor', w: 600, h: 800, label: 'CORRETOR — 600×800px (3:4)' },
+  ];
+
+  $('btnDownloadPlaceholders').addEventListener('click', () => {
+    PLACEHOLDERS.forEach((spec, i) => {
+      setTimeout(() => baixarPlaceholder(spec), i * 120);
+    });
+  });
+
+  function baixarPlaceholder({ nome, w, h, label }) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    // fundo quadriculado simples pra deixar claro que é placeholder
+    ctx.fillStyle = '#1A2438';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#2A3752';
+    ctx.lineWidth = 2;
+    const step = 40;
+    for (let x = 0; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = 0; y < h; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+    ctx.fillStyle = '#C8922A';
+    ctx.font = 'bold ' + Math.round(w * 0.032) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, w / 2, h / 2);
+
+    canvas.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'placeholder-' + nome + '.webp';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, 'image/webp', 0.9);
+  }
+
+  function slugify(s) {
+    return String(s).toLowerCase()
+      .normalize('NFD').replace(new RegExp('[̀-ͯ]', 'g'), '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+</script>
+</body>
+</html>
