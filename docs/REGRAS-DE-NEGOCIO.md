@@ -122,6 +122,23 @@ o Firebase devolve registros DNS, e emite SSL grátis sozinho quando o DNS propa
   reaproveitaria essa mesma credencial, sem criar um mecanismo de acesso novo. Só vale
   a pena construir quando o volume de upgrades justificar.
 
+## 7. Produtos no Stripe
+
+Cadastrar exatamente com esses `lookup_key` — é o que `control-plane/functions/checkout.js`
+e `webhook.js` usam pra identificar cada preço, não o ID opaco (que muda entre modo
+test e live).
+
+| Produto | Tipo | Preço | `lookup_key` |
+|---|---|---|---|
+| Inmobly Starter | Recorrente, mensal | USD 79,00 | `inmobly_starter_monthly` |
+| Inmobly Pro | Recorrente, mensal | USD 129,00 | `inmobly_pro_monthly` |
+| Página de Emprendimento | Única | USD 400,00 (valor de tabela) | `inmobly_emprendimento_page` |
+| Configuração de Domínio Próprio | Única | USD 39,00 | `inmobly_domain_setup` |
+
+Coupon `LANCAMENTO50` (`percent_off: 50`) aplicado automaticamente pelo `checkout.js`
+só em `inmobly_emprendimento_page`, enquanto dura o preço de lançamento (ver seção 5).
+Trial não tem produto no Stripe — nunca toca o Stripe, é autogerenciado sem cartão.
+
 ---
 
 ## Pendências em aberto (não bloqueiam o build atual)
@@ -134,10 +151,13 @@ o Firebase devolve registros DNS, e emite SSL grátis sozinho quando o DNS propa
       Cloud Function de sync documentados em `control-plane/README.md`).
 - [ ] Politica de reembolso / cancelamento de "Página de Emprendimento" já paga mas
       não entregue.
-- [ ] Webhook do Stripe em si (o que escreve `plan`/`status`/`stripeSubscriptionId`
-      em `brokers/{slug}` quando uma assinatura muda) — o control-plane já tem o lado
-      de *sync pra fora* (central → broker) pronto, falta o lado que recebe o evento
-      do Stripe e decide o que escrever.
-- [ ] Criar de fato o projeto `inmobly-control` no Firebase e testar o
-      `syncPlanoParaBroker` contra infraestrutura real — o que existe hoje foi
-      desenhado e revisado, não executado.
+- [x] ~~Webhook do Stripe em si~~ — resolvido: `control-plane/functions/checkout.js`
+      (`criarCheckoutSession`) e `webhook.js` (`stripeWebhook`) escritos e revisados.
+- [ ] Botão/UI de upgrade no `/admin` de cada broker que efetivamente chama
+      `criarCheckoutSession` — sem isso, o webhook não tem como ser exercitado de
+      ponta a ponta, mesmo já existindo.
+- [ ] Criar de fato o projeto `inmobly-control` no Firebase, os produtos no Stripe
+      (seção 7) e testar as 3 Cloud Functions contra infraestrutura real — o que
+      existe hoje foi escrito, revisado (`node --check` + `require()` bem-sucedido de
+      cada módulo) e tem os `require`s confirmados, mas nunca rodou contra Firestore/
+      Stripe reais.
