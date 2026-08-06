@@ -85,3 +85,11 @@ projeto do broker e:
 - **Se não tem fotos ainda**, gera e baixa placeholders no tamanho exato de cada seção (hero, galeria, foto do corretor), com a especificação em px gravada na própria imagem — para a equipe saber exatamente o que fotografar/produzir antes de montar a página.
 
 Basta colar o bloco `firebase` do `brokers/<slug>.config.json` na ferramenta — a leitura de `imoveis` e `imoveis/{id}/fotos` é pública nas rules, não precisa de login.
+
+## Painel interno (control-plane)
+
+Projeto Firebase central e único, separado do de cada broker — guarda plano/status
+de todos os clientes e roda o painel que a equipe Punto Alto usa pra ver/filtrar
+todos os brokers de uma vez (diferente do `/admin` de cada broker, que só mostra os
+próprios leads/imóveis). Estrutura, regras e setup em
+[`control-plane/README.md`](control-plane/README.md).

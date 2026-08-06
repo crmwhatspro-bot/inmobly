@@ -112,10 +112,16 @@ o Firebase devolve registros DNS, e emite SSL grátis sozinho quando o DNS propa
 
 - [ ] Definir exatamente o texto/UX do aviso quando o corretor atinge o limite de
       imóveis do plano (bloqueia criação? mostra banner de upgrade?).
-- [ ] Definir o schema exato do documento central de billing (`brokers/{slug}`) e como
-      ele replica `config/plan` para o Firestore de cada broker — depende de decidir
-      onde vive o projeto central (novo projeto dedicado, recomendado, para não
-      misturar billing do PAIm com os dados de lead-gen do site institucional da
-      Punto Alto).
+- [x] ~~Definir o schema exato do documento central de billing (`brokers/{slug}`) e como
+      ele replica `config/plan` para o Firestore de cada broker~~ — resolvido em
+      `control-plane/` (projeto Firebase novo e dedicado `paim-control`, schema e
+      Cloud Function de sync documentados em `control-plane/README.md`).
 - [ ] Politica de reembolso / cancelamento de "Página de Emprendimento" já paga mas
       não entregue.
+- [ ] Webhook do Stripe em si (o que escreve `plan`/`status`/`stripeSubscriptionId`
+      em `brokers/{slug}` quando uma assinatura muda) — o control-plane já tem o lado
+      de *sync pra fora* (central → broker) pronto, falta o lado que recebe o evento
+      do Stripe e decide o que escrever.
+- [ ] Criar de fato o projeto `paim-control` no Firebase e testar o
+      `syncPlanoParaBroker` contra infraestrutura real — o que existe hoje foi
+      desenhado e revisado, não executado.

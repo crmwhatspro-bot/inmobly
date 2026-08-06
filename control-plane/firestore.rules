@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // E-mails da equipe Punto Alto com acesso ao painel interno.
+    // Mesmo padrão de allowlist usado nas firestore.rules de cada broker,
+    // só que aqui é uma lista (vários membros da equipe), não um único e-mail.
+    function isTeam() {
+      return request.auth != null && request.auth.token.email in [
+        'crmwhatspro@gmail.com'
+        // adicionar outros e-mails da equipe Punto Alto aqui
+      ];
+    }
+
+    // Doc principal do broker: plano, status, billing, domínio.
+    // - Equipe Punto Alto: leitura e escrita total.
+    // - O próprio broker (e-mail == brokers/{slug}.email, o mesmo que loga no
+    //   /admin dele): só pode atualizar o subcampo `usage` do PRÓPRIO doc —
+    //   é o auto-relato de quantidade de imóveis, sem precisar de credencial
+    //   de admin nem de Cloud Function. Não pode tocar em plan/status/billing.
+    match /brokers/{slug} {
+      allow read: if isTeam();
+      allow create, delete: if isTeam();
+      allow update: if isTeam()
+                    || (
+                      request.auth != null &&
+                      request.auth.token.email == resource.data.email &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usage', 'updatedAt']) &&
+                      request.resource.data.usage.imoveisCount is int &&
+                      request.resource.data.usage.imoveisCount >= 0
+                    );
+
+      // Histórico de produtos avulsos (página de emprendimento, domínio) —
+      // só a equipe mexe; billing real fica no Stripe, isso é só o registro.
+      match /purchases/{purchaseId} {
+        allow read, write: if isTeam();
+      }
+    }
+  }
+}
