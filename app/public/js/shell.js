@@ -17,15 +17,19 @@ const ICONS = {
   dominio: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
   plano: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
   chevron: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  hamburger: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
 };
 
+// `primary: true` marca os itens que também aparecem na bottombar do
+// mobile (só os 4 que já têm UI de verdade — Leads/Domínio são stub
+// "Em breve", não merecem espaço fixo permanente na tela).
 const NAV = [
-  { key: 'dashboard', href: 'painel.html',              label: 'Dashboard',      icon: ICONS.dashboard },
-  { key: 'imoveis',   href: 'admin.html',                label: 'Meus Imóveis',   icon: ICONS.imoveis },
-  { key: 'site',      href: 'meu-site.html',              label: 'Meu Site',       icon: ICONS.site },
+  { key: 'dashboard', href: 'painel.html',              label: 'Dashboard',      icon: ICONS.dashboard, primary: true },
+  { key: 'imoveis',   href: 'admin.html',                label: 'Meus Imóveis',   icon: ICONS.imoveis,   primary: true },
+  { key: 'site',      href: 'meu-site.html',              label: 'Meu Site',       icon: ICONS.site,      primary: true },
   { key: 'leads',     href: 'em-breve.html?f=leads',     label: 'Leads',          icon: ICONS.leads,   soon: true },
   { key: 'dominio',   href: 'em-breve.html?f=dominio',   label: 'Domínio',        icon: ICONS.dominio, soon: true },
-  { key: 'plano',     href: 'planos.html',                label: 'Plano',          icon: ICONS.plano },
+  { key: 'plano',     href: 'planos.html',                label: 'Plano',          icon: ICONS.plano,      primary: true },
 ];
 
 // Changelog do produto — mostrado no card "Novidades" do rodapé da
@@ -98,7 +102,12 @@ function renderSidebar(active) {
 function renderTopbar(title) {
   return `
     <header class="admin-topbar">
-      <h1 class="admin-topbar__title">${title}</h1>
+      <div class="admin-topbar__left">
+        <button type="button" class="admin-topbar__hamburger" id="shellHamburgerBtn" aria-label="Abrir menu" aria-expanded="false">
+          ${ICONS.hamburger}
+        </button>
+        <h1 class="admin-topbar__title">${title}</h1>
+      </div>
       <div class="admin-user-menu">
         <button class="admin-topbar__user" id="shellUserBtn" aria-haspopup="true" aria-expanded="false" aria-label="Menu da conta">
           <span id="shellTopAvatarWrap">${avatarHTML(null, 'sm')}</span>
@@ -115,6 +124,47 @@ function renderTopbar(title) {
         </div>
       </div>
     </header>`;
+}
+
+// Barra fixa no rodapé, só mobile — apenas os itens `primary`. O menu
+// completo (com Leads/Domínio e o rodapé de perfil/plano) mora no
+// drawer da sidebar, aberto pelo hambúrguer da topbar.
+function renderBottomBar(active) {
+  const itens = NAV.filter(item => item.primary).map(item => `
+    <a class="admin-bottombar__btn${item.key === active ? ' active' : ''}" href="${item.href}" aria-label="${item.label}">
+      ${item.icon}
+    </a>`).join('');
+  return `<nav class="admin-bottombar" aria-label="Navegação principal">${itens}</nav>`;
+}
+
+function renderDrawerBackdrop() {
+  return `<div class="admin-drawer-backdrop" id="shellDrawerBackdrop"></div>`;
+}
+
+function wireDrawer() {
+  const hamburgerBtn = document.getElementById('shellHamburgerBtn');
+  const sidebar = document.querySelector('.admin-sidebar');
+  const backdrop = document.getElementById('shellDrawerBackdrop');
+  if (!hamburgerBtn || !sidebar || !backdrop) return;
+
+  function abrir() {
+    sidebar.classList.add('is-open');
+    backdrop.classList.add('is-open');
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+  function fechar() {
+    sidebar.classList.remove('is-open');
+    backdrop.classList.remove('is-open');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  hamburgerBtn.addEventListener('click', () => {
+    sidebar.classList.contains('is-open') ? fechar() : abrir();
+  });
+  backdrop.addEventListener('click', fechar);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fechar(); });
 }
 
 function wireUpdatesCard() {
@@ -204,8 +254,13 @@ export function initShell({ active, title }) {
   if (sidebarMount) sidebarMount.outerHTML = renderSidebar(active);
   if (topbarMount) topbarMount.outerHTML = renderTopbar(title);
 
+  // Bottombar + backdrop do drawer — só existem/aparecem em mobile
+  // (ver @media em shell.css), mas ficam sempre no DOM.
+  document.body.insertAdjacentHTML('beforeend', renderBottomBar(active) + renderDrawerBackdrop());
+
   wireUpdatesCard();
   wireUserMenu();
+  wireDrawer();
 
   return new Promise((resolve) => {
     onAuthChange(async (user) => {

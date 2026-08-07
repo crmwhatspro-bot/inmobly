@@ -64,52 +64,22 @@ mail/instagram). Esse commit é o retrabalho completo:
 e testar tudo de novo — logo, headline/subheadline, sobre, cor, e-mail
 de contato, Instagram, e principalmente o popup de preview.
 
-## 🔧 Em andamento — só desenhado, ZERO código escrito ainda
+## ✅ Menu mobile em dois níveis — implementado, ainda não testado num aparelho real
 
-Pedido do usuário, textual: *"o mobile pode distribuir também o menu
-inferior, deixá-lo fixo somente com alguns flat icons, e trabalhar um
-menu dropdown de 3 listras no topo esquerdo pras features assim como é
-na barra da esquerda no pc."*
+Pedido do usuário atendido logo depois desse resumo ter sido escrito:
+bottombar (`.admin-bottombar`, só ícone, só os 4 itens `primary`) +
+hambúrguer no canto superior esquerdo da topbar (`.admin-topbar__hamburger`)
+que abre a sidebar completa como drawer (`.admin-sidebar.is-open`,
+`transform: translateX(0)`, com `.admin-drawer-backdrop` escurecendo o
+fundo). Detalhes completos no `README.md`, seção "App shell (pós-login)".
 
-Design já fechado, só não implementado (a sessão foi interrompida pra
-esse resumo antes de escrever qualquer linha):
-
-- **Bottom bar mobile** fica só com os itens "primary": Dashboard, Meus
-  Imóveis, Meu Site, Plano (Leads/Domínio ficam de fora — são só stub
-  "Em breve" mesmo, não merecem espaço fixo). Nova classe
-  `.admin-bottombar`, markup próprio e mais simples que `.admin-nav`.
-- **Hamburger (3 listras) no topo esquerdo** do `.admin-topbar`, visível
-  só em mobile (`display:none` no desktop). Abre a **mesma sidebar
-  completa do desktop** (logo + todos os 6 itens com label + rodapé
-  com Novidades/perfil/plano/uso/Assinar) como um **drawer deslizando
-  da esquerda** — não mais convertendo a sidebar inteira numa barra
-  inferior compacta, isso vira responsabilidade só da nova bottombar.
-- Implica: `.admin-sidebar` no mobile passa a ser `position:fixed; left:0;
-  transform:translateX(-100%)`, com uma classe `.is-open` que aplica
-  `translateX(0)` + transição. Precisa de um backdrop
-  (`.admin-drawer-backdrop`, clique fecha) e de **remover** as
-  regras antigas que escondiam `.admin-sidebar__logo`/`.admin-sidebar__foot`
-  e que forçavam `.admin-nav` pra `flex-direction:row` — o drawer deve
-  parecer com o desktop, não com a bottombar antiga.
-- `js/shell.js`: adicionar `primary: true` nos 4 itens do array `NAV`
-  correspondentes; nova função `renderBottomBar(active)` gerando a
-  bottombar a partir dos itens `primary`; novo botão hamburger dentro de
-  `renderTopbar()` (envolver título+hamburger num wrapper, porque
-  `.admin-topbar` usa `justify-content:space-between` entre 2 filhos —
-  virando 3 quebra isso sem um wrapper); função de toggle do drawer
-  (adicionar/remover `.is-open` na sidebar e no backdrop, travar/destravar
-  `document.body.style.overflow`); montar bottombar+backdrop via
-  `document.body.insertAdjacentHTML('beforeend', ...)` dentro de
-  `initShell()`, do jeito que sidebar/topbar já usam mount points.
-- Arquivos a mexer: `public/js/shell.js`, `public/css/shell.css` (a
-  seção `@media (max-width: 900px)` no final do arquivo é o ponto de
-  partida — está bem isolada).
-
-**Antes de fechar isso**: rodar `node --check` no shell.js editado,
-conferir que os IDs novos (hamburger, backdrop, bottombar) não colidem
-com nada, testar em telas realmente estreitas (~360-390px) antes de
-considerar pronto — essa é exatamente a classe de bug que já apareceu
-duas vezes nessa área (menu inferior com texto quebrando).
+`node --check` passou em `shell.js`, brace-balance conferido em
+`shell.css`, cross-reference de IDs internos do shell.js conferido —
+mas **nada disso substitui testar num celular de verdade**: abrir o
+hambúrguer, fechar pelo backdrop/Escape, navegar por um item da
+bottombar e por um item só-no-drawer (Leads/Domínio/Plano — Plano é
+primary e também está no drawer, então dá pra comparar os dois
+caminhos pro mesmo destino).
 
 ## Backlog conhecido (não urgente, só registrado)
 
@@ -131,10 +101,9 @@ Do `README.md`, seção "O que ainda não existe":
 
 ## Ordem sugerida pra amanhã
 
-1. Deployar e testar o commit `a59a760` (Meu Site v2) antes de mais
-   nada — é o maior pedaço de código ainda não validado contra infra
-   real.
-2. Terminar o menu mobile (bottombar + drawer) com o design já descrito
-   acima.
+1. Deployar e testar o commit `a59a760` (Meu Site v2) — é o maior
+   pedaço de código ainda não validado contra infra real.
+2. Testar o menu mobile (bottombar + drawer) num aparelho de verdade —
+   código já está pronto, só falta essa validação.
 3. Só depois disso, considerar o backlog (Leads é provavelmente o mais
    valioso a seguir, já que schema/rules já existem).

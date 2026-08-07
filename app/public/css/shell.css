@@ -260,11 +260,37 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--clr-border-dark);
 }
+.admin-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+/* hambúrguer: escondido no desktop, aparece só no drawer mobile (ver @media) */
+.admin-topbar__hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--clr-text-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--dur-fast);
+}
+.admin-topbar__hamburger:hover { background: rgba(255,255,255,.06); }
 .admin-topbar__title {
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
   color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
 }
 
 /* ── Menu do usuário (dropdown no avatar, topbar) ─ */
@@ -335,54 +361,92 @@ body {
   width: 100%;
 }
 
-/* Mobile: sidebar vira barra de navegação inferior (estilo app) */
+/* ── Barra inferior fixa (mobile) — só os itens "primary" ─── */
+.admin-bottombar {
+  display: none; /* vira flex só no @media abaixo */
+}
+.admin-bottombar__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border-radius: var(--radius-md);
+  color: var(--clr-text-light);
+  text-decoration: none;
+  position: relative;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.admin-bottombar__btn svg { width: 22px; height: 22px; }
+.admin-bottombar__btn:hover { background: rgba(255,255,255,.06); }
+.admin-bottombar__btn.active {
+  background: rgba(200, 146, 42, 0.20);
+  color: var(--clr-accent-light);
+}
+.admin-bottombar__btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 3px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--clr-accent);
+}
+
+/* ── Fundo escurecido atrás do drawer (mobile) ─────────────── */
+.admin-drawer-backdrop {
+  display: none;
+}
+
+/* Mobile: sidebar vira um drawer que desliza da esquerda (aberto
+   pelo hambúrguer da topbar) — igual em conteúdo ao desktop, só a
+   posição/animação mudam. A navegação rápida do dia a dia fica na
+   bottombar abaixo, com só os itens "primary". */
 @media (max-width: 900px) {
+  .admin-topbar__hamburger { display: flex; }
+
   .admin-sidebar {
     position: fixed;
-    top: auto;
-    bottom: 0;
+    top: 0;
     left: 0;
-    right: 0;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
+    bottom: 0;
+    width: 280px;
+    max-width: 84vw;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform var(--dur-normal) var(--ease-out);
+    box-shadow: var(--shadow-xl);
+    /* +1 sobre o backdrop — o backdrop é inserido depois no DOM (via
+       insertAdjacentHTML em document.body), então com o mesmo
+       z-index ele pintaria por cima do drawer e escureceria o menu
+       junto com o resto da página. */
+    z-index: calc(var(--z-modal) + 1);
+  }
+  .admin-sidebar.is-open { transform: translateX(0); }
+
+  .admin-drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-normal);
+    z-index: var(--z-modal);
+  }
+  .admin-drawer-backdrop.is-open { opacity: 1; pointer-events: all; }
+
+  .admin-bottombar {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--clr-surface-dark);
+    border-top: 1px solid var(--clr-border-dark);
     padding: var(--sp-1) var(--sp-2);
     padding-bottom: max(var(--sp-1), env(safe-area-inset-bottom));
-    border-right: none;
-    border-top: 1px solid var(--clr-border-dark);
     z-index: var(--z-sticky);
   }
-  .admin-sidebar__logo,
-  .admin-sidebar__foot { display: none; }
-  .admin-nav {
-    flex-direction: row;
-    width: 100%;
-  }
-  .admin-nav__btn {
-    flex: 1;
-    padding: var(--sp-2) var(--sp-1);
-    min-height: 52px;
-    border-radius: var(--radius-md);
-    position: relative;
-  }
-  /* só o ícone no menu inferior — com 6 itens numa fatia de ~60px,
-     rótulo de duas palavras sempre quebrava linha e desalinhava */
-  .admin-nav__btn-main { width: 100%; justify-content: center; }
-  .admin-nav__label { display: none; }
-  .admin-nav__icon svg { width: 22px; height: 22px; }
-  .admin-nav__btn.active {
-    background: rgba(200, 146, 42, 0.20);
-  }
-  .admin-nav__btn.active::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 24px; height: 3px;
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-    background: var(--clr-accent);
-  }
-  .admin-nav__btn--soon .admin-nav__soon-tag { display: none; }
-  /* espaço para o conteúdo não ficar atrás da barra inferior */
+
+  /* espaço para o conteúdo não ficar atrás da bottombar */
   .admin-main { padding-bottom: calc(var(--sp-20) + env(safe-area-inset-bottom)); }
 }

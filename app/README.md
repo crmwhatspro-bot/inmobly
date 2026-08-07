@@ -91,11 +91,19 @@ elas — só dava pra "descobrir" outra página por um botão específico.
 - `em-breve.html`/`js/em-breve.js` — placeholder genérico pros itens do
   menu sem UI ainda; `?f=leads|dominio|perfil|configuracoes` decide o
   título/texto mostrado.
-- **Menu inferior no mobile (≤900px)**: só ícone, sem rótulo — com 6 itens
-  numa barra de ~375px, um rótulo de duas palavras (`Meus Imóveis`, `Meu
-  Site`) sempre quebrava linha numa fatia de ~60px e ficava ilegível. O
-  item ativo agora tem uma barrinha de destaque no topo do ícone, mais
-  fácil de notar que a única pista antes era um fundo bem sutil.
+- **Navegação no mobile (≤900px)**: dois níveis, não mais a sidebar
+  inteira comprimida numa barra inferior (6 rótulos de duas palavras
+  numa fatia de ~60px sempre quebravam linha e ficavam ilegíveis).
+  - `.admin-bottombar` — barra fixa no rodapé, só ícone, só os itens
+    `primary: true` no array `NAV` (Dashboard, Meus Imóveis, Meu Site,
+    Plano — Leads/Domínio ficam de fora, são só stub "Em breve").
+  - Hambúrguer no canto superior esquerdo da topbar (`.admin-topbar__hamburger`,
+    escondido no desktop) abre a sidebar completa — mesmo conteúdo do
+    desktop (logo, todos os 6 itens com rótulo, rodapé com
+    Novidades/perfil/plano/uso/Assinar) — como um drawer deslizando da
+    esquerda sobre um backdrop escurecido. `js/shell.js#wireDrawer()`
+    cuida do abrir/fechar (clique no backdrop, Escape, ou o próprio
+    hambúrguer).
 - **Pendente**: aplicar um product tour (destacando os itens da sidebar)
   depois que essa interface for validada — combinado, ainda não construído.
 
