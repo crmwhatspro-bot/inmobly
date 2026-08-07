@@ -6,3 +6,4 @@
 exports.criarConta           = require('./criarConta').criarConta;
 exports.criarCheckoutSession = require('./checkout').criarCheckoutSession;
 exports.stripeWebhook        = require('./webhook').stripeWebhook;
+exports.perfilPublico        = require('./perfilPublico').perfilPublico;

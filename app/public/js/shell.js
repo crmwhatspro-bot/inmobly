@@ -22,7 +22,7 @@ const ICONS = {
 const NAV = [
   { key: 'dashboard', href: 'painel.html',              label: 'Dashboard',      icon: ICONS.dashboard },
   { key: 'imoveis',   href: 'admin.html',                label: 'Meus Imóveis',   icon: ICONS.imoveis },
-  { key: 'site',      href: 'em-breve.html?f=site',      label: 'Meu Site',       icon: ICONS.site,    soon: true },
+  { key: 'site',      href: 'meu-site.html',              label: 'Meu Site',       icon: ICONS.site },
   { key: 'leads',     href: 'em-breve.html?f=leads',     label: 'Leads',          icon: ICONS.leads,   soon: true },
   { key: 'dominio',   href: 'em-breve.html?f=dominio',   label: 'Domínio',        icon: ICONS.dominio, soon: true },
   { key: 'plano',     href: 'planos.html',                label: 'Plano',          icon: ICONS.plano },
@@ -32,6 +32,7 @@ const NAV = [
 // sidebar. Adicionar um item no topo a cada mudança relevante pro
 // usuário final (não é changelog técnico interno).
 const UPDATES = [
+  { date: '2026-08-07', title: 'Meu Site', desc: 'Configure seu WhatsApp e publique o catálogo público dos seus imóveis.' },
   { date: '2026-08-07', title: 'Painel reorganizado', desc: 'Menu lateral novo com todas as áreas do sistema, mais fácil de navegar.' },
   { date: '2026-08-07', title: 'Cadastro mais confiável', desc: 'Corrigido um caso raro que podia travar a criação de conta.' },
   { date: '2026-08-06', title: 'Gerenciador de imóveis', desc: 'Cadastre, edite e adicione fotos aos seus imóveis direto do painel.' },

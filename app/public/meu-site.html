@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Site — Inmobly</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/admin.css">
+<style>
+  .ms-status {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-4);
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--clr-border-dark);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--sp-5);
+  }
+  .ms-status__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--clr-text-muted); flex-shrink: 0; }
+  .ms-status__dot.is-live { background: var(--clr-success); box-shadow: 0 0 0 4px var(--clr-success-bg); }
+  .ms-status__text strong { display: block; color: white; font-size: var(--text-sm); }
+  .ms-status__text small { color: var(--clr-text-light-2); font-size: var(--text-xs); }
+  .ms-status__actions { margin-left: auto; display: flex; gap: var(--sp-2); }
+  .ms-max { max-width: 560px; }
+</style>
+</head>
+<body>
+
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+    <main class="admin-main">
+
+      <div class="ms-max">
+
+        <div class="ms-status" id="msStatus">
+          <span class="ms-status__dot" id="msStatusDot"></span>
+          <div class="ms-status__text">
+            <strong id="msStatusTitulo">Carregando...</strong>
+            <small id="msStatusSub"></small>
+          </div>
+          <div class="ms-status__actions">
+            <a href="#" id="msVerSite" target="_blank" rel="noopener" class="btn btn--md imv-btn-ghost" hidden>Visualizar site ↗</a>
+            <button type="button" class="btn btn--accent btn--md" id="msPublicarBtn">Publicar site</button>
+            <button type="button" class="imv-btn-excluir" id="msDespublicarBtn" hidden>Despublicar</button>
+          </div>
+        </div>
+
+        <section class="imv-sec">
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            <h3>WhatsApp de contato</h3>
+            <p>É pra esse número que os clientes vão escrever ao ver um imóvel no seu site.</p>
+          </header>
+          <div class="imv-sec__body">
+            <div class="form-group">
+              <label class="form-label" for="ms-whatsapp">Número (sem o +595)</label>
+              <div class="imv-affix">
+                <span aria-hidden="true">+595</span>
+                <input class="form-input" type="tel" id="ms-whatsapp" inputmode="numeric" placeholder="981123456">
+              </div>
+              <p class="imv-hint">Só números — sem espaços, sem o 0 inicial.</p>
+            </div>
+            <p id="msWhatsappMsg" class="imv-form-msg" role="alert" hidden></p>
+            <button type="button" class="btn btn--accent btn--md" id="msSalvarWhatsappBtn" style="margin-top: var(--sp-4);">Salvar WhatsApp</button>
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/meu-site.js"></script>
+</body>
+</html>

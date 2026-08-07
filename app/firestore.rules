@@ -21,17 +21,29 @@ service cloud.firestore {
     match /brokers/{tenantId} {
       allow read: if isTeam() || isTenantAdmin(tenantId);
       allow create, delete: if isTeam();
-      // corretor só pode mexer no próprio `usage` (auto-relato de
-      // quantidade de imóveis) e em `onboardingCompleted` (marcado por
-      // tour.js ao terminar o onboarding) — plano/status/billing só a
-      // equipe ou o stripeWebhook (que roda com Admin SDK, ignora rules).
+
+      // Campos que o próprio corretor pode alterar sem ser da equipe —
+      // tudo mais (plano/status/billing) só a equipe ou o stripeWebhook
+      // (que roda com Admin SDK, ignora rules).
+      //   usage                 — auto-relato de quantidade de imóveis
+      //   onboardingCompleted   — marcado por tour.js ao terminar o onboarding
+      //   whatsapp, published   — meu-site.html (contato + publicar catálogo)
       allow update: if isTeam()
                     || (
                       isTenantAdmin(tenantId) &&
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usage', 'onboardingCompleted', 'updatedAt']) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usage', 'onboardingCompleted', 'whatsapp', 'published', 'updatedAt']) &&
                       request.resource.data.usage.imoveisCount is int &&
                       request.resource.data.usage.imoveisCount >= 0 &&
-                      request.resource.data.onboardingCompleted is bool
+                      request.resource.data.onboardingCompleted is bool &&
+                      // .get(chave, default) em vez de acesso direto — docs
+                      // criados antes dessa feature não têm whatsapp/published
+                      // no doc, e acessar campo ausente direto pode falhar
+                      // a regra inteira mesmo numa atualização só de usage.
+                      request.resource.data.get('whatsapp', '') is string &&
+                      request.resource.data.get('published', false) is bool &&
+                      // nunca publica sem ter um whatsapp já salvo
+                      (request.resource.data.get('published', false) != true
+                        || request.resource.data.get('whatsapp', '') != '')
                     );
 
       match /purchases/{purchaseId} {

@@ -46,7 +46,15 @@ public/inmobiliario.html (puntoalto/v1, outro repo)
                           (brokers/{tenantId}/imoveis)
         │
         ▼
-  planos.html (Plano), em-breve.html (Meu Site / Leads / Domínio / Perfil /
+  meu-site.html (Meu Site) → configura whatsapp + botão Publicar site
+                          (brokers/{tenantId}.whatsapp/.published)
+        │
+        ▼ (published: true)
+  site/index.html          → catálogo público (sem login) — resolve o tenant
+                          por ?t=slug hoje, por hostname quando existir um
+                          Hosting site por tenant (ver pendências)
+        │
+  planos.html (Plano), em-breve.html (Leads / Domínio / Perfil /
   Configurações — stubs honestos, sem funcionalidade ainda)
 ```
 
@@ -55,9 +63,10 @@ Um usuário que já tem tenant e já fez o tour pula direto pra `painel.html` �
 
 ### App shell (pós-login)
 
-`painel.html`, `admin.html`, `planos.html` e `em-breve.html` compartilham a
-mesma casca — sidebar fixa à esquerda (Dashboard / Meus Imóveis / Meu Site /
-Leads / Domínio / Plano, com "Em breve" nos itens sem UI própria ainda) +
+`painel.html`, `admin.html`, `meu-site.html`, `planos.html` e `em-breve.html`
+compartilham a mesma casca — sidebar fixa à esquerda (Dashboard / Meus
+Imóveis / Meu Site / Leads / Domínio / Plano, com "Em breve" só nos itens
+sem UI própria ainda: Leads e Domínio) +
 topbar com dropdown de avatar (Meu perfil / Configurações / Sair). Antes
 disso cada página tinha seu próprio header solto e nenhuma navegação entre
 elas — só dava pra "descobrir" outra página por um botão específico.
@@ -77,10 +86,35 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   de imóveis com barrinha) e o avatar (foto do Google se existir, senão
   iniciais do nome).
 - `em-breve.html`/`js/em-breve.js` — placeholder genérico pros itens do
-  menu sem UI ainda; `?f=site|leads|dominio|perfil|configuracoes` decide o
+  menu sem UI ainda; `?f=leads|dominio|perfil|configuracoes` decide o
   título/texto mostrado.
 - **Pendente**: aplicar um product tour (destacando os itens da sidebar)
   depois que essa interface for validada — combinado, ainda não construído.
+
+### Meu Site / catálogo público
+
+`meu-site.html`+`js/meu-site.js` — o corretor configura `whatsapp` e clica
+"Publicar site" (grava `published: true` em `brokers/{tenantId}`, bloqueado
+no client E na regra do Firestore até `whatsapp` existir). `site/index.html`
+é o catálogo que o cliente final vê, sem login:
+
+- **Não lê `brokers/{tenantId}` direto** (tem e-mail, IDs do Stripe) — chama
+  a function `perfilPublico?tenant=slug`, que só responde se
+  `published === true` (404 senão) e devolve só `{name, whatsapp,
+  imoveisLimit}`. `imoveis`/`fotos` continuam lidos direto do Firestore
+  client-side, já eram públicos.
+- **Resolve o tenant** por `location.hostname` (`slug.web.app`, quando
+  existir um Hosting site por tenant — ver pendências) com fallback
+  `?t=slug`, que é o único jeito de acessar/testar hoje.
+- **Pasta autocontida** (`site/css/`, `site/js/`, paths relativos) —
+  pensada pra um futuro "Publicar site" mover só esse conteúdo pro Hosting
+  site do tenant, sem depender de nada fora de `site/`.
+- **Versão enxuta**, não o template completo: hero (nome + WhatsApp) +
+  filtros básicos (operação/tipo/cidade, cidade montada dinamicamente a
+  partir dos imóveis do corretor) + grid + modal de detalhe + rodapé. Sem
+  bio, depoimentos, FAQ ou formulário de contato — só WhatsApp direto.
+  `site/js/imoveis.js` é a versão adaptada de `template/js/imoveis.js`
+  (paths viram `brokers/{tenantId}/imoveis/...`, idioma fixo em `es`).
 
 ## Estrutura
 
@@ -90,7 +124,10 @@ firestore.indexes.json
 firebase.json            ← hosting de public/ + firestore + functions
 public/
   login.html, criar-conta.html, tour.html, obrigado.html  ← jornada pré-app
-  painel.html, admin.html, planos.html, em-breve.html     ← dentro do app shell
+  painel.html, admin.html, meu-site.html, planos.html,
+  em-breve.html                                           ← dentro do app shell
+  site/                     ← catálogo público, pasta autocontida (ver seção
+                              acima) — css/js próprios, não usa os de public/
   css/app.css              ← visual da jornada (login/tour/obrigado) — próprio
                               do Inmobly, não é o tema por broker
   css/shell.css            ← sidebar + topbar do app shell, ver seção acima
@@ -122,6 +159,8 @@ functions/
                                 que a versão cross-project do control-plane/)
   webhook.js                  ← stripeWebhook (quase idêntico ao control-plane/,
                                  sempre escreveu só no doc "central")
+  perfilPublico.js              ← onRequest público (cors:true), usado por
+                                   site/index.html — ver seção "Meu Site" acima
   index.js, package.json
 ```
 
@@ -143,6 +182,9 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 ├─ usage: { imoveisCount, imoveisUpdatedAt }
 ├─ customDomainStatus: 'none' | 'requested' | 'configuring' | 'active'
 ├─ onboardingCompleted: boolean       ← novo — controla se pula o tour
+├─ whatsapp: string                   ← novo — meu-site.html, formato "595..." (sem +)
+├─ published: boolean                 ← novo — meu-site.html; site/index.html só
+│                                        mostra o catálogo se isso for true
 ├─ createdAt, updatedAt
 ├─ purchases/{id}                    ← igual ao antigo, sem mudança de schema
 └─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,
@@ -150,9 +192,10 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 ```
 
 O CRUD de `imoveis` (criar/editar/desativar/excluir + fotos) já está migrado —
-`public/admin.html` + `public/js/admin-imoveis.js`. O que ainda usa o modelo antigo
-(projeto isolado) é só o **catálogo público** que os clientes dos brokers veem
-(`template/imoveis.html`/`template/index.html`) — ver pendências abaixo.
+`public/admin.html` + `public/js/admin-imoveis.js`. O catálogo público que os
+clientes dos brokers veem também já existe (`public/site/`, ver seção "Meu
+Site" acima) — o que falta é só a automação de Hosting por tenant, ver
+pendências abaixo.
 
 ## Setup (quando for para produção)
 
@@ -182,13 +225,14 @@ o checkout é criado, não os produtos vendidos. Webhook endpoint aponta pra
 Já tem lugar reservado na sidebar do app shell (item visível, mas cai em
 `em-breve.html` — não é link morto, é honesto sobre o status):
 
-- **Meu Site** — pré-visualização + configuração (whatsapp, publicar) do
-  catálogo público que o cliente final do broker vê. Design já fechado
-  (ver conversa que precedeu este commit): resolve o tenant por
-  `location.hostname` (um Hosting site por tenant, criado via botão
-  "Publicar site" — também não construído ainda) com fallback `?t=slug`
-  pra teste, function `perfilPublico` pra não expor `brokers/{tenantId}`
-  inteiro publicamente. Ainda não implementado.
+- **"Publicar site" com Hosting de verdade** — `meu-site.html` já publica
+  (`published: true`) e `site/index.html` já funciona, mas hoje só é
+  acessível via `?t=slug` no site padrão do projeto. Falta o botão criar de
+  fato um Hosting site próprio (`<slug>.web.app`) via Hosting Admin API —
+  precisa de `roles/firebasehosting.admin` na service account e um novo
+  fluxo (provavelmente uma function chamada a partir de "Publicar site")
+  que faz deploy do conteúdo de `site/` nesse novo site. Não decidido se
+  isso acontece síncrono no clique ou assíncrono com feedback depois.
 - **Leads** — a aba "Leads" que existia no `template/admin/` antigo não foi
   portada, só o CRUD de imóveis. `brokers/{tenantId}/leads` já existe no
   schema/rules, só não tem UI ainda.
@@ -197,8 +241,8 @@ Já tem lugar reservado na sidebar do app shell (item visível, mas cai em
 - **Meu perfil / Configurações** (dropdown do avatar) — edição de dados da
   conta, ainda não construído.
 
-⚠️ **`admin.html`/`admin-imoveis.js` também não foram testados contra infraestrutura
-real ainda** — só `node --check` (sintaxe), verificação de IDs cruzados entre
-HTML/JS, e balanceamento de tags. A lógica de compressão de fotos e batch-write é a
-mesma do `template/` original (que também nunca rodou nesse app novo), só os
-caminhos do Firestore mudaram.
+⚠️ **Nada disso foi testado contra infraestrutura real ainda** — só
+`node --check` (sintaxe), verificação de IDs cruzados entre HTML/JS, e
+balanceamento de tags. A lógica de compressão de fotos e batch-write do CMS
+é a mesma do `template/` original (que também nunca rodou nesse app novo),
+só os caminhos do Firestore mudaram.
