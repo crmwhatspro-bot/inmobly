@@ -305,22 +305,33 @@ function mostrarIndisponivel() {
 
 // ── Aplica campos do perfil no DOM — usado tanto no fluxo normal
 // (perfilPublico) quanto no preview (postMessage), sempre com o
-// mesmo shape { name, whatsapp, logo, description, keywords, accentColor }.
+// mesmo shape { name, whatsapp, logo, headline, subheadline, about,
+// keywords, email, instagramUrl, accentColor }. Tudo opcional exceto
+// name/whatsapp — sem os outros campos, cai num texto padrão razoável.
 function aplicarPerfil(p) {
   perfil = p;
   aplicarAccent(p.accentColor);
 
   const nome = p.name || 'Inmuebles';
   document.title = nome + ' — Inmuebles';
-  document.getElementById('meta-description').setAttribute('content', p.description || `Catálogo de inmuebles de ${nome}.`);
+  document.getElementById('meta-description').setAttribute('content', p.subheadline || `Catálogo de inmuebles de ${nome}.`);
   document.getElementById('meta-keywords').setAttribute('content', p.keywords || `inmuebles, ${nome}, Paraguay`);
 
   const logoEl = document.getElementById('hero-logo');
   if (p.logo) { logoEl.src = p.logo; logoEl.alt = nome; logoEl.hidden = false; }
   else { logoEl.hidden = true; }
 
-  document.getElementById('imoveis-titulo').textContent = 'Inmuebles disponibles';
-  document.getElementById('imoveis-sub').textContent = p.description || `Seleccionados por ${nome}.`;
+  document.getElementById('imoveis-titulo').textContent = p.headline || 'Inmuebles disponibles';
+  document.getElementById('imoveis-sub').textContent = p.subheadline || `Seleccionados por ${nome}.`;
+
+  const sobreSec = document.getElementById('sobre-section');
+  if (p.about) {
+    document.getElementById('sobre-titulo').textContent = `Sobre ${nome}`;
+    document.getElementById('sobre-texto').textContent = p.about;
+    sobreSec.hidden = false;
+  } else {
+    sobreSec.hidden = true;
+  }
 
   const msgPadrao = encodeURIComponent('Hola, quiero más información sobre sus propiedades.');
   const waHref = p.whatsapp ? `https://wa.me/${p.whatsapp}?text=${msgPadrao}` : '#';
@@ -328,6 +339,14 @@ function aplicarPerfil(p) {
   document.getElementById('footer-whatsapp').href = waHref;
   document.getElementById('footer-nome').textContent = nome;
   document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${nome}. Todos los derechos reservados.`;
+
+  const emailEl = document.getElementById('footer-email');
+  if (p.email) { emailEl.href = `mailto:${p.email}`; emailEl.textContent = p.email; emailEl.hidden = false; }
+  else { emailEl.hidden = true; }
+
+  const instaEl = document.getElementById('footer-instagram');
+  if (p.instagramUrl) { instaEl.href = p.instagramUrl; instaEl.hidden = false; }
+  else { instaEl.hidden = true; }
 }
 
 function initComum() {

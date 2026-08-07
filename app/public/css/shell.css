@@ -67,6 +67,8 @@ body {
   min-height: 44px;
 }
 .admin-nav__btn svg { flex-shrink: 0; }
+.admin-nav__btn-main { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.admin-nav__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-nav__btn:hover { background: rgba(255,255,255,.05); color: white; }
 .admin-nav__btn.active {
   background: var(--clr-accent-ghost);
@@ -358,12 +360,27 @@ body {
   }
   .admin-nav__btn {
     flex: 1;
-    flex-direction: column;
-    gap: 3px;
-    padding: var(--sp-2);
-    font-size: var(--text-xs);
+    padding: var(--sp-2) var(--sp-1);
     min-height: 52px;
     border-radius: var(--radius-md);
+    position: relative;
+  }
+  /* só o ícone no menu inferior — com 6 itens numa fatia de ~60px,
+     rótulo de duas palavras sempre quebrava linha e desalinhava */
+  .admin-nav__btn-main { width: 100%; justify-content: center; }
+  .admin-nav__label { display: none; }
+  .admin-nav__icon svg { width: 22px; height: 22px; }
+  .admin-nav__btn.active {
+    background: rgba(200, 146, 42, 0.20);
+  }
+  .admin-nav__btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 24px; height: 3px;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    background: var(--clr-accent);
   }
   .admin-nav__btn--soon .admin-nav__soon-tag { display: none; }
   /* espaço para o conteúdo não ficar atrás da barra inferior */

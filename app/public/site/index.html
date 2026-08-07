@@ -64,19 +64,33 @@
     </div>
   </main>
 
+  <section class="section section--alt" id="sobre-section" hidden aria-labelledby="sobre-titulo">
+    <div class="container" style="max-width: 760px;">
+      <span class="section-label t-label">Sobre</span>
+      <h2 class="t-display-md" id="sobre-titulo">Sobre nosotros</h2>
+      <p class="t-body-lg" id="sobre-texto" style="margin-top: var(--sp-4); white-space: pre-line;"></p>
+    </div>
+  </section>
+
   <footer class="footer" aria-label="Pie de página">
     <div class="container">
       <div class="footer__grid" style="grid-template-columns: 1fr;">
         <div>
           <p class="footer__logo" id="footer-nome">—</p>
           <p class="footer__desc">Hablá directo por WhatsApp para más información.</p>
-          <div style="margin-top: var(--sp-4);">
+          <div style="margin-top: var(--sp-4); display:flex; gap: var(--sp-4); flex-wrap:wrap; align-items:center;">
             <a href="#" id="footer-whatsapp" target="_blank" rel="noopener" class="btn btn--whatsapp btn--md">WhatsApp</a>
+            <a href="#" id="footer-email" target="_blank" hidden style="color:var(--clr-text-light-2); font-size:var(--text-sm); text-decoration:underline;"></a>
           </div>
         </div>
       </div>
       <div class="footer__bottom">
         <span id="footer-copy">—</span>
+        <div class="footer__socials">
+          <a href="#" id="footer-instagram" target="_blank" rel="noopener" aria-label="Instagram" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+          </a>
+        </div>
       </div>
     </div>
   </footer>

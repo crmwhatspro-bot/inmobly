@@ -50,7 +50,10 @@ function avatarHTML(user, size) {
 function renderSidebar(active) {
   const navHTML = NAV.map(item => `
     <a class="admin-nav__btn${item.key === active ? ' active' : ''}${item.soon ? ' admin-nav__btn--soon' : ''}" href="${item.href}">
-      <span style="display:flex; align-items:center; gap: var(--sp-3);">${item.icon}${item.label}</span>
+      <span class="admin-nav__btn-main">
+        <span class="admin-nav__icon" aria-hidden="true">${item.icon}</span>
+        <span class="admin-nav__label">${item.label}</span>
+      </span>
       ${item.soon ? '<span class="admin-nav__soon-tag">Em breve</span>' : ''}
     </a>`).join('');
 

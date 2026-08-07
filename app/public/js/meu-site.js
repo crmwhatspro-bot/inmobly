@@ -1,14 +1,16 @@
 // ════════════════════════════════════════════════
-// meu-site.html — identidade visual (logo, nome, descrição,
-// palavras-chave, cor), whatsapp de contato, publicar/despublicar,
-// e o preview ao vivo (iframe com site/index.html?preview=1).
+// meu-site.html — identidade visual (logo, nome, cor), textos do
+// site (headline, subheadline, sobre, keywords), contato (whatsapp,
+// email, instagram), publicar/despublicar, e o preview ao vivo.
 //
-// O preview roda num modo próprio (ver site/js/imoveis.js) que não
-// toca Firestore nem a function perfilPublico — ele só espera
-// receber o perfil por postMessage e mostra 3 imóveis de exemplo
-// fixos. Isso deixa o preview funcionando com qualquer combinação
-// de campos preenchidos/vazios e mesmo antes de publicar ou
-// cadastrar qualquer imóvel de verdade.
+// O preview abre num modal só quando o corretor clica em
+// "Pré-visualizar site" — o <iframe> só recebe `src` nesse momento
+// (não carrega sozinho ao abrir a página). Ele roda site/index.html
+// no modo preview (?preview=1, ver site/js/imoveis.js), que não
+// toca Firestore nem a function perfilPublico: espera receber o
+// perfil por postMessage e mostra 3 imóveis de exemplo fixos, só
+// pra ilustrar o layout — funciona mesmo sem ter publicado ou
+// cadastrado nenhum imóvel de verdade ainda.
 // ════════════════════════════════════════════════
 import { db, auth } from './firebase.js';
 import { doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -17,9 +19,7 @@ import { initShell } from './shell.js';
 
 const $ = (id) => document.getElementById(id);
 
-const whatsappInput   = $('ms-whatsapp');
-const whatsappMsg     = $('msWhatsappMsg');
-const salvarWaBtn     = $('msSalvarWhatsappBtn');
+// Status / publicação
 const publicarBtn     = $('msPublicarBtn');
 const despublicarBtn  = $('msDespublicarBtn');
 const verSiteLink     = $('msVerSite');
@@ -27,25 +27,45 @@ const statusDot       = $('msStatusDot');
 const statusTitulo    = $('msStatusTitulo');
 const statusSub       = $('msStatusSub');
 
+// Identidade
 const nomeInput       = $('ms-nome');
-const descricaoInput  = $('ms-descricao');
-const keywordsInput   = $('ms-keywords');
 const identidadeMsg   = $('msIdentidadeMsg');
 const salvarIdentidadeBtn = $('msSalvarIdentidadeBtn');
 const logoInput       = $('ms-logo-input');
+const logoBtn         = $('msLogoBtn');
 const logoPreviewEl   = $('msLogoPreview');
 const swatchesWrap    = $('msColorSwatches');
-const previewFrame    = $('msPreviewFrame');
+
+// Textos
+const headlineInput    = $('ms-headline');
+const subheadlineInput = $('ms-subheadline');
+const sobreInput       = $('ms-sobre');
+const keywordsInput    = $('ms-keywords');
+const textosMsg        = $('msTextosMsg');
+const salvarTextosBtn  = $('msSalvarTextosBtn');
+
+// Contato
+const whatsappInput   = $('ms-whatsapp');
+const emailInput      = $('ms-email');
+const instagramInput  = $('ms-instagram');
+const contatoMsg      = $('msContatoMsg');
+const salvarContatoBtn = $('msSalvarContatoBtn');
+
+// Preview
+const abrirPreviewBtn  = $('msAbrirPreviewBtn');
+const previewModal     = $('msPreviewModal');
+const previewFrame     = $('msPreviewFrame');
+const fecharPreviewBtn = $('msPreviewFecharBtn');
 
 const LOGO_PLACEHOLDER_HTML = logoPreviewEl.innerHTML;
 
 const PRESETS_COR = [
-  { nome: 'Dourado',        hex: '#C8922A' },
-  { nome: 'Azul petróleo',  hex: '#1D6F8C' },
+  { nome: 'Dourado',         hex: '#C8922A' },
+  { nome: 'Azul petróleo',   hex: '#1D6F8C' },
   { nome: 'Verde esmeralda', hex: '#0F9D6B' },
-  { nome: 'Vinho',          hex: '#9B3747' },
-  { nome: 'Terracota',      hex: '#C1653A' },
-  { nome: 'Azul marinho',   hex: '#2E5C8A' },
+  { nome: 'Vinho',           hex: '#9B3747' },
+  { nome: 'Terracota',       hex: '#C1653A' },
+  { nome: 'Azul marinho',    hex: '#2E5C8A' },
 ];
 const ACCENT_PADRAO = '#C8922A';
 
@@ -56,6 +76,7 @@ let tenantId = null;
 let broker = null;
 let corSelecionada = ACCENT_PADRAO;
 let logoAtualDataUrl = null;
+let previewCarregado = false;
 let previewPronto = false;
 
 function mostrarMsg(el, texto, tipo) {
@@ -70,21 +91,25 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-// ── Preview ao vivo ────────────────────────────────
+// ── Preview (modal, lazy) ──────────────────────────
 function perfilAtualDoFormulario() {
   const wa = whatsappInput.value ? '595' + digitsOnly(whatsappInput.value) : (broker?.whatsapp || null);
   return {
     name: nomeInput.value.trim() || broker?.name || 'Tu empresa',
     whatsapp: wa,
     logo: logoAtualDataUrl,
-    description: descricaoInput.value.trim(),
+    headline: headlineInput.value.trim(),
+    subheadline: subheadlineInput.value.trim(),
+    about: sobreInput.value.trim(),
     keywords: keywordsInput.value.trim(),
+    email: emailInput.value.trim(),
+    instagramUrl: instagramInput.value.trim(),
     accentColor: corSelecionada,
   };
 }
 
 function enviarPreview() {
-  if (!previewPronto || !previewFrame.contentWindow) return;
+  if (previewModal.hidden || !previewPronto || !previewFrame.contentWindow) return;
   previewFrame.contentWindow.postMessage({ tipo: 'pa-preview-perfil', perfil: perfilAtualDoFormulario() }, '*');
 }
 const enviarPreviewDebounced = debounce(enviarPreview, 200);
@@ -93,6 +118,28 @@ window.addEventListener('message', (e) => {
   if (e.data?.tipo !== 'pa-preview-pronto') return;
   previewPronto = true;
   enviarPreview();
+});
+
+function abrirPreview() {
+  if (!previewCarregado) {
+    previewFrame.src = 'site/index.html?preview=1';
+    previewCarregado = true;
+  }
+  previewModal.hidden = false;
+  requestAnimationFrame(() => previewModal.classList.add('open'));
+  document.body.style.overflow = 'hidden';
+  enviarPreview();
+}
+function fecharPreview() {
+  previewModal.classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { previewModal.hidden = true; }, 300);
+}
+abrirPreviewBtn.addEventListener('click', abrirPreview);
+fecharPreviewBtn.addEventListener('click', fecharPreview);
+previewModal.addEventListener('click', (e) => { if (e.target === previewModal) fecharPreview(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && previewModal.classList.contains('open')) fecharPreview();
 });
 
 // ── Logo: mesma técnica de compressão de admin-imoveis.js (canvas
@@ -137,6 +184,7 @@ function atualizarLogoPreview() {
     : LOGO_PLACEHOLDER_HTML;
 }
 
+logoBtn.addEventListener('click', () => logoInput.click());
 logoInput.addEventListener('change', async () => {
   const file = logoInput.files[0];
   if (!file) return;
@@ -168,7 +216,7 @@ function montarSwatches() {
   });
 }
 
-// ── Identidade: salvar ─────────────────────────────
+// ── Identidade: salvar (nome, logo, cor) ───────────
 async function salvarIdentidade() {
   const nome = nomeInput.value.trim();
   if (!nome) {
@@ -179,14 +227,7 @@ async function salvarIdentidade() {
   const textoOriginal = salvarIdentidadeBtn.textContent;
   salvarIdentidadeBtn.textContent = 'Salvando...';
   try {
-    const dados = {
-      name: nome,
-      description: descricaoInput.value.trim(),
-      keywords: keywordsInput.value.trim(),
-      accentColor: corSelecionada,
-      logo: logoAtualDataUrl || '',
-      updatedAt: serverTimestamp(),
-    };
+    const dados = { name: nome, accentColor: corSelecionada, logo: logoAtualDataUrl || '', updatedAt: serverTimestamp() };
     await updateDoc(doc(db, 'brokers', tenantId), dados);
     Object.assign(broker, dados);
     mostrarMsg(identidadeMsg, 'Identidade salva.', 'ok');
@@ -196,6 +237,61 @@ async function salvarIdentidade() {
   } finally {
     salvarIdentidadeBtn.disabled = false;
     salvarIdentidadeBtn.textContent = textoOriginal;
+  }
+}
+
+// ── Textos: salvar (headline, subheadline, sobre, keywords) ───
+async function salvarTextos() {
+  salvarTextosBtn.disabled = true;
+  const textoOriginal = salvarTextosBtn.textContent;
+  salvarTextosBtn.textContent = 'Salvando...';
+  try {
+    const dados = {
+      headline: headlineInput.value.trim(),
+      subheadline: subheadlineInput.value.trim(),
+      about: sobreInput.value.trim(),
+      keywords: keywordsInput.value.trim(),
+      updatedAt: serverTimestamp(),
+    };
+    await updateDoc(doc(db, 'brokers', tenantId), dados);
+    Object.assign(broker, dados);
+    mostrarMsg(textosMsg, 'Textos salvos.', 'ok');
+  } catch (err) {
+    mostrarMsg(textosMsg, 'Não foi possível salvar: ' + err.message, 'erro');
+  } finally {
+    salvarTextosBtn.disabled = false;
+    salvarTextosBtn.textContent = textoOriginal;
+  }
+}
+
+// ── Contato: salvar (whatsapp, email, instagram) ───
+async function salvarContato() {
+  const digitos = digitsOnly(whatsappInput.value);
+  if (digitos.length < 8) {
+    mostrarMsg(contatoMsg, 'Informe um WhatsApp válido (pelo menos 8 dígitos).', 'erro');
+    return;
+  }
+  salvarContatoBtn.disabled = true;
+  const textoOriginal = salvarContatoBtn.textContent;
+  salvarContatoBtn.textContent = 'Salvando...';
+  try {
+    const dados = {
+      whatsapp: '595' + digitos,
+      // contactEmail, não `email` — esse é o e-mail de login/conta,
+      // não pode ser sobrescrito pelo formulário de contato do site.
+      contactEmail: emailInput.value.trim(),
+      instagramUrl: instagramInput.value.trim(),
+      updatedAt: serverTimestamp(),
+    };
+    await updateDoc(doc(db, 'brokers', tenantId), dados);
+    Object.assign(broker, dados);
+    mostrarMsg(contatoMsg, 'Contato salvo.', 'ok');
+    atualizarStatusTexto();
+  } catch (err) {
+    mostrarMsg(contatoMsg, 'Não foi possível salvar: ' + err.message, 'erro');
+  } finally {
+    salvarContatoBtn.disabled = false;
+    salvarContatoBtn.textContent = textoOriginal;
   }
 }
 
@@ -216,31 +312,9 @@ function atualizarStatusTexto() {
   if (publicado) verSiteLink.href = `https://${tenantId}.web.app/`;
 }
 
-async function salvarWhatsapp() {
-  const digitos = digitsOnly(whatsappInput.value);
-  if (digitos.length < 8) {
-    mostrarMsg(whatsappMsg, 'Informe um número válido (pelo menos 8 dígitos).', 'erro');
-    return;
-  }
-  salvarWaBtn.disabled = true;
-  salvarWaBtn.textContent = 'Salvando...';
-  try {
-    const whatsapp = '595' + digitos;
-    await updateDoc(doc(db, 'brokers', tenantId), { whatsapp, updatedAt: serverTimestamp() });
-    broker.whatsapp = whatsapp;
-    mostrarMsg(whatsappMsg, 'WhatsApp salvo.', 'ok');
-    atualizarStatusTexto();
-  } catch (err) {
-    mostrarMsg(whatsappMsg, 'Não foi possível salvar: ' + err.message, 'erro');
-  } finally {
-    salvarWaBtn.disabled = false;
-    salvarWaBtn.textContent = 'Salvar WhatsApp';
-  }
-}
-
 async function publicar() {
   if (!broker.whatsapp) {
-    mostrarMsg(whatsappMsg, 'Configure e salve seu WhatsApp antes de publicar.', 'erro');
+    mostrarMsg(contatoMsg, 'Configure e salve seu WhatsApp antes de publicar.', 'erro');
     return;
   }
   publicarBtn.disabled = true;
@@ -251,7 +325,7 @@ async function publicar() {
     broker.published = true;
     atualizarStatusTexto();
   } catch (err) {
-    mostrarMsg(whatsappMsg, 'Não foi possível publicar: ' + err.message, 'erro');
+    mostrarMsg(contatoMsg, 'Não foi possível publicar: ' + err.message, 'erro');
   } finally {
     publicarBtn.disabled = false;
     publicarBtn.textContent = textoOriginal;
@@ -265,18 +339,19 @@ async function despublicar() {
     broker.published = false;
     atualizarStatusTexto();
   } catch (err) {
-    mostrarMsg(whatsappMsg, 'Não foi possível despublicar: ' + err.message, 'erro');
+    mostrarMsg(contatoMsg, 'Não foi possível despublicar: ' + err.message, 'erro');
   } finally {
     despublicarBtn.disabled = false;
   }
 }
 
-salvarWaBtn.addEventListener('click', salvarWhatsapp);
 salvarIdentidadeBtn.addEventListener('click', salvarIdentidade);
+salvarTextosBtn.addEventListener('click', salvarTextos);
+salvarContatoBtn.addEventListener('click', salvarContato);
 publicarBtn.addEventListener('click', publicar);
 despublicarBtn.addEventListener('click', despublicar);
 
-[whatsappInput, nomeInput, descricaoInput, keywordsInput].forEach(el => {
+[whatsappInput, nomeInput, headlineInput, subheadlineInput, sobreInput, keywordsInput, emailInput, instagramInput].forEach(el => {
   el.addEventListener('input', enviarPreviewDebounced);
 });
 
@@ -285,8 +360,12 @@ initShell({ active: 'site', title: 'Meu Site' }).then((resultado) => {
   broker = resultado.broker;
 
   whatsappInput.value = broker.whatsapp ? broker.whatsapp.replace(/^595/, '') : '';
+  emailInput.value = broker.contactEmail || '';
+  instagramInput.value = broker.instagramUrl || '';
   nomeInput.value = broker.name || '';
-  descricaoInput.value = broker.description || '';
+  headlineInput.value = broker.headline || '';
+  subheadlineInput.value = broker.subheadline || '';
+  sobreInput.value = broker.about || '';
   keywordsInput.value = broker.keywords || '';
   logoAtualDataUrl = broker.logo || null;
   corSelecionada = broker.accentColor || ACCENT_PADRAO;
@@ -294,5 +373,4 @@ initShell({ active: 'site', title: 'Meu Site' }).then((resultado) => {
   atualizarLogoPreview();
   montarSwatches();
   atualizarStatusTexto();
-  enviarPreview();
 });

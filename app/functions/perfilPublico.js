@@ -47,8 +47,14 @@ exports.perfilPublico = onRequest(
         name: broker.name || tenantId,
         whatsapp: broker.whatsapp || null,
         logo: broker.logo || null,
-        description: broker.description || null,
+        headline: broker.headline || null,
+        subheadline: broker.subheadline || null,
+        about: broker.about || null,
         keywords: broker.keywords || null,
+        // contactEmail, não broker.email — esse é o e-mail de login/conta,
+        // nunca deve ser exposto por um endpoint público.
+        email: broker.contactEmail || null,
+        instagramUrl: broker.instagramUrl || null,
         accentColor: broker.accentColor || '#C8922A',
         // Infinity não serializa em JSON (vira null de qualquer jeito
         // via JSON.stringify) — explícito aqui pra não depender disso.

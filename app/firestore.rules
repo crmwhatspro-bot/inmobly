@@ -28,14 +28,20 @@ service cloud.firestore {
       //   usage                 — auto-relato de quantidade de imóveis
       //   onboardingCompleted   — marcado por tour.js ao terminar o onboarding
       //   whatsapp, published   — meu-site.html (contato + publicar catálogo)
-      //   name, logo, description, keywords, accentColor
-      //                         — meu-site.html (identidade visual do site público)
+      //   name, logo, accentColor
+      //                         — meu-site.html (identidade visual)
+      //   headline, subheadline, about, keywords
+      //                         — meu-site.html (textos do site público)
+      //   contactEmail, instagramUrl — meu-site.html (contato, além do whatsapp)
+      //                         — NÃO confundir com `email` (login/conta, setado
+      //                         por criarConta.js, nunca editável pelo tenant)
       allow update: if isTeam()
                     || (
                       isTenantAdmin(tenantId) &&
                       request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(['usage', 'onboardingCompleted', 'whatsapp', 'published',
-                                  'name', 'logo', 'description', 'keywords', 'accentColor', 'updatedAt']) &&
+                                  'name', 'logo', 'accentColor', 'headline', 'subheadline',
+                                  'about', 'keywords', 'contactEmail', 'instagramUrl', 'updatedAt']) &&
                       request.resource.data.usage.imoveisCount is int &&
                       request.resource.data.usage.imoveisCount >= 0 &&
                       request.resource.data.onboardingCompleted is bool &&
@@ -47,8 +53,12 @@ service cloud.firestore {
                       request.resource.data.get('published', false) is bool &&
                       request.resource.data.get('name', '') is string &&
                       request.resource.data.get('logo', '') is string &&
-                      request.resource.data.get('description', '') is string &&
+                      request.resource.data.get('headline', '') is string &&
+                      request.resource.data.get('subheadline', '') is string &&
+                      request.resource.data.get('about', '') is string &&
                       request.resource.data.get('keywords', '') is string &&
+                      request.resource.data.get('contactEmail', '') is string &&
+                      request.resource.data.get('instagramUrl', '') is string &&
                       // cor sempre um hex válido — nunca vazio, sempre tem um
                       // padrão escolhido no client (ver ACCENT_PADRAO em meu-site.js)
                       request.resource.data.get('accentColor', '#C8922A').matches('^#[0-9a-fA-F]{6}$') &&
