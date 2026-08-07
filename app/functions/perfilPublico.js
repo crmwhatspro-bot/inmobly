@@ -57,6 +57,7 @@ exports.perfilPublico = onRequest(
         instagramUrl: broker.instagramUrl || null,
         accentColor: broker.accentColor || '#C8922A',
         language: broker.language || 'es',
+        gtmId: broker.gtmId || null,
         // Infinity não serializa em JSON (vira null de qualquer jeito
         // via JSON.stringify) — explícito aqui pra não depender disso.
         imoveisLimit: Number.isFinite(limite) ? limite : null,

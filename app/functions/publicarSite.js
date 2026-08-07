@@ -4,11 +4,14 @@
    estático do catálogo público, depois marca published:true.
    Chamado por meu-site.js ao clicar em "Publicar site".
 
-   O conteúdo é sempre o mesmo pra qualquer tenant — quem resolve
+   O conteúdo é quase sempre o mesmo pra qualquer tenant — quem resolve
    "de quem é esse site" é o próprio bundle, em tempo de execução,
-   lendo location.hostname (ver public/site/js/public-tenant.js).
-   Isso simplifica o deploy: não tem nada pra "gerar" por tenant, só
-   publicar o mesmo pacote de arquivos num site novo.
+   lendo location.hostname (ver public/site/js/public-tenant.js). A
+   única exceção é index.html: popularEUpload() grava o tenantId numa
+   meta tag (`pa-tenant`, vem vazia em site-assets/) antes de fazer o
+   upload dele — sem isso, um domínio próprio conectado (ver
+   functions/dominio.js) não bateria com o padrão *.web.app e o bundle
+   não teria como saber de quem é o site.
 
    Os arquivos vêm de functions/site-assets/ — uma CÓPIA de
    public/site/, porque uma Cloud Function só enxerga o que está
@@ -115,13 +118,28 @@ async function criarVersao(tenantId) {
   return versao.name; // "sites/{tenantId}/versions/{versionId}"
 }
 
-async function popularEUpload(versionName) {
+async function popularEUpload(versionName, tenantId) {
   const arquivos = listarArquivos(ASSETS_DIR);
   const gzipPorHash = new Map();
   const hashes = {};
 
   for (const arq of arquivos) {
-    const gz = zlib.gzipSync(fs.readFileSync(arq.abs));
+    // index.html é o único arquivo que muda por tenant — grava o
+    // tenantId na meta tag `pa-tenant` (vem vazia em site-assets/) pra
+    // o bundle (idêntico pra todo mundo, ver comentário no topo do
+    // arquivo) saber de quem é o site quando o hostname é um domínio
+    // próprio e não bate com *.web.app (ver public-tenant.js).
+    let conteudo = fs.readFileSync(arq.abs);
+    if (arq.publico === '/index.html') {
+      conteudo = Buffer.from(
+        conteudo.toString('utf8').replace(
+          '<meta name="pa-tenant" id="meta-pa-tenant" content="">',
+          `<meta name="pa-tenant" id="meta-pa-tenant" content="${tenantId}">`
+        ),
+        'utf8'
+      );
+    }
+    const gz = zlib.gzipSync(conteudo);
     const hash = crypto.createHash('sha256').update(gz).digest('hex');
     gzipPorHash.set(hash, gz);
     hashes[arq.publico] = hash;
@@ -173,7 +191,7 @@ exports.publicarSite = onCall(
     try {
       await criarSiteSeNaoExistir(tenantId);
       const versionName = await criarVersao(tenantId);
-      await popularEUpload(versionName);
+      await popularEUpload(versionName, tenantId);
       await finalizarEPublicar(tenantId, versionName);
     } catch (err) {
       console.error(`[publicarSite] falha publicando "${tenantId}":`, err);

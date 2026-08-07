@@ -51,6 +51,11 @@ const instagramInput  = $('ms-instagram');
 const contatoMsg      = $('msContatoMsg');
 const salvarContatoBtn = $('msSalvarContatoBtn');
 
+// Google Tag Manager
+const gtmInput     = $('ms-gtm-id');
+const gtmMsg       = $('msGtmMsg');
+const salvarGtmBtn = $('msSalvarGtmBtn');
+
 // Preview
 const abrirPreviewBtn  = $('msAbrirPreviewBtn');
 const previewModal     = $('msPreviewModal');
@@ -306,6 +311,32 @@ async function salvarContato() {
   }
 }
 
+// ── Google Tag Manager: salvar (opcional) ───────────
+const GTM_ID_REGEX = /^GTM-[A-Z0-9]+$/;
+
+async function salvarGtm() {
+  const valor = gtmInput.value.trim().toUpperCase();
+  if (valor && !GTM_ID_REGEX.test(valor)) {
+    mostrarMsg(gtmMsg, 'ID inválido — deve ter o formato GTM-XXXXXXX.', 'erro');
+    return;
+  }
+  salvarGtmBtn.disabled = true;
+  const textoOriginal = salvarGtmBtn.textContent;
+  salvarGtmBtn.textContent = 'Salvando...';
+  try {
+    const dados = { gtmId: valor, updatedAt: serverTimestamp() };
+    await updateDoc(doc(db, 'brokers', tenantId), dados);
+    Object.assign(broker, dados);
+    gtmInput.value = valor;
+    mostrarMsg(gtmMsg, valor ? 'Google Tag Manager conectado.' : 'Google Tag Manager desconectado.', 'ok');
+  } catch (err) {
+    mostrarMsg(gtmMsg, 'Não foi possível salvar: ' + err.message, 'erro');
+  } finally {
+    salvarGtmBtn.disabled = false;
+    salvarGtmBtn.textContent = textoOriginal;
+  }
+}
+
 // ── Status / publicação ────────────────────────────
 // Um switch só, em vez de 3 botões separados (Publicar/Despublicar
 // eram dois botões trocando de hidden, ficava largo e no mobile o
@@ -379,6 +410,7 @@ async function atualizarSitePublicado() {
 salvarIdentidadeBtn.addEventListener('click', salvarIdentidade);
 salvarTextosBtn.addEventListener('click', salvarTextos);
 salvarContatoBtn.addEventListener('click', salvarContato);
+salvarGtmBtn.addEventListener('click', salvarGtm);
 publicarSwitch.addEventListener('change', alternarPublicacao);
 atualizarBtn.addEventListener('click', atualizarSitePublicado);
 
@@ -399,6 +431,7 @@ initShell({ active: 'site', title: 'Meu Site' }).then((resultado) => {
   subheadlineInput.value = broker.subheadline || '';
   sobreInput.value = broker.about || '';
   keywordsInput.value = broker.keywords || '';
+  gtmInput.value = broker.gtmId || '';
   logoAtualDataUrl = broker.logo || null;
   corSelecionada = broker.accentColor || ACCENT_PADRAO;
   idiomaInput.value = broker.language || 'es';

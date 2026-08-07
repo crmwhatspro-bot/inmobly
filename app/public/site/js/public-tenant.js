@@ -6,12 +6,21 @@
 // ════════════════════════════════════════════════
 const FUNCTIONS_BASE = 'https://southamerica-east1-inmobly-project.cloudfunctions.net';
 
-// Produção (quando "Publicar site" existir): cada tenant tem seu
-// próprio Hosting site <slug>.web.app. Até lá, ?t=slug serve pra
+// Cada tenant tem seu próprio Hosting site <slug>.web.app — o slug dá
+// pra ler direto do hostname. Mas com domínio próprio conectado (ver
+// functions/dominio.js) o hostname vira algo tipo
+// catalogo.suaempresa.com.py, que não bate com esse padrão: nesse caso
+// quem diz de quem é o site é a meta tag gravada por publicarSite.js
+// no HTML publicado (o bundle em si é idêntico pra todo mundo, então
+// sem essa tag não teria como saber). ?t=slug continua servindo pra
 // testar/pré-visualizar no site padrão do projeto.
 export function tenantIdAtual() {
   const host = location.hostname.match(/^([a-z0-9-]+)\.web\.app$/);
   if (host && host[1] !== 'inmobly-project') return host[1];
+
+  const meta = document.querySelector('meta[name="pa-tenant"]')?.content;
+  if (meta) return meta;
+
   return new URLSearchParams(location.search).get('t');
 }
 

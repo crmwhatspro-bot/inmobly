@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Domínio — Inmobly</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/admin.css">
+<style>
+  .dm-max { max-width: 640px; }
+  .dm-max > .imv-sec,
+  .dm-max > .ms-status { margin-bottom: var(--sp-5); }
+
+  .dm-status-badge {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .dm-status-badge::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor;
+  }
+  .dm-status-badge--pendente { background: rgba(234,179,8,.12); color: #eab308; }
+  .dm-status-badge--ativo    { background: rgba(29,158,117,.12); color: var(--clr-accent, #1D9E75); }
+  .dm-status-badge--erro     { background: rgba(239,68,68,.12); color: #ef4444; }
+
+  .dm-dns-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--sp-4);
+    font-size: var(--text-sm);
+  }
+  .dm-dns-table th, .dm-dns-table td {
+    text-align: left;
+    padding: var(--sp-2) var(--sp-3);
+    border-bottom: 1px solid var(--clr-border-dark);
+    color: var(--clr-text-light-2);
+  }
+  .dm-dns-table th { color: var(--clr-text-muted); font-weight: 500; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; }
+  .dm-dns-table td { font-family: monospace; color: white; }
+
+  .dm-atual {
+    display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+    padding: var(--sp-4);
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--clr-border-dark);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--sp-5);
+  }
+  .dm-atual a { color: var(--clr-accent, #1D9E75); text-decoration: underline; word-break: break-all; }
+
+  .dm-actions-row { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-5); }
+</style>
+</head>
+<body>
+
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+    <main class="admin-main">
+
+      <div class="dm-max">
+
+        <div class="dm-atual">
+          <div style="flex:1; min-width:200px;">
+            <strong style="color:white; display:block; margin-bottom:4px;">Endereço atual do seu site</strong>
+            <a href="#" id="dmUrlAtual" target="_blank" rel="noopener">—</a>
+          </div>
+        </div>
+
+        <!-- Sem domínio conectado ainda -->
+        <section class="imv-sec" id="dmFormSec">
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+            <h3>Conectar domínio próprio</h3>
+            <p>Ex.: catalogo.suaempresa.com.py</p>
+          </header>
+          <div class="imv-sec__body">
+            <div class="form-group">
+              <label class="form-label" for="dm-dominio">Domínio</label>
+              <input class="form-input" type="text" id="dm-dominio" placeholder="catalogo.suaempresa.com.py" autocomplete="off">
+              <p class="imv-hint">Seu site precisa estar publicado em "Meu Site" antes de conectar um domínio.</p>
+            </div>
+            <p id="dmFormMsg" class="imv-form-msg" role="alert" hidden></p>
+            <button type="button" class="btn btn--accent btn--md" id="dmConectarBtn">Conectar domínio</button>
+          </div>
+        </section>
+
+        <!-- Domínio já conectado — status + instruções de DNS -->
+        <section class="imv-sec" id="dmStatusSec" hidden>
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+            <h3 id="dmDominioTitulo">—</h3>
+            <span class="dm-status-badge" id="dmStatusBadge">Verificando</span>
+          </header>
+          <div class="imv-sec__body">
+            <p class="imv-hint" id="dmStatusExplicacao">Configure este registro no painel de DNS do seu domínio. A propagação e a emissão do certificado podem levar algumas horas — em casos raros, até 24h.</p>
+
+            <table class="dm-dns-table" id="dmDnsTable" hidden>
+              <thead><tr><th>Tipo</th><th>Host</th><th>Valor</th></tr></thead>
+              <tbody id="dmDnsBody"></tbody>
+            </table>
+
+            <p id="dmStatusMsg" class="imv-form-msg" role="alert" hidden></p>
+
+            <div class="dm-actions-row">
+              <button type="button" class="btn btn--accent btn--md" id="dmVerificarBtn">Verificar novamente</button>
+              <button type="button" class="imv-btn-excluir" id="dmRemoverBtn">Remover domínio</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/dominio.js"></script>
+</body>
+</html>

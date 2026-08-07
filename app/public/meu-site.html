@@ -72,6 +72,15 @@
      gap próprio, só padding externo). */
   .ms-field-stack { display: flex; flex-direction: column; gap: var(--sp-5); }
 
+  .ms-gtm-tutorial {
+    display: flex; flex-direction: column; gap: var(--sp-2);
+    margin: 0; padding-left: var(--sp-5);
+    color: var(--clr-text-light-2);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+  .ms-gtm-tutorial strong { color: white; }
+
   .ms-preview-btn-row { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
   .ms-preview-btn-row p { color: var(--clr-text-light-2); font-size: var(--text-sm); margin: 0; flex: 1; min-width: 180px; }
 
@@ -316,6 +325,40 @@
               <div>
                 <p id="msContatoMsg" class="imv-form-msg" role="alert" hidden></p>
                 <button type="button" class="btn btn--accent btn--md" id="msSalvarContatoBtn">Salvar contato</button>
+              </div>
+
+            </div>
+          </div>
+        </details>
+
+        <details class="imv-sec ms-accordion">
+          <summary class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <div class="ms-accordion__text">
+              <h3>Google Tag Manager</h3>
+              <p>Opcional — conecte seu próprio container pra medir tráfego e conversões.</p>
+            </div>
+            <svg class="ms-accordion__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="imv-sec__body">
+            <div class="ms-field-stack">
+
+              <ol class="ms-gtm-tutorial">
+                <li>Acesse <strong>tagmanager.google.com</strong> e faça login com sua conta Google.</li>
+                <li>Clique em <strong>"Criar conta"</strong>, dê um nome (ex.: o nome da sua empresa) e, no tipo de container, escolha <strong>"Web"</strong>.</li>
+                <li>O Tag Manager vai mostrar um ID no formato <strong>GTM-XXXXXXX</strong>, no canto superior direito do painel.</li>
+                <li>Copie esse ID e cole no campo abaixo — não precisa mexer em nenhum código, a gente já cuida da instalação no seu site.</li>
+              </ol>
+
+              <div class="form-group">
+                <label class="form-label" for="ms-gtm-id">ID do container (GTM-XXXXXXX)</label>
+                <input class="form-input" type="text" id="ms-gtm-id" placeholder="GTM-XXXXXXX" autocomplete="off">
+                <p class="imv-hint">Deixe em branco pra não usar o Google Tag Manager no seu site.</p>
+              </div>
+
+              <div>
+                <p id="msGtmMsg" class="imv-form-msg" role="alert" hidden></p>
+                <button type="button" class="btn btn--accent btn--md" id="msSalvarGtmBtn">Salvar GTM</button>
               </div>
 
             </div>

@@ -6,6 +6,12 @@
 <title>Inmuebles</title>
 <meta name="description" id="meta-description" content="Catálogo de inmuebles disponibles.">
 <meta name="keywords" id="meta-keywords" content="">
+<!-- Gravado por publicarSite.js na hora do deploy de cada tenant — é
+     assim que o bundle (idêntico pra todo mundo) descobre de quem é o
+     site quando o hostname é um domínio próprio e não bate com
+     *.web.app (ver site/js/public-tenant.js#tenantIdAtual). Em
+     desenvolvimento/preview fica vazio e cai no fallback de sempre. -->
+<meta name="pa-tenant" id="meta-pa-tenant" content="">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

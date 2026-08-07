@@ -280,7 +280,10 @@ cliente final vê, sem login:
   campos abaixo. `imoveis`/`fotos` continuam lidos direto do Firestore
   client-side, já eram públicos.
 - **Resolve o tenant** por `location.hostname` em produção
-  (`<slug>.web.app`) com fallback `?t=slug` pra testar antes de publicar.
+  (`<slug>.web.app`), com fallback pra meta tag `pa-tenant` (gravada por
+  `publicarSite.js` no HTML de cada tenant, ver seção "Domínio próprio"
+  abaixo) quando o hostname é um domínio próprio, e `?t=slug` por
+  último pra testar antes de publicar.
 - **Conteúdo**: hero (logo + `headline` + `subheadline`, sem botão — o
   hero do template original também não tem CTA, só texto) + filtros
   básicos (operação/tipo/cidade, cidade montada dinamicamente a partir
@@ -360,6 +363,106 @@ cliente final vê, sem login:
   do produto, mas é uma parede que existe — não resolvida agora de
   propósito, só registrada aqui pra não esquecer quando a base de
   corretores crescer.
+
+### Domínio próprio (`dominio.html`)
+
+O corretor conecta um domínio dele (ex.: `catalogo.suaempresa.com.py`) ao
+catálogo já publicado, em vez de ficar só em `<tenantId>.web.app`. Item
+"Domínio" do menu, antes um stub "Em breve", agora é uma página de
+verdade.
+
+- **`functions/dominio.js`** — 3 functions novas usando o recurso
+  `sites.domains` da Hosting REST API v1beta1 (endpoint diferente do
+  que `publicarSite.js` usa — aquele publica arquivos, este associa um
+  domínio a um site que já existe):
+  - `conectarDominio({ dominio })` — exige o site já publicado
+    (`broker.published === true`, senão nem existe o Hosting site pra
+    associar), cria a associação, devolve o status + os IPs que a
+    Hosting API espera (`provisioning.expectedIps`) pro corretor
+    configurar como registro A no DNS dele.
+  - `verificarDominio()` — refaz o GET da associação, atualiza o status
+    cacheado no Firestore. Chamado tanto pelo botão "Verificar
+    novamente" quanto automaticamente toda vez que `dominio.html` abre.
+  - `removerDominio()` — desfaz a associação (idempotente — sem domínio
+    conectado, só retorna `ok`), volta a usar só `<tenantId>.web.app`.
+  - Mesmo padrão de auth/erro/credenciais de `publicarSite.js`
+    (`applicationDefault()` resolvida late, mesmo `chamarApi()`). O
+    papel `roles/firebasehosting.admin` já concedido pra `publicarSite`
+    cobre isso também — é a mesma API, só recurso diferente.
+- **`brokers/{tenantId}.customDomain`/`.customDomainStatus`** — só um
+  CACHE do último status conhecido, gravado pelas functions acima via
+  Admin SDK (ignora rules). **Não** estão na lista de campos que
+  `firestore.rules` deixa o tenant escrever sozinho de propósito — só
+  as Cloud Functions (que de fato chamam a Hosting API) podem gravar
+  esses campos, pra nunca existir um `customDomain` "fantasma" sem
+  associação real por trás. `customDomainStatus` fica só em
+  `'none' | 'requested' | 'configuring' | 'active'` —
+  `functions/dominio.js#statusResumido()` reduz o `certStatus`/`dnsStatus`/
+  `status` brutos da Hosting API pra esses 4 valores antes de gravar ou
+  devolver pro client; `js/dominio.js` só traduz o enum pra
+  badge/texto/explicação (`SITUACAO`), nunca interpreta nome de enum da
+  Hosting API diretamente.
+- **Resolução do tenant num domínio próprio** — o bundle público
+  (`site/js/imoveis.js` + `public-tenant.js`) é idêntico pra qualquer
+  tenant; hoje ele descobria "de quem é esse site" só por
+  `location.hostname` bater com `<slug>.web.app`. Um domínio próprio
+  não bate nesse padrão. Corrigido em duas pontas: `site/index.html`
+  ganhou `<meta name="pa-tenant" content="">` (vazia por padrão) e
+  `publicarSite.js#popularEUpload()` agora grava o `tenantId` ali antes
+  de fazer o upload de `index.html` — é o único arquivo do bundle que
+  passou a mudar por tenant, todo o resto continua idêntico.
+  `tenantIdAtual()` lê essa meta tag como segundo fallback (depois do
+  padrão `*.web.app`, antes do `?t=` usado só em preview/teste).
+- ⚠️ **NÃO TESTADO CONTRA INFRA REAL — testar com um domínio de
+  verdade antes de oferecer pra qualquer cliente.** Duas incertezas
+  concretas que só um teste real resolve:
+  1. Não ficou claro, pelas fontes disponíveis, se a Hosting API pede
+     alguma verificação de posse do domínio (historicamente, esse tipo
+     de conexão pedia prova de posse via Google Search Console/Site
+     Verification, feita à parte) antes de aceitar a associação, ou se
+     resolve isso sozinha nesse fluxo multi-site. Se o `conectarDominio`
+     falhar com algo parecido com "verification required" ou
+     "permission denied", esse passo extra de verificação de posse
+     ainda precisa ser desenhado — hoje o código assume que não é
+     necessário.
+  2. `statusResumido()` (`functions/dominio.js`) reduz `certStatus`/
+     `dnsStatus`/`status` pra `'requested'`/`'configuring'`/`'active'`
+     só com base nos nomes de enum que aparecem na documentação pública
+     — os valores exatos devolvidos pela API de verdade (`CERT_ACTIVE`?
+     `ACTIVE`? outro nome?) não foram confirmados contra uma resposta
+     real.
+
+### Google Tag Manager (`meu-site.html`)
+
+Campo opcional pro corretor colar o ID do container dele
+(`GTM-XXXXXXX`) — uma nova seção sanfona "Google Tag Manager" em "Meu
+Site", com um mini-tutorial de 4 passos (criar conta em
+tagmanager.google.com, tipo Web, copiar o ID, colar no campo) direto
+acima do input, já que a maioria dos corretores nunca mexeu nisso.
+
+- **`brokers/{tenantId}.gtmId`** — igual aos outros campos de
+  Identidade/Textos/Contato: o próprio tenant grava direto
+  (`updateDoc` client-side), sem passar por Cloud Function — não chama
+  nenhuma API externa, só salva uma string. `firestore.rules` valida o
+  formato (`^(GTM-[A-Z0-9]+)?$` — vazio ou um container ID válido,
+  nunca outra coisa) antes de aceitar a escrita.
+- **`perfilPublico.js`** projeta `gtmId` igual aos outros campos
+  públicos (nome, whatsapp, etc.) — sem isso o campo ficaria só no
+  Firestore, nunca chegando no catálogo publicado.
+- **Injeção no site público** (`site/js/imoveis.js#injetarGTM()`) —
+  réplica em JS do snippet oficial de instalação do GTM (que normalmente
+  vai direto no HTML) — aqui precisa ser via JS porque `index.html` é o
+  mesmo bundle pra qualquer tenant, o ID só existe em tempo de
+  execução. Roda dentro de `aplicarPerfil()`, só quando
+  `!MODO_PREVIEW && p.gtmId` — **nunca no preview do modal em
+  "Pré-visualizar site"**, de propósito: sem essa trava, cada tecla
+  digitada no formulário (o preview reenvia o perfil com debounce a
+  cada edição) dispararia uma "visita" de teste no GTM de verdade do
+  corretor. Valida o formato do ID de novo antes de montar a URL do
+  script (defesa em profundidade — não confia só na validação já
+  feita na escrita do Firestore) e guarda contra injeção duplicada
+  (`#pa-gtm-script`) caso `aplicarPerfil()` seja chamado mais de uma
+  vez.
 
 ### Product tour — abandono expira
 
@@ -523,6 +626,9 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 │                                       ← paginasCompradas é novo — crédito de
 │                                        Páginas de Empreendimento pagas, só o
 │                                        stripeWebhook incrementa (Admin SDK)
+├─ customDomain: string | null        ← novo — domínio conectado (ver dominio.html),
+│                                        só gravado pelas Cloud Functions de
+│                                        functions/dominio.js, nunca pelo client
 ├─ customDomainStatus: 'none' | 'requested' | 'configuring' | 'active'
 ├─ onboardingCompleted: boolean       ← novo — controla se pula o tour
 ├─ whatsapp: string                   ← novo — meu-site.html, formato "595..." (sem +)
@@ -540,6 +646,10 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 │                                              contactEmail e não `email` de propósito,
 │                                              ver nota acima
 ├─ language: 'es' | 'pt' | 'en'               ← novo — meu-site.html, padrão 'es'
+├─ gtmId: string                              ← novo — meu-site.html (Google Tag
+│                                              Manager), formato "GTM-XXXXXXX" ou
+│                                              vazio, injetado no site público
+│                                              (site/js/imoveis.js), nunca no preview
 ├─ createdAt, updatedAt
 ├─ purchases/{id}                    ← igual ao antigo, sem mudança de schema
 ├─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,

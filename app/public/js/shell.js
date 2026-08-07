@@ -30,7 +30,7 @@ const NAV = [
   { key: 'imoveis',   href: 'admin.html',                label: 'Meus Imóveis',   icon: ICONS.imoveis,   primary: true },
   { key: 'site',      href: 'meu-site.html',              label: 'Meu Site',       icon: ICONS.site,      primary: true },
   { key: 'paginas',   href: 'paginas.html',               label: 'Páginas',        icon: ICONS.paginas },
-  { key: 'dominio',   href: 'em-breve.html?f=dominio',   label: 'Domínio',        icon: ICONS.dominio, soon: true },
+  { key: 'dominio',   href: 'dominio.html',               label: 'Domínio',        icon: ICONS.dominio },
   { key: 'plano',     href: 'planos.html',                label: 'Plano',          icon: ICONS.plano,      primary: true },
 ];
 
@@ -38,6 +38,7 @@ const NAV = [
 // sidebar. Adicionar um item no topo a cada mudança relevante pro
 // usuário final (não é changelog técnico interno).
 const UPDATES = [
+  { date: '2026-08-07', title: 'Domínio próprio', desc: 'Conecte seu domínio (ex.: catalogo.suaempresa.com.py) ao seu catálogo direto pelo painel.' },
   { date: '2026-08-07', title: 'Páginas de Empreendimento', desc: 'Compre e crie páginas institucionais para seus empreendimentos, com preço de lançamento.' },
   { date: '2026-08-07', title: 'Meu Site', desc: 'Configure seu WhatsApp e publique o catálogo público dos seus imóveis.' },
   { date: '2026-08-07', title: 'Painel reorganizado', desc: 'Menu lateral novo com todas as áreas do sistema, mais fácil de navegar.' },

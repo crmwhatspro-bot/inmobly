@@ -447,15 +447,49 @@ function mostrarConteudo() {
   conteudoEl.hidden = false;
 }
 
+// Container do Google Tag Manager do próprio corretor (opcional,
+// configurado em meu-site.html). Só injeta no site publicado de
+// verdade — nunca no preview (senão cada tecla digitada no formulário
+// dispararia visita de teste no GTM do corretor) — e só uma vez, caso
+// aplicarPerfil() seja chamado de novo por qualquer motivo. Réplica em
+// JS do snippet oficial de instalação do GTM (que normalmente vai
+// direto no HTML) — aqui precisa ser via JS porque o bundle é o mesmo
+// pra qualquer tenant, o id só existe em tempo de execução.
+const GTM_ID_REGEX = /^GTM-[A-Z0-9]+$/;
+function injetarGTM(id) {
+  if (!GTM_ID_REGEX.test(id || '') || document.getElementById('pa-gtm-script')) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+
+  const script = document.createElement('script');
+  script.id = 'pa-gtm-script';
+  script.async = true;
+  script.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(id);
+  document.head.appendChild(script);
+
+  const noscript = document.createElement('noscript');
+  const iframe = document.createElement('iframe');
+  iframe.src = 'https://www.googletagmanager.com/ns.html?id=' + encodeURIComponent(id);
+  iframe.height = '0';
+  iframe.width = '0';
+  iframe.style.display = 'none';
+  iframe.style.visibility = 'hidden';
+  noscript.appendChild(iframe);
+  document.body.insertBefore(noscript, document.body.firstChild);
+}
+
 // ── Aplica campos do perfil no DOM — usado tanto no fluxo normal
 // (perfilPublico) quanto no preview (postMessage), sempre com o
 // mesmo shape { name, whatsapp, logo, headline, subheadline, about,
-// keywords, email, instagramUrl, accentColor }. Tudo opcional exceto
-// name/whatsapp — sem os outros campos, cai num texto padrão razoável.
+// keywords, email, instagramUrl, accentColor, gtmId }. Tudo opcional
+// exceto name/whatsapp — sem os outros campos, cai num texto padrão
+// razoável.
 function aplicarPerfil(p) {
   perfil = p;
   aplicarIdioma(p.language);
   aplicarAccent(p.accentColor);
+  if (!MODO_PREVIEW && p.gtmId) injetarGTM(p.gtmId);
 
   const nome = p.name || STR.tituloSufixo;
   document.title = nome + ' — ' + STR.tituloSufixo;

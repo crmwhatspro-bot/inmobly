@@ -36,6 +36,9 @@ service cloud.firestore {
       //                         — NÃO confundir com `email` (login/conta, setado
       //                         por criarConta.js, nunca editável pelo tenant)
       //   language              — meu-site.html, idioma do site público (es/pt/en)
+      //   gtmId                 — meu-site.html (seção Google Tag Manager),
+      //                         container do GTM do próprio corretor injetado
+      //                         no site público — ver site/js/imoveis.js
       allow update: if isTeam()
                     || (
                       isTenantAdmin(tenantId) &&
@@ -43,7 +46,7 @@ service cloud.firestore {
                         .hasOnly(['usage', 'onboardingCompleted', 'whatsapp', 'published',
                                   'name', 'logo', 'accentColor', 'headline', 'subheadline',
                                   'about', 'keywords', 'contactEmail', 'instagramUrl',
-                                  'language', 'updatedAt']) &&
+                                  'language', 'gtmId', 'updatedAt']) &&
                       request.resource.data.usage.imoveisCount is int &&
                       request.resource.data.usage.imoveisCount >= 0 &&
                       request.resource.data.onboardingCompleted is bool &&
@@ -65,6 +68,10 @@ service cloud.firestore {
                       // cor sempre um hex válido — nunca vazio, sempre tem um
                       // padrão escolhido no client (ver ACCENT_PADRAO em meu-site.js)
                       request.resource.data.get('accentColor', '#C8922A').matches('^#[0-9a-fA-F]{6}$') &&
+                      // vazio (sem GTM conectado) ou um container ID válido —
+                      // nunca um valor qualquer indo parar numa URL de script
+                      // injetada no site público (ver site/js/imoveis.js)
+                      request.resource.data.get('gtmId', '').matches('^(GTM-[A-Z0-9]+)?$') &&
                       // nunca publica sem ter um whatsapp já salvo
                       (request.resource.data.get('published', false) != true
                         || request.resource.data.get('whatsapp', '') != '')
