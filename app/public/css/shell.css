@@ -464,3 +464,73 @@ body {
     padding-bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--sp-6));
   }
 }
+
+/* ── Product tour (js/product-tour.js) ────────────────────────── */
+.pa-tour-highlight {
+  position: relative;
+  z-index: calc(var(--z-modal) + 2);
+  border-radius: var(--radius-lg);
+  animation: pa-tour-pulse 1.6s ease-in-out infinite;
+}
+@keyframes pa-tour-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--clr-accent), 0 0 20px 2px var(--clr-accent-glow); }
+  50%      { box-shadow: 0 0 0 5px var(--clr-accent), 0 0 28px 6px var(--clr-accent-glow); }
+}
+
+.pa-tour-card {
+  position: fixed;
+  right: var(--sp-4);
+  bottom: calc(var(--bottombar-h, 0px) + var(--sp-6));
+  width: 300px;
+  max-width: calc(100vw - var(--sp-8));
+  background: var(--clr-surface-dark-2);
+  border: 1px solid var(--clr-accent);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--sp-5);
+  z-index: calc(var(--z-modal) + 3);
+  animation: pa-tour-in var(--dur-normal) var(--ease-out);
+}
+@keyframes pa-tour-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pa-tour-card__step {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clr-accent-light);
+  margin-bottom: var(--sp-2);
+}
+.pa-tour-card__titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: white;
+  margin-bottom: var(--sp-2);
+}
+.pa-tour-card__texto {
+  font-size: var(--text-sm);
+  color: var(--clr-text-light-2);
+  line-height: 1.5;
+  margin-bottom: var(--sp-4);
+}
+.pa-tour-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.pa-tour-card__pular {
+  background: none; border: none; cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--clr-text-muted);
+  text-decoration: underline;
+  padding: 0;
+}
+.pa-tour-card__pular:hover { color: var(--clr-text-light-2); }
+
+@media (max-width: 640px) {
+  .pa-tour-card { left: var(--sp-4); right: var(--sp-4); width: auto; bottom: calc(var(--bottombar-h, 0px) + var(--sp-4)); }
+}

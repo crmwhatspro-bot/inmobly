@@ -24,19 +24,123 @@ import { aplicarAccent } from './cores.js';
 
 const MODO_PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
 
-const STR = {
-  venda: 'Venta', aluguel: 'Alquiler', vendaAluguel: 'Venta / Alquiler',
-  mes: '/mes', consulta: 'A consultar',
-  quartos: 'dormitorios', banheiros: 'baños', vagas: 'cocheras',
-  pronto: 'Listo', construcao: 'En construcción', planta: 'En pozo',
-  apartamento: 'Departamento', casa: 'Casa', duplex: 'Dúplex',
-  terreno: 'Terreno', comercial: 'Comercial', escritorio: 'Oficina',
-  vazio: 'No se encontraron inmuebles con esos filtros.',
-  erro: 'No se pudieron cargar los inmuebles. Intentá de nuevo.',
-  cta: 'Consultar por este inmueble',
-  ref: 'Ref.',
-  wa: (titulo) => `Hola, me interesa el inmueble: ${titulo}`,
+// Idioma escolhido em meu-site.html (brokers/{tenantId}.language) —
+// todo texto visível da página, estático ou gerado por JS, vem daqui.
+// STR é reatribuída (não é const) em aplicarIdioma(), então todo
+// código abaixo que já lê STR.algumaCoisa continua funcionando sem
+// precisar saber que o idioma mudou.
+const IDIOMAS = {
+  es: {
+    portfolio: 'Portfolio', sobre: 'Sobre', todos: 'Todos',
+    venda: 'Venta', aluguel: 'Alquiler', vendaAluguel: 'Venta / Alquiler',
+    todosTipos: 'Todos los tipos', todasCidades: 'Todas las ciudades',
+    apartamento: 'Departamento', casa: 'Casa', duplex: 'Dúplex',
+    terreno: 'Terreno', comercial: 'Comercial', escritorio: 'Oficina',
+    mes: '/mes', consulta: 'A consultar',
+    quartos: 'dormitorios', banheiros: 'baños', vagas: 'cocheras',
+    pronto: 'Listo', construcao: 'En construcción', planta: 'En pozo',
+    vazio: 'No se encontraron inmuebles con esos filtros.',
+    erro: 'No se pudieron cargar los inmuebles. Intentá de nuevo.',
+    cargando: 'Cargando...',
+    cta: 'Consultar por este inmueble', ref: 'Ref.',
+    wa: (t) => `Hola, me interesa el inmueble: ${t}`,
+    waHero: 'Hola, quiero más información sobre sus propiedades.',
+    ctaTitulo: '¿No encontraste lo que buscabas?',
+    ctaSub: 'Contame qué estás buscando y te ayudo a encontrarlo.',
+    ctaBtn: 'Hablar por WhatsApp',
+    footerDesc: 'Hablá directo por WhatsApp para más información.',
+    footerInmobly: 'Creado con orgullo por',
+    tituloSufixo: 'Inmuebles',
+    seleccionadosPor: (n) => `Seleccionados por ${n}.`,
+    catalogoDe: (n) => `Catálogo de inmuebles de ${n}.`,
+    keywordsDefault: (n) => `inmuebles, ${n}, Paraguay`,
+    sobreDe: (n) => `Sobre ${n}`,
+    derechos: 'Todos los derechos reservados.',
+  },
+  pt: {
+    portfolio: 'Portfólio', sobre: 'Sobre', todos: 'Todos',
+    venda: 'Venda', aluguel: 'Aluguel', vendaAluguel: 'Venda / Aluguel',
+    todosTipos: 'Todos os tipos', todasCidades: 'Todas as cidades',
+    apartamento: 'Apartamento', casa: 'Casa', duplex: 'Duplex',
+    terreno: 'Terreno', comercial: 'Comercial', escritorio: 'Escritório',
+    mes: '/mês', consulta: 'Sob consulta',
+    quartos: 'quartos', banheiros: 'banheiros', vagas: 'vagas',
+    pronto: 'Pronto', construcao: 'Em construção', planta: 'Na planta',
+    vazio: 'Nenhum imóvel encontrado com esses filtros.',
+    erro: 'Não foi possível carregar os imóveis. Tente novamente.',
+    cargando: 'Carregando...',
+    cta: 'Falar sobre este imóvel', ref: 'Ref.',
+    wa: (t) => `Olá, tenho interesse no imóvel: ${t}`,
+    waHero: 'Olá, quero mais informações sobre seus imóveis.',
+    ctaTitulo: 'Não encontrou o que procura?',
+    ctaSub: 'Me conte o que você está buscando que eu te ajudo a encontrar.',
+    ctaBtn: 'Falar no WhatsApp',
+    footerDesc: 'Fale direto pelo WhatsApp para mais informações.',
+    footerInmobly: 'Criado com orgulho por',
+    tituloSufixo: 'Imóveis',
+    seleccionadosPor: (n) => `Selecionados por ${n}.`,
+    catalogoDe: (n) => `Catálogo de imóveis de ${n}.`,
+    keywordsDefault: (n) => `imóveis, ${n}, Paraguai`,
+    sobreDe: (n) => `Sobre ${n}`,
+    derechos: 'Todos os direitos reservados.',
+  },
+  en: {
+    portfolio: 'Portfolio', sobre: 'About', todos: 'All',
+    venda: 'For Sale', aluguel: 'For Rent', vendaAluguel: 'Sale / Rent',
+    todosTipos: 'All types', todasCidades: 'All cities',
+    apartamento: 'Apartment', casa: 'House', duplex: 'Duplex',
+    terreno: 'Land', comercial: 'Commercial', escritorio: 'Office',
+    mes: '/month', consulta: 'Price on request',
+    quartos: 'bedrooms', banheiros: 'bathrooms', vagas: 'parking',
+    pronto: 'Ready', construcao: 'Under construction', planta: 'Off-plan',
+    vazio: 'No properties found with these filters.',
+    erro: 'Could not load properties. Please try again.',
+    cargando: 'Loading...',
+    cta: 'Ask about this property', ref: 'Ref.',
+    wa: (t) => `Hi, I'm interested in this property: ${t}`,
+    waHero: "Hi, I'd like more information about your properties.",
+    ctaTitulo: "Didn't find what you were looking for?",
+    ctaSub: "Tell me what you're looking for and I'll help you find it.",
+    ctaBtn: 'Chat on WhatsApp',
+    footerDesc: 'Reach out directly on WhatsApp for more information.',
+    footerInmobly: 'Proudly built with',
+    tituloSufixo: 'Properties',
+    seleccionadosPor: (n) => `Selected by ${n}.`,
+    catalogoDe: (n) => `Property catalog by ${n}.`,
+    keywordsDefault: (n) => `real estate, ${n}, Paraguay`,
+    sobreDe: (n) => `About ${n}`,
+    derechos: 'All rights reserved.',
+  },
 };
+let STR = IDIOMAS.es;
+
+// Aplica o idioma nos textos estáticos do HTML (os que não são
+// gerados via cardHTML/etc, que já leem STR na hora de renderizar) —
+// <html lang>, pills, opções dos selects, seção CTA, rodapé.
+function aplicarIdioma(idiomaPedido) {
+  const idioma = IDIOMAS[idiomaPedido] ? idiomaPedido : 'es';
+  STR = IDIOMAS[idioma];
+  document.documentElement.lang = idioma;
+
+  document.getElementById('hero-label').textContent = STR.portfolio;
+  document.getElementById('pill-todos').textContent = STR.todos;
+  document.getElementById('pill-venda').textContent = STR.venda;
+  document.getElementById('pill-aluguel').textContent = STR.aluguel;
+  document.getElementById('opt-tipo-todos').textContent = STR.todosTipos;
+  document.getElementById('opt-tipo-apartamento').textContent = STR.apartamento;
+  document.getElementById('opt-tipo-casa').textContent = STR.casa;
+  document.getElementById('opt-tipo-duplex').textContent = STR.duplex;
+  document.getElementById('opt-tipo-terreno').textContent = STR.terreno;
+  document.getElementById('opt-tipo-comercial').textContent = STR.comercial;
+  document.getElementById('opt-tipo-escritorio').textContent = STR.escritorio;
+  document.getElementById('opt-cidade-todas').textContent = STR.todasCidades;
+  document.getElementById('cta-titulo').textContent = STR.ctaTitulo;
+  document.getElementById('cta-sub').textContent = STR.ctaSub;
+  document.getElementById('cta-whatsapp').textContent = STR.ctaBtn;
+  document.getElementById('sobre-label').textContent = STR.sobre;
+  document.getElementById('footer-desc').textContent = STR.footerDesc;
+  document.getElementById('footer-inmobly-texto').textContent = STR.footerInmobly;
+}
 
 const ICONS = {
   pin:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
@@ -124,6 +228,7 @@ let cache = null;
 const grid = document.getElementById('imv-grid');
 const conteudoEl = document.getElementById('site-conteudo');
 const indisponivelEl = document.getElementById('site-indisponivel');
+const carregandoEl = document.getElementById('site-carregando');
 const filtros = { operacao: 'todos', tipo: 'todos', cidade: 'todas' };
 
 function colImoveis()        { return collection(db, 'brokers', tenantId, 'imoveis'); }
@@ -314,8 +419,22 @@ function initDetalhe() {
 
 // ── Indisponível (tenant não existe / não publicado) ──────────
 function mostrarIndisponivel() {
+  carregandoEl.hidden = true;
   conteudoEl.hidden = true;
+  // display setado aqui, não fixo no HTML — um <div hidden> com
+  // display:flex fixo no style continua visível de qualquer jeito,
+  // porque o inline style tem mais especificidade que o [hidden] do
+  // navegador (era exatamente o bug: aparecia sempre, escondido ou não).
+  indisponivelEl.style.display = 'flex';
   indisponivelEl.hidden = false;
+}
+
+// Revela o site só depois que aplicarPerfil() já rodou com dados de
+// verdade — antes disso fica o spinner, nunca o texto padrão estático
+// do HTML (que já não existe mais, mas por segurança).
+function mostrarConteudo() {
+  carregandoEl.hidden = true;
+  conteudoEl.hidden = false;
 }
 
 // ── Aplica campos do perfil no DOM — usado tanto no fluxo normal
@@ -325,21 +444,22 @@ function mostrarIndisponivel() {
 // name/whatsapp — sem os outros campos, cai num texto padrão razoável.
 function aplicarPerfil(p) {
   perfil = p;
+  aplicarIdioma(p.language);
   aplicarAccent(p.accentColor);
 
-  const nome = p.name || 'Inmuebles';
-  document.title = nome + ' — Inmuebles';
-  document.getElementById('meta-description').setAttribute('content', p.subheadline || `Catálogo de inmuebles de ${nome}.`);
-  document.getElementById('meta-keywords').setAttribute('content', p.keywords || `inmuebles, ${nome}, Paraguay`);
+  const nome = p.name || STR.tituloSufixo;
+  document.title = nome + ' — ' + STR.tituloSufixo;
+  document.getElementById('meta-description').setAttribute('content', p.subheadline || STR.catalogoDe(nome));
+  document.getElementById('meta-keywords').setAttribute('content', p.keywords || STR.keywordsDefault(nome));
 
   const logoEl = document.getElementById('hero-logo');
   if (p.logo) { logoEl.src = p.logo; logoEl.alt = nome; logoEl.hidden = false; }
   else { logoEl.hidden = true; }
 
   document.getElementById('imoveis-titulo').textContent = p.headline
-    || (MODO_PREVIEW ? EXEMPLO_TEXTOS.headline : 'Inmuebles disponibles');
+    || (MODO_PREVIEW ? EXEMPLO_TEXTOS.headline : STR.tituloSufixo + ' disponibles');
   document.getElementById('imoveis-sub').textContent = p.subheadline
-    || (MODO_PREVIEW ? EXEMPLO_TEXTOS.subheadline : `Seleccionados por ${nome}.`);
+    || (MODO_PREVIEW ? EXEMPLO_TEXTOS.subheadline : STR.seleccionadosPor(nome));
 
   // "Sobre" fica escondida se vazia no site publicado de verdade — mas
   // no preview mostra um texto de exemplo, pra dar pro corretor uma
@@ -347,19 +467,19 @@ function aplicarPerfil(p) {
   const sobreSec = document.getElementById('sobre-section');
   const sobreTexto = p.about || (MODO_PREVIEW ? EXEMPLO_TEXTOS.about : '');
   if (sobreTexto) {
-    document.getElementById('sobre-titulo').textContent = `Sobre ${nome}`;
+    document.getElementById('sobre-titulo').textContent = STR.sobreDe(nome);
     document.getElementById('sobre-texto').textContent = sobreTexto;
     sobreSec.hidden = false;
   } else {
     sobreSec.hidden = true;
   }
 
-  const msgPadrao = encodeURIComponent('Hola, quiero más información sobre sus propiedades.');
+  const msgPadrao = encodeURIComponent(STR.waHero);
   const waHref = p.whatsapp ? `https://wa.me/${p.whatsapp}?text=${msgPadrao}` : '#';
   document.getElementById('cta-whatsapp').href = waHref;
   document.getElementById('footer-whatsapp').href = waHref;
   document.getElementById('footer-nome').textContent = nome;
-  document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${nome}. Todos los derechos reservados.`;
+  document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${nome}. ${STR.derechos}`;
 
   const emailEl = document.getElementById('footer-email');
   if (p.email) { emailEl.href = `mailto:${p.email}`; emailEl.textContent = p.email; emailEl.hidden = false; }
@@ -368,6 +488,8 @@ function aplicarPerfil(p) {
   const instaEl = document.getElementById('footer-instagram');
   if (p.instagramUrl) { instaEl.href = p.instagramUrl; instaEl.hidden = false; }
   else { instaEl.hidden = true; }
+
+  if (cache) renderGrid(); // idioma pode ter mudado depois da 1ª renderização (preview)
 }
 
 function initComum() {
@@ -398,6 +520,7 @@ async function iniciarPreview() {
   window.addEventListener('message', (e) => {
     if (e.data?.tipo !== 'pa-preview-perfil') return;
     aplicarPerfil(e.data.perfil);
+    mostrarConteudo();
   });
   window.parent?.postMessage({ tipo: 'pa-preview-pronto' }, '*');
 
@@ -419,6 +542,7 @@ async function iniciarNormal() {
   const p = await carregarPerfilPublico(tenantId);
   if (!p) { mostrarIndisponivel(); return; }
   aplicarPerfil(p);
+  mostrarConteudo();
 
   initComum();
 

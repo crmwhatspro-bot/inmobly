@@ -20,11 +20,9 @@ import { initShell } from './shell.js';
 const $ = (id) => document.getElementById(id);
 
 // Status / publicação
-const publicarBtn     = $('msPublicarBtn');
+const publicarSwitch  = $('msPublicarSwitch');
 const atualizarBtn    = $('msAtualizarBtn');
-const despublicarBtn  = $('msDespublicarBtn');
 const verSiteLink     = $('msVerSite');
-const statusDot       = $('msStatusDot');
 const statusTitulo    = $('msStatusTitulo');
 const statusSub       = $('msStatusSub');
 
@@ -36,6 +34,7 @@ const logoInput       = $('ms-logo-input');
 const logoBtn         = $('msLogoBtn');
 const logoPreviewEl   = $('msLogoPreview');
 const swatchesWrap    = $('msColorSwatches');
+const idiomaInput     = $('ms-idioma');
 
 // Textos
 const headlineInput    = $('ms-headline');
@@ -106,6 +105,7 @@ function perfilAtualDoFormulario() {
     email: emailInput.value.trim(),
     instagramUrl: instagramInput.value.trim(),
     accentColor: corSelecionada,
+    language: idiomaInput.value,
   };
 }
 
@@ -238,7 +238,7 @@ async function salvarIdentidade() {
   const textoOriginal = salvarIdentidadeBtn.textContent;
   salvarIdentidadeBtn.textContent = 'Salvando...';
   try {
-    const dados = { name: nome, accentColor: corSelecionada, logo: logoAtualDataUrl || '', updatedAt: serverTimestamp() };
+    const dados = { name: nome, accentColor: corSelecionada, language: idiomaInput.value, logo: logoAtualDataUrl || '', updatedAt: serverTimestamp() };
     await updateDoc(doc(db, 'brokers', tenantId), dados);
     Object.assign(broker, dados);
     mostrarMsg(identidadeMsg, 'Identidade salva.', 'ok');
@@ -307,72 +307,85 @@ async function salvarContato() {
 }
 
 // ── Status / publicação ────────────────────────────
+// Um switch só, em vez de 3 botões separados (Publicar/Despublicar
+// eram dois botões trocando de hidden, ficava largo e no mobile o
+// texto do botão não cabia). "Atualizar" fica à parte porque é uma
+// ação diferente — não muda published, só reenvia o conteúdo mais
+// recente pro Hosting.
 function atualizarStatusTexto() {
   const publicado = broker.published === true;
-  statusDot.classList.toggle('is-live', publicado);
-  statusTitulo.textContent = publicado ? 'Seu site está publicado' : 'Seu site ainda não está publicado';
+  publicarSwitch.checked = publicado;
+  statusTitulo.textContent = publicado ? 'Site publicado' : 'Site não publicado';
   statusSub.textContent = publicado
-    ? `Ao vivo em ${tenantId}.web.app — qualquer pessoa com o link já consegue ver.`
+    ? `Ao vivo em ${tenantId}.web.app`
     : broker.whatsapp
-      ? 'Seu WhatsApp está configurado — clique em publicar quando quiser.'
+      ? 'Seu WhatsApp está configurado — ative pra publicar.'
       : 'Configure seu WhatsApp de contato antes de publicar.';
 
-  publicarBtn.hidden = publicado;
   atualizarBtn.hidden = !publicado;
-  despublicarBtn.hidden = !publicado;
   verSiteLink.hidden = !publicado;
   if (publicado) verSiteLink.href = `https://${tenantId}.web.app/`;
 }
 
-// Publicar (1ª vez) e Atualizar (republicar o que já está no ar, com
-// o conteúdo mais recente) chamam a mesma function — ela já é segura
-// pra rodar de novo (cria uma versão/release nova no Hosting toda
-// vez). Sem o botão "Atualizar", a única forma de levar uma mudança
-// pro site já publicado era Despublicar (o catálogo fica indisponível
-// por um tempo) e Publicar de novo — desnecessário e confuso.
-async function publicarOuAtualizar(btn) {
-  if (!broker.whatsapp) {
+async function alternarPublicacao() {
+  const querPublicar = publicarSwitch.checked;
+
+  if (querPublicar && !broker.whatsapp) {
+    publicarSwitch.checked = false;
     mostrarMsg(contatoMsg, 'Configure e salve seu WhatsApp antes de publicar.', 'erro');
     return;
   }
-  btn.disabled = true;
-  const textoOriginal = btn.textContent;
-  btn.textContent = 'Publicando... (pode levar alguns segundos)';
+
+  publicarSwitch.disabled = true;
+  statusTitulo.textContent = querPublicar ? 'Publicando... (pode levar alguns segundos)' : 'Despublicando...';
+  statusSub.textContent = '';
+
   try {
-    await publicarSiteFn();
-    broker.published = true;
-    atualizarStatusTexto();
+    if (querPublicar) {
+      await publicarSiteFn();
+      broker.published = true;
+    } else {
+      await updateDoc(doc(db, 'brokers', tenantId), { published: false, updatedAt: serverTimestamp() });
+      broker.published = false;
+    }
   } catch (err) {
-    mostrarMsg(contatoMsg, 'Não foi possível publicar: ' + err.message, 'erro');
+    publicarSwitch.checked = !querPublicar; // desfaz visualmente, a ação não terminou
+    mostrarMsg(contatoMsg, `Não foi possível ${querPublicar ? 'publicar' : 'despublicar'}: ${err.message}`, 'erro');
   } finally {
-    btn.disabled = false;
-    btn.textContent = textoOriginal;
+    publicarSwitch.disabled = false;
+    atualizarStatusTexto();
   }
 }
 
-async function despublicar() {
-  despublicarBtn.disabled = true;
+// Republica o conteúdo mais recente sem sair do estado publicado —
+// sem isso, a única forma de levar uma mudança pro site já publicado
+// era despublicar (catálogo fica "indisponível" por um tempo) e
+// publicar de novo.
+async function atualizarSitePublicado() {
+  atualizarBtn.disabled = true;
+  const original = atualizarBtn.innerHTML;
+  atualizarBtn.style.opacity = '0.5';
   try {
-    await updateDoc(doc(db, 'brokers', tenantId), { published: false, updatedAt: serverTimestamp() });
-    broker.published = false;
-    atualizarStatusTexto();
+    await publicarSiteFn();
   } catch (err) {
-    mostrarMsg(contatoMsg, 'Não foi possível despublicar: ' + err.message, 'erro');
+    mostrarMsg(contatoMsg, 'Não foi possível atualizar: ' + err.message, 'erro');
   } finally {
-    despublicarBtn.disabled = false;
+    atualizarBtn.disabled = false;
+    atualizarBtn.style.opacity = '';
+    atualizarBtn.innerHTML = original;
   }
 }
 
 salvarIdentidadeBtn.addEventListener('click', salvarIdentidade);
 salvarTextosBtn.addEventListener('click', salvarTextos);
 salvarContatoBtn.addEventListener('click', salvarContato);
-publicarBtn.addEventListener('click', () => publicarOuAtualizar(publicarBtn));
-atualizarBtn.addEventListener('click', () => publicarOuAtualizar(atualizarBtn));
-despublicarBtn.addEventListener('click', despublicar);
+publicarSwitch.addEventListener('change', alternarPublicacao);
+atualizarBtn.addEventListener('click', atualizarSitePublicado);
 
 [whatsappInput, nomeInput, headlineInput, subheadlineInput, sobreInput, keywordsInput, emailInput, instagramInput].forEach(el => {
   el.addEventListener('input', enviarPreviewDebounced);
 });
+idiomaInput.addEventListener('change', enviarPreviewDebounced);
 
 initShell({ active: 'site', title: 'Meu Site' }).then((resultado) => {
   tenantId = resultado.tenantId;
@@ -388,6 +401,7 @@ initShell({ active: 'site', title: 'Meu Site' }).then((resultado) => {
   keywordsInput.value = broker.keywords || '';
   logoAtualDataUrl = broker.logo || null;
   corSelecionada = broker.accentColor || ACCENT_PADRAO;
+  idiomaInput.value = broker.language || 'es';
 
   atualizarLogoPreview();
   montarSwatches();

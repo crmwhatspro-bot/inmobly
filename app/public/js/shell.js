@@ -8,6 +8,7 @@
 // ════════════════════════════════════════════════
 import { logout, onAuthChange } from './firebase.js';
 import { tenantIdAtual, buscarBroker, limiteEfetivo } from './tenant.js';
+import { initProductTour } from './product-tour.js';
 
 const ICONS = {
   dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
@@ -284,6 +285,7 @@ export function initShell({ active, title }) {
       if (!broker) { location.href = 'criar-conta.html'; return; }
 
       preencherPerfil(user, broker, tenantId);
+      initProductTour({ tenantId, active });
       resolve({ user, tenantId, broker });
     });
   });

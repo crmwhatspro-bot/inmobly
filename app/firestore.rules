@@ -35,13 +35,15 @@ service cloud.firestore {
       //   contactEmail, instagramUrl — meu-site.html (contato, além do whatsapp)
       //                         — NÃO confundir com `email` (login/conta, setado
       //                         por criarConta.js, nunca editável pelo tenant)
+      //   language              — meu-site.html, idioma do site público (es/pt/en)
       allow update: if isTeam()
                     || (
                       isTenantAdmin(tenantId) &&
                       request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(['usage', 'onboardingCompleted', 'whatsapp', 'published',
                                   'name', 'logo', 'accentColor', 'headline', 'subheadline',
-                                  'about', 'keywords', 'contactEmail', 'instagramUrl', 'updatedAt']) &&
+                                  'about', 'keywords', 'contactEmail', 'instagramUrl',
+                                  'language', 'updatedAt']) &&
                       request.resource.data.usage.imoveisCount is int &&
                       request.resource.data.usage.imoveisCount >= 0 &&
                       request.resource.data.onboardingCompleted is bool &&
@@ -59,6 +61,7 @@ service cloud.firestore {
                       request.resource.data.get('keywords', '') is string &&
                       request.resource.data.get('contactEmail', '') is string &&
                       request.resource.data.get('instagramUrl', '') is string &&
+                      request.resource.data.get('language', 'es') in ['es', 'pt', 'en'] &&
                       // cor sempre um hex válido — nunca vazio, sempre tem um
                       // padrão escolhido no client (ver ACCENT_PADRAO em meu-site.js)
                       request.resource.data.get('accentColor', '#C8922A').matches('^#[0-9a-fA-F]{6}$') &&

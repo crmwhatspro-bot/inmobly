@@ -15,14 +15,32 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/imoveis.css">
+<style>
+  /* Spinner enquanto o perfil de verdade não chegou — sem isso, o
+     texto padrão do HTML estático (ex.: "Inmuebles disponibles")
+     aparecia por um instante antes de aplicarPerfil() sobrescrever
+     com os dados reais do corretor. */
+  .pa-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(0,0,0,0.1);
+    border-top-color: var(--clr-accent);
+    border-radius: 50%;
+    animation: pa-spin 0.8s linear infinite;
+  }
+  @keyframes pa-spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
 
-<div id="site-conteudo">
+<div id="site-carregando" style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+  <div class="pa-spinner" role="status" aria-label="Cargando"></div>
+</div>
+
+<div id="site-conteudo" hidden>
 
   <section class="imv-hero" aria-labelledby="imoveis-titulo">
     <img id="hero-logo" src="" alt="" hidden style="max-height:64px; max-width:220px; object-fit:contain; margin-bottom: var(--sp-4); border-radius: var(--radius-md);">
-    <span class="section-label t-label">Portfolio</span>
+    <span class="section-label t-label" id="hero-label">Portfolio</span>
     <h1 class="t-display-md" id="imoveis-titulo">Inmuebles disponibles</h1>
     <p class="t-body-lg" id="imoveis-sub">Cargando...</p>
   </section>
@@ -31,24 +49,24 @@
     <div class="container">
 
       <div class="imv-filters" role="search" aria-label="Filtrar inmuebles">
-        <div class="imv-pills" role="group" aria-label="Operación">
-          <button type="button" data-op="todos" class="active">Todos</button>
-          <button type="button" data-op="venda">Venta</button>
-          <button type="button" data-op="aluguel">Alquiler</button>
+        <div class="imv-pills" role="group" aria-label="Operación" id="pills-operacao">
+          <button type="button" data-op="todos" class="active" id="pill-todos">Todos</button>
+          <button type="button" data-op="venda" id="pill-venda">Venta</button>
+          <button type="button" data-op="aluguel" id="pill-aluguel">Alquiler</button>
         </div>
 
         <select class="form-select" id="imv-filtro-tipo" aria-label="Tipo de inmueble">
-          <option value="todos">Todos los tipos</option>
-          <option value="apartamento">Departamento</option>
-          <option value="casa">Casa</option>
-          <option value="duplex">Dúplex</option>
-          <option value="terreno">Terreno</option>
-          <option value="comercial">Comercial</option>
-          <option value="escritorio">Oficina</option>
+          <option value="todos" id="opt-tipo-todos">Todos los tipos</option>
+          <option value="apartamento" id="opt-tipo-apartamento">Departamento</option>
+          <option value="casa" id="opt-tipo-casa">Casa</option>
+          <option value="duplex" id="opt-tipo-duplex">Dúplex</option>
+          <option value="terreno" id="opt-tipo-terreno">Terreno</option>
+          <option value="comercial" id="opt-tipo-comercial">Comercial</option>
+          <option value="escritorio" id="opt-tipo-escritorio">Oficina</option>
         </select>
 
         <select class="form-select" id="imv-filtro-cidade" aria-label="Ciudad">
-          <option value="todas">Todas las ciudades</option>
+          <option value="todas" id="opt-cidade-todas">Todas las ciudades</option>
         </select>
       </div>
 
@@ -71,7 +89,7 @@
 
   <section class="section section--alt" id="sobre-section" hidden aria-labelledby="sobre-titulo">
     <div class="container" style="max-width: 760px;">
-      <span class="section-label t-label">Sobre</span>
+      <span class="section-label t-label" id="sobre-label">Sobre</span>
       <h2 class="t-display-md" id="sobre-titulo">Sobre nosotros</h2>
       <p class="t-body-lg" id="sobre-texto" style="margin-top: var(--sp-4); white-space: pre-line;"></p>
     </div>
@@ -82,7 +100,7 @@
       <div class="footer__grid" style="grid-template-columns: 1fr;">
         <div>
           <p class="footer__logo" id="footer-nome">—</p>
-          <p class="footer__desc">Hablá directo por WhatsApp para más información.</p>
+          <p class="footer__desc" id="footer-desc">Hablá directo por WhatsApp para más información.</p>
           <div style="margin-top: var(--sp-4); display:flex; gap: var(--sp-4); flex-wrap:wrap; align-items:center;">
             <a href="#" id="footer-whatsapp" target="_blank" rel="noopener" class="btn btn--whatsapp btn--md">WhatsApp</a>
             <a href="#" id="footer-email" target="_blank" hidden style="color:var(--clr-text-light-2); font-size:var(--text-sm); text-decoration:underline;"></a>
@@ -98,7 +116,7 @@
         </div>
       </div>
       <p style="text-align:center; margin-top: var(--sp-6); font-size: var(--text-xs); color: var(--clr-text-muted);">
-        Creado con orgullo por <a href="https://inmobly-project.web.app/" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Inmobly</a>
+        <span id="footer-inmobly-texto">Creado con orgullo por</span> <a href="https://inmobly-project.web.app/" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Inmobly</a>
       </p>
     </div>
   </footer>
@@ -130,7 +148,7 @@
 
 </div><!-- /site-conteudo -->
 
-<div id="site-indisponivel" hidden style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: var(--sp-8); gap: var(--sp-3);">
+<div id="site-indisponivel" hidden style="min-height:100vh; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: var(--sp-8); gap: var(--sp-3);">
   <h1 class="t-display-md">Catálogo no disponible</h1>
   <p class="t-body-lg" style="color: var(--clr-text-2); max-width: 420px;">Este enlace todavía no tiene un catálogo publicado.</p>
 </div>

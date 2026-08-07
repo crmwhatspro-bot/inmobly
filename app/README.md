@@ -104,8 +104,25 @@ elas — só dava pra "descobrir" outra página por um botão específico.
     esquerda sobre um backdrop escurecido. `js/shell.js#wireDrawer()`
     cuida do abrir/fechar (clique no backdrop, Escape, ou o próprio
     hambúrguer).
-- **Pendente**: aplicar um product tour (destacando os itens da sidebar)
-  depois que essa interface for validada — combinado, ainda não construído.
+- **Product tour** (`js/product-tour.js`) — 4 passos guiando as primeiras
+  tarefas reais: conhecer a navegação (Dashboard), configurar o perfil
+  (Meu Site), cadastrar imóveis (Meus Imóveis), pré-visualizar antes de
+  publicar (Meu Site de novo). Diferente de `tour.html` (os slides
+  estáticos de onboarding logo após o signup, sem dado nenhum ainda) —
+  esse aponta pra elementos reais da UI em 3 páginas diferentes, com um
+  card flutuante + contorno pulsando no alvo (`.pa-tour-highlight`),
+  sem escurecer o resto da tela (nada de spotlight com máscara — mais
+  simples de implementar e a página continua legível/usável durante o
+  tour). Chamado de dentro de `shell.js#initShell()`, então já roda em
+  toda página que usa o shell sem precisar importar em cada uma.
+  Estado em `localStorage['pa-tour-{tenantId}']`: `null`/ausente =
+  nunca visto (começa no passo 0), um número = passo atual, `'done'` =
+  terminado ou pulado, nunca mais aparece. "Próximo" navega pra próxima
+  página quando o passo seguinte é de outra página; "Pular tour" marca
+  como `done` na hora. No mobile, o passo 1 (menu completo) teria como
+  alvo a sidebar — mas ela fica escondida dentro do drawer fechado por
+  padrão, então nesse caso o alvo vira a bottombar (sempre visível) em
+  vez do `.admin-nav`.
 
 ### Meus Imóveis (`admin.html`)
 
@@ -167,18 +184,34 @@ cliente final vê, sem login:
   sem isso, "Publicar site" continua publicando uma versão desatualizada
   do catálogo pra todo mundo que clicar. Nenhum passo automático garante
   essa sincronia hoje.
-- **Despublicar continua simples**: `updateDoc(..., {published: false})`
-  direto do client — não desfaz o Hosting site nem os arquivos, só faz
-  `perfilPublico` parar de responder (o catálogo publicado fica "no ar"
-  mas mostra a tela de indisponível).
-- **"Atualizar site"** — botão novo, aparece ao lado de "Despublicar"
-  quando já publicado. Chama a mesma `publicarSite` (é segura pra rodar
-  de novo, sempre cria uma versão/release nova no Hosting com o
-  conteúdo mais recente de `site-assets/`). Antes desse botão, a única
-  forma de levar uma mudança de conteúdo pro site já publicado era
-  Despublicar (catálogo fica "indisponível" por um tempo) e Publicar de
-  novo — provavelmente a causa de alguma confusão de "por que ficou
-  indisponível" ao testar.
+- **Publicar/despublicar é um switch, não mais 3 botões** — 3 botões
+  lado a lado (Publicar/Atualizar/Despublicar) ficavam largos demais e
+  no mobile o texto cortava. Agora é um `.imv-switch` (mesmo componente
+  usado em "Anúncio ativo" no editor de imóveis) — ligado = publicado,
+  desligado = despublicado — mais "Abrir site ↗" e "Atualizar" como
+  ícones compactos ao lado, só quando já publicado.
+- **"Atualizar site"** — ícone separado do switch. Chama a mesma
+  `publicarSite` (segura pra rodar de novo, sempre cria uma
+  versão/release nova no Hosting com o conteúdo mais recente de
+  `site-assets/`) sem desligar `published`. Antes desse botão existir,
+  a única forma de levar uma mudança de conteúdo pro site já publicado
+  era despublicar (catálogo mostra "indisponível" por um tempo) e
+  publicar de novo — provavelmente a causa de confusão de "por que
+  ficou indisponível" relatada ao testar.
+- **Bug real corrigido: "indisponível" aparecia sempre, publicado ou
+  não** — `#site-indisponivel` tinha `hidden` E um `style="display:flex"`
+  inline ao mesmo tempo. Estilo inline sempre vence a regra padrão do
+  navegador pra `[hidden]` (que é só `display:none`), então o bloco
+  ficava visível *de qualquer jeito*, aparecendo embaixo do rodapé
+  mesmo com o catálogo carregando certo. `display` agora só é setado
+  via JS (`mostrarIndisponivel()`), nunca fixo no HTML.
+- **Flash de conteúdo padrão corrigido** — o HTML estático tinha texto
+  genérico ("Inmuebles disponibles" etc.) visível por um instante antes
+  do fetch a `perfilPublico` resolver e sobrescrever com os dados reais
+  do corretor. `#site-conteudo` começa `hidden`, um spinner
+  (`#site-carregando`) fica visível até `aplicarPerfil()` já ter
+  rodado com dados de verdade — nunca mais mostra o texto errado, nem
+  por um instante.
 - **Não lê `brokers/{tenantId}` direto** (tem e-mail, IDs do Stripe) — o
   catálogo chama `perfilPublico?tenant=slug`, que só responde se
   `published === true` (404 senão) e devolve uma projeção pública dos
@@ -200,8 +233,18 @@ cliente final vê, sem login:
   mais a versão "enxuta" original, essa foi abandonada depois de ver o
   resultado. Ainda sem depoimentos/FAQ/formulário de contato — não
   pedidos até agora. `site/js/imoveis.js` é a versão adaptada de
-  `template/js/imoveis.js` (paths viram `brokers/{tenantId}/imoveis/...`,
-  idioma fixo em `es`).
+  `template/js/imoveis.js` (paths viram `brokers/{tenantId}/imoveis/...`).
+- **Idioma** (`language`: `es`/`pt`/`en`, padrão `es`) — selecionável em
+  Identidade visual. `site/js/imoveis.js` guarda um dicionário completo
+  por idioma (`IDIOMAS`) cobrindo tanto os textos gerados por JS
+  (cards, filtros, modal — já existia) quanto o que antes era texto
+  estático direto no HTML (pills, opções dos `<select>`, seção CTA,
+  rodapé) — esse segundo grupo precisou ganhar `id` em cada elemento
+  pra `aplicarIdioma()` conseguir trocar. `STR` é reatribuída (não é
+  `const`) pro idioma escolhido — todo o resto do arquivo que já lia
+  `STR.algumaCoisa` continua funcionando sem saber que o idioma mudou.
+  `<html lang>` também é atualizado. Rules restringem a um dos 3
+  valores (`in ['es','pt','en']`).
 - **Identidade visual** — `meu-site.html` deixa o corretor configurar
   `name`, `logo` (upload comprimido pro mesmo padrão canvas→WebP/JPEG do
   CMS de imóveis, sem Storage, teto de 180KB) e `accentColor` (cor de
@@ -237,6 +280,12 @@ cliente final vê, sem login:
   uma com seu próprio botão — evita um formulário gigante com um único
   "Salvar" para tudo, e mantém o WhatsApp junto do resto do contato em
   vez de isolado como antes.
+- **Cards sanfona, fechados por padrão** — as 3 seções eram
+  `<section>`/`<div>` normais, todas abertas e expostas na tela ao
+  mesmo tempo, muita coisa pra ver de uma vez só na primeira visita.
+  Viraram `<details>`/`<summary>` nativos (`.ms-accordion`) — sem JS
+  pra abrir/fechar, funciona de teclado de graça. Só o ícone de
+  chevron (`.ms-accordion__chevron`) gira via `[open]` no CSS.
 - **Limite de sites por projeto**: Firebase Hosting tem uma cota de sites
   por projeto (dezenas, não milhares). Não é problema na validação inicial
   do produto, mas é uma parede que existe — não resolvida agora de
@@ -274,6 +323,8 @@ public/
                               plano direto do doc do tenant, sem o config/plan
                               sincronizado que o template/js/plano.js antigo usava
   js/shell.js              ← sidebar/topbar/auth-gate compartilhados, ver seção acima
+  js/product-tour.js       ← tour guiado pós-dashboard, chamado de dentro do
+                              initShell() de shell.js — ver seção "App shell" acima
   js/admin-imoveis.js      ← CRUD de imóveis, portado de
                               template/js/admin-imoveis.js: mesma compressão de
                               fotos (canvas → WebP/JPEG, máx 900px, sem Storage),
@@ -331,6 +382,7 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 │                                              site público (além do whatsapp) —
 │                                              contactEmail e não `email` de propósito,
 │                                              ver nota acima
+├─ language: 'es' | 'pt' | 'en'               ← novo — meu-site.html, padrão 'es'
 ├─ createdAt, updatedAt
 ├─ purchases/{id}                    ← igual ao antigo, sem mudança de schema
 └─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,
