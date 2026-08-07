@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus Imóveis — Inmobly</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="admin-dashboard" style="grid-template-columns: 1fr;">
+  <div class="admin-content" style="grid-column: 1 / -1;">
+
+    <header class="admin-topbar">
+      <h1 class="admin-topbar__title">Meus Imóveis</h1>
+      <button id="logout-btn" class="admin-topbar__logout">
+        Sair
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </header>
+
+    <main class="admin-main">
+      <div class="admin-tab-panel active" id="tab-imoveis">
+
+        <!-- Lista de imóveis -->
+        <div id="imv-lista-view">
+
+          <div class="imv-toolbar">
+            <div>
+              <h2 class="imv-toolbar__title">Imóveis cadastrados</h2>
+              <span class="imv-toolbar__count" id="imv-count">—</span>
+            </div>
+            <button type="button" class="btn btn--accent btn--md" id="imv-novo-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Imóvel
+            </button>
+          </div>
+
+          <p class="imv-plano-banner" id="imv-plano-banner" hidden></p>
+
+          <div class="imv-admin-list" id="imv-admin-list">
+            <p class="admin-empty">Carregando...</p>
+          </div>
+
+        </div>
+
+        <!-- Editor (criar / editar) -->
+        <div id="imv-editor-view" hidden>
+
+          <div class="imv-editor-head">
+            <button type="button" class="imv-voltar" id="imv-voltar-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Voltar
+            </button>
+            <h2 class="imv-editor-head__title" id="imv-form-titulo">Novo Imóvel</h2>
+          </div>
+
+          <form id="imv-form" class="imv-form" novalidate>
+
+            <!-- Coluna principal -->
+            <div class="imv-form__main">
+
+              <!-- Fotos -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <h3>Fotos</h3>
+                  <p>A foto com a estrela é a capa do anúncio</p>
+                </header>
+                <div class="imv-sec__body">
+                  <div class="imv-fotos-grid" id="imv-fotos-grid"></div>
+                  <label class="imv-dropzone" for="imv-fotos-input">
+                    <span class="imv-dropzone__icon" aria-hidden="true">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </span>
+                    <span class="imv-dropzone__title">Adicionar fotos</span>
+                    <small class="imv-dropzone__sub">Toque para tirar foto ou escolher várias da galeria</small>
+                    <span class="imv-dropzone__btn" aria-hidden="true">Escolher fotos</span>
+                  </label>
+                  <input type="file" id="imv-fotos-input" accept="image/*" multiple hidden>
+                </div>
+              </section>
+
+              <!-- Informações básicas -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <h3>Informações básicas</h3>
+                </header>
+                <div class="imv-sec__body imv-grid">
+                  <div class="form-group imv-col-6">
+                    <label class="form-label" for="imv-titulo">Título do anúncio *</label>
+                    <input class="form-input" type="text" id="imv-titulo" required
+                           placeholder="Ex.: Apartamento 2 quartos — Villa Morra">
+                  </div>
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="imv-operacao">Operação *</label>
+                    <select class="form-select" id="imv-operacao" required>
+                      <option value="venda">Venda</option>
+                      <option value="aluguel">Aluguel</option>
+                      <option value="venda-aluguel">Venda e Aluguel</option>
+                    </select>
+                  </div>
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="imv-tipo">Tipo *</label>
+                    <select class="form-select" id="imv-tipo" required>
+                      <option value="apartamento">Apartamento</option>
+                      <option value="casa">Casa</option>
+                      <option value="duplex">Duplex</option>
+                      <option value="terreno">Terreno</option>
+                      <option value="comercial">Comercial</option>
+                      <option value="escritorio">Escritório</option>
+                    </select>
+                  </div>
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="imv-estagio">Estágio da obra</label>
+                    <select class="form-select" id="imv-estagio">
+                      <option value="pronto">Pronto</option>
+                      <option value="construcao">Em construção</option>
+                      <option value="planta">Na planta</option>
+                    </select>
+                  </div>
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="imv-cidade">Cidade</label>
+                    <input class="form-input" type="text" id="imv-cidade" placeholder="Assunção" value="Assunção">
+                  </div>
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="imv-bairro">Bairro</label>
+                    <input class="form-input" type="text" id="imv-bairro" placeholder="Ex.: Villa Morra">
+                  </div>
+                </div>
+              </section>
+
+              <!-- Valores -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                  <h3>Valores</h3>
+                  <p>Em branco = "Sob consulta"</p>
+                </header>
+                <div class="imv-sec__body imv-grid">
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="imv-preco-venda">Preço de venda</label>
+                    <div class="imv-affix">
+                      <span aria-hidden="true">US$</span>
+                      <input class="form-input" type="number" id="imv-preco-venda" min="0" step="100"
+                             inputmode="numeric" placeholder="120000">
+                    </div>
+                  </div>
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="imv-preco-aluguel">Aluguel mensal</label>
+                    <div class="imv-affix">
+                      <span aria-hidden="true">US$</span>
+                      <input class="form-input" type="number" id="imv-preco-aluguel" min="0" step="10"
+                             inputmode="numeric" placeholder="800">
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Características -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                  <h3>Características</h3>
+                </header>
+                <div class="imv-sec__body imv-grid imv-grid--feats">
+                  <div class="form-group">
+                    <label class="form-label" for="imv-quartos">Quartos</label>
+                    <input class="form-input" type="number" id="imv-quartos" min="0" inputmode="numeric" placeholder="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="imv-banheiros">Banheiros</label>
+                    <input class="form-input" type="number" id="imv-banheiros" min="0" inputmode="numeric" placeholder="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="imv-vagas">Vagas</label>
+                    <input class="form-input" type="number" id="imv-vagas" min="0" inputmode="numeric" placeholder="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="imv-area">Área (m²)</label>
+                    <input class="form-input" type="number" id="imv-area" min="0" step="0.1" inputmode="decimal" placeholder="0">
+                  </div>
+                </div>
+              </section>
+
+              <!-- Comodidades -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <h3>Comodidades</h3>
+                  <p>Toque para marcar todas que se aplicam</p>
+                </header>
+                <div class="imv-sec__body">
+                  <div class="imv-chips" id="imv-comodidades">
+                    <label class="imv-chip"><input type="checkbox" value="piscina"><span>Piscina</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="churrasqueira"><span>Churrasqueira</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="academia"><span>Academia</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="mobiliado"><span>Mobiliado</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="ar"><span>Ar-condicionado</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="varanda"><span>Varanda</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="seguranca"><span>Segurança 24h</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="elevador"><span>Elevador</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="pets"><span>Aceita pets</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="lavanderia"><span>Lavanderia</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="salao"><span>Salão de festas</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="coworking"><span>Coworking</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="jardim"><span>Jardim</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="gerador"><span>Gerador</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="playground"><span>Playground</span></label>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Descrição -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                  <h3>Descrição</h3>
+                </header>
+                <div class="imv-sec__body">
+                  <textarea class="form-textarea" id="imv-descricao" rows="5" aria-label="Descrição do imóvel"
+                            placeholder="Descreva o imóvel: acabamento, condomínio, diferenciais, condições de pagamento..."></textarea>
+                </div>
+              </section>
+
+            </div>
+
+            <!-- Sidebar: publicação + ações -->
+            <aside class="imv-form__side">
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/></svg>
+                  <h3>Publicação</h3>
+                </header>
+                <div class="imv-sec__body imv-sec__body--side">
+
+                  <label class="imv-switch">
+                    <input type="checkbox" id="imv-ativo" checked>
+                    <span class="imv-switch__track" aria-hidden="true"></span>
+                    <span>
+                      <strong>Anúncio ativo</strong>
+                      <small>Visível no site</small>
+                    </span>
+                  </label>
+                  <label class="imv-switch">
+                    <input type="checkbox" id="imv-destaque">
+                    <span class="imv-switch__track" aria-hidden="true"></span>
+                    <span>
+                      <strong>Destaque na home</strong>
+                      <small>Seção "Imóveis selecionados" (até 3)</small>
+                    </span>
+                  </label>
+
+                  <p id="imv-form-msg" class="imv-form-msg" role="alert" hidden></p>
+
+                  <div class="imv-actions">
+                    <button type="submit" class="btn btn--accent btn--md" id="imv-salvar-btn">Salvar imóvel</button>
+                    <button type="button" class="btn btn--md imv-btn-ghost" id="imv-cancelar-btn">Cancelar</button>
+                    <button type="button" class="imv-btn-excluir" id="imv-excluir-btn" hidden>Excluir imóvel</button>
+                  </div>
+
+                </div>
+              </section>
+            </aside>
+
+          </form>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script type="module" src="js/admin-imoveis.js"></script>
+</body>
+</html>

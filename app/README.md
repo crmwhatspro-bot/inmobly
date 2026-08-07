@@ -37,7 +37,12 @@ public/inmobiliario.html (puntoalto/v1, outro repo)
   obrigado.html        → confirmação, manda pro painel
         │
         ▼
-  painel.html          → status atual (STUB — CMS completo ainda não migrado)
+  painel.html          → status atual + "Gerenciar meus imóveis"
+        │
+        ▼
+  admin.html           → CMS real: CRUD de imóveis, fotos, comodidades
+                          (brokers/{tenantId}/imoveis) — só falta a vitrine
+                          pública que o cliente final visitaria, ver pendências
 ```
 
 Um usuário que já tem tenant e já fez o tour pula direto pra `painel.html` —
@@ -51,10 +56,27 @@ firestore.indexes.json
 firebase.json            ← hosting de public/ + firestore + functions
 public/
   login.html, criar-conta.html, tour.html, planos.html, obrigado.html, painel.html
-  css/app.css             ← visual próprio do Inmobly (não é o tema por broker)
-  js/firebase.js          ← init do projeto único (config literal, PREENCHER)
-  js/tenant.js            ← lê custom claim tenantId + decide a próxima página
-  js/<pagina>.js           ← um arquivo por página, mesmo padrão do template/ antigo
+  admin.html               ← CMS de imóveis (CRUD + fotos) — HTML portado quase
+                              intacto de template/admin/index.html
+  css/app.css              ← visual da jornada (login/tour/planos/painel) — próprio
+                              do Inmobly, não é o tema por broker
+  css/tokens.css           ← "assado" a partir de template/css/tokens.css: mesmos
+                              {{CLR_PRIMARY}}/{{CLR_ACCENT}}/etc. de sempre, só que
+                              resolvidos 1x pra cores fixas do Inmobly (não há
+                              build.js aqui, então não podem ficar como placeholder)
+  css/base.css, components.css, admin.css
+                            ← copiados verbatim de template/css/ (zero placeholder
+                              nesses três — só tokens.css precisou ser assado)
+  js/firebase.js           ← init do projeto único (config literal, PREENCHER)
+  js/tenant.js             ← lê custom claim tenantId, decide a próxima página, e
+                              agora também limiteEfetivo(broker) — lê o limite do
+                              plano direto do doc do tenant, sem o config/plan
+                              sincronizado que o template/js/plano.js antigo usava
+  js/admin-imoveis.js      ← CRUD de imóveis, portado de
+                              template/js/admin-imoveis.js: mesma compressão de
+                              fotos (canvas → WebP/JPEG, máx 900px, sem Storage),
+                              caminhos trocados pra brokers/{tenantId}/imoveis/...
+  js/<pagina>.js            ← um arquivo por página, mesmo padrão do template/ antigo
 functions/
   admin.js                 ← app default do Firebase Admin, inicializado 1x
   criarConta.js             ← signup: cria brokers/{slug} + seta custom claim
@@ -87,10 +109,10 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
     └─ fotos/{id}                       agora aninhado sob o tenant (mesma forma)
 ```
 
-**`template/js/plano.js`, `imoveis.js`, `admin-imoveis.js` ainda não foram migrados**
-pra ler `brokers/{tenantId}/imoveis` em vez de `imoveis` top-level de um projeto
-isolado. Isso é o que falta pra `painel.html` deixar de ser um stub — é o próximo
-passo depois deste.
+O CRUD de `imoveis` (criar/editar/desativar/excluir + fotos) já está migrado —
+`public/admin.html` + `public/js/admin-imoveis.js`. O que ainda usa o modelo antigo
+(projeto isolado) é só o **catálogo público** que os clientes dos brokers veem
+(`template/imoveis.html`/`template/index.html`) — ver pendências abaixo.
 
 ## Setup (quando for para produção)
 
@@ -117,13 +139,20 @@ o checkout é criado, não os produtos vendidos. Webhook endpoint aponta pra
 
 ## O que ainda não existe (de propósito)
 
-- **CMS multi-tenant** — `template/admin/` + `template/js/admin-imoveis.js` e
-  `imoveis.js` ainda operam no modelo antigo (projeto isolado, sem `tenantId`).
-  `painel.html` é um placeholder de status até essa migração acontecer.
-- **Site público por tenant** (a página que o cliente final vê, com o catálogo) —
-  mesma pendência do item acima: precisa decidir entre gerar estático por tenant
-  (automatizando o antigo `build.js` + deploy) ou virar um app único que resolve o
-  tenant em tempo de execução. Ainda não decidido de propósito (ver conversa que
-  precedeu esse commit).
+- **Site público por tenant** (a página que o cliente final do broker vê — home +
+  catálogo navegável, sem login). O CMS (`admin.html`) já escreve dados reais em
+  `brokers/{tenantId}/imoveis`; falta só quem lê e exibe isso publicamente. Precisa
+  decidir entre gerar estático por tenant (automatizando o antigo `build.js` +
+  deploy) ou virar um app único que resolve o tenant em tempo de execução — ainda
+  não decidido de propósito (ver conversa que precedeu o commit do pivô).
+- **Leads** — a aba "Leads" que existia no `template/admin/` antigo não foi portada,
+  só o CRUD de imóveis (era o que foi pedido). `brokers/{tenantId}/leads` já existe
+  no schema/rules, só não tem UI ainda.
 - **Domínio próprio automatizado** — segue igual ao que já estava definido em
   `docs/REGRAS-DE-NEGOCIO.md`, seção 6: concierge manual por enquanto.
+
+⚠️ **`admin.html`/`admin-imoveis.js` também não foram testados contra infraestrutura
+real ainda** — só `node --check` (sintaxe), verificação de IDs cruzados entre
+HTML/JS, e balanceamento de tags. A lógica de compressão de fotos e batch-write é a
+mesma do `template/` original (que também nunca rodou nesse app novo), só os
+caminhos do Firestore mudaram.

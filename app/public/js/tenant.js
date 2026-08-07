@@ -27,6 +27,20 @@ export async function buscarBroker(tenantId) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
+const LIMITE_TRIAL = 6;
+
+// Limite de imóveis que vale AGORA, considerando o status da
+// assinatura — não só o plano contratado. Equivalente ao antigo
+// template/js/plano.js, mas lê direto do doc do tenant (aqui não
+// existe mais um config/plan sincronizado de outro projeto, o doc
+// já É a fonte da verdade). Ver docs/REGRAS-DE-NEGOCIO.md, seção 4.
+export function limiteEfetivo(broker) {
+  if (!broker) return LIMITE_TRIAL;
+  if (broker.status === 'active')   return broker.imoveisLimit ?? Infinity;
+  if (broker.status === 'trialing') return broker.imoveisLimit ?? LIMITE_TRIAL;
+  return LIMITE_TRIAL; // past_due, canceled, ou status desconhecido
+}
+
 // Próxima página da jornada pra um usuário já autenticado.
 export async function proximaPagina(forcarRefresh = false) {
   const tenantId = await tenantIdAtual(forcarRefresh);

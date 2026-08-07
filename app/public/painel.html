@@ -28,11 +28,12 @@
     </dl>
 
     <div style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
-      <a href="planos.html" class="btn btn--primary">Ver / trocar plano</a>
+      <a href="admin.html" class="btn btn--primary">Gerenciar meus imóveis →</a>
+      <a href="planos.html" class="btn btn--ghost">Ver / trocar plano</a>
     </div>
 
     <p style="color:var(--muted); font-size:0.78rem; margin-top:2rem; padding-top:1.5rem; border-top:1px dashed var(--line);">
-      O CMS completo (cadastro de imóveis, fotos, catálogo) ainda está na versão antiga por corretor — essa tela é um placeholder até o admin ser migrado pro modelo multi-tenant.
+      A página pública do catálogo (o que seus clientes veem) ainda não existe nesse modelo multi-tenant — "Gerenciar meus imóveis" já cadastra de verdade em <code>brokers/{tenantId}/imoveis</code>, falta só a vitrine pública.
     </p>
   </div>
 </div>
