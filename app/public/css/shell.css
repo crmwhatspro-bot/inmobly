@@ -1,0 +1,348 @@
+/* ════════════════════════════════════════════════
+   APP SHELL — sidebar + topbar compartilhados por toda página
+   pós-login (painel, admin/imóveis, planos, em-breve...).
+   Nomes de classe mantidos com prefixo "admin-" (herdados do
+   admin.css original) mesmo fora do CMS de imóveis, pra não
+   forçar rename em cascata — ler como "área autenticada", não
+   "só admin".
+   ════════════════════════════════════════════════ */
+
+body {
+  background: var(--clr-bg-dark);
+  color: var(--clr-text-light);
+  font-family: var(--font-body);
+}
+
+/* ── Shell: sidebar + conteúdo ─────────────────── */
+.admin-dashboard {
+  display: none;
+  min-height: 100vh;
+}
+.admin-dashboard.visible { display: flex; }
+
+/* Menu lateral (desktop) */
+.admin-sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  background: var(--clr-surface-dark);
+  border-right: 1px solid var(--clr-border-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  padding: var(--sp-6) var(--sp-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.admin-sidebar__logo {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: white;
+  padding-inline: var(--sp-3);
+}
+.admin-sidebar__logo span { display: block; color: var(--clr-accent); font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase; }
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.admin-nav__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--clr-text-light-2);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--dur-fast), color var(--dur-fast);
+  min-height: 44px;
+}
+.admin-nav__btn svg { flex-shrink: 0; }
+.admin-nav__btn:hover { background: rgba(255,255,255,.05); color: white; }
+.admin-nav__btn.active {
+  background: var(--clr-accent-ghost);
+  color: var(--clr-accent-light);
+}
+.admin-nav__btn--soon {
+  justify-content: space-between;
+}
+.admin-nav__soon-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--clr-text-light-2);
+  background: rgba(255,255,255,.06);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+}
+
+/* ── Rodapé da sidebar: novidades, perfil, uso ─── */
+.admin-sidebar__foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* Card "Novidades" */
+.admin-sidebar__updates { position: relative; }
+.admin-sidebar__updates-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-md);
+  color: var(--clr-text-light-2);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.admin-sidebar__updates-btn:hover { background: rgba(255,255,255,.06); color: white; }
+.admin-sidebar__updates-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  box-shadow: 0 0 0 3px var(--clr-accent-ghost);
+  flex-shrink: 0;
+}
+.admin-sidebar__updates-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  max-width: 80vw;
+  background: var(--clr-surface-dark-2);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: var(--sp-4);
+  z-index: var(--z-sticky);
+}
+.admin-sidebar__updates-panel h4 {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clr-text-light-2);
+  margin-bottom: var(--sp-3);
+}
+.admin-update-item { padding-block: var(--sp-2); border-top: 1px solid var(--clr-border-dark); }
+.admin-update-item:first-of-type { border-top: none; padding-top: 0; }
+.admin-update-item__date {
+  font-size: 0.68rem;
+  color: var(--clr-text-light-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.admin-update-item__title { font-size: var(--text-sm); font-weight: 600; color: white; margin-top: 2px; }
+.admin-update-item__desc { font-size: var(--text-xs); color: var(--clr-text-light-2); margin-top: 2px; line-height: 1.5; }
+
+/* Card de perfil (nome + plano) */
+.admin-sidebar__profile {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+}
+.admin-sidebar__profile-info { min-width: 0; }
+.admin-sidebar__profile-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-sidebar__profile-plan {
+  font-size: var(--text-xs);
+  color: var(--clr-accent-light);
+  text-transform: capitalize;
+}
+
+/* Uso (imóveis / armazenamento) */
+.admin-sidebar__usage { padding: 0 var(--sp-3) var(--sp-1); }
+.admin-sidebar__usage-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--clr-text-light-2);
+  margin-bottom: var(--sp-2);
+}
+.admin-sidebar__usage-bar {
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,.08);
+  overflow: hidden;
+}
+.admin-sidebar__usage-fill {
+  height: 100%;
+  background: var(--clr-accent);
+  border-radius: var(--radius-full);
+  transition: width var(--dur-normal) var(--ease-out);
+}
+.admin-sidebar__usage-fill.is-full { background: var(--clr-error); }
+
+/* ── Avatar (reutilizável: sidebar e topbar) ──── */
+.admin-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--clr-accent-ghost);
+  color: var(--clr-accent-light);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-transform: uppercase;
+}
+.admin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.admin-avatar--sm { width: 30px; height: 30px; font-size: var(--text-xs); }
+
+/* Área de conteúdo */
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-raised);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
+  background: rgba(17, 24, 32, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--clr-border-dark);
+}
+.admin-topbar__title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: white;
+}
+
+/* ── Menu do usuário (dropdown no avatar, topbar) ─ */
+.admin-user-menu { position: relative; }
+.admin-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.admin-topbar__user:hover { background: rgba(255,255,255,.05); }
+.admin-topbar__user[aria-expanded="true"] { border-color: var(--clr-border-dark); background: rgba(255,255,255,.05); }
+.admin-topbar__chevron { color: var(--clr-text-light-2); transition: transform var(--dur-fast); }
+.admin-topbar__user[aria-expanded="true"] .admin-topbar__chevron { transform: rotate(180deg); }
+
+.admin-user-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background: var(--clr-surface-dark-2);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: var(--sp-2);
+  z-index: var(--z-sticky);
+}
+.admin-user-menu__head {
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--clr-border-dark);
+}
+.admin-user-menu__head p:first-child { font-size: var(--text-sm); font-weight: 600; color: white; }
+.admin-user-menu__head p:last-child {
+  font-size: var(--text-xs); color: var(--clr-text-light-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.admin-user-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--sp-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  color: var(--clr-text-light);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+}
+.admin-user-menu__item:hover { background: rgba(255,255,255,.06); }
+.admin-user-menu__item--danger { color: #f87171; }
+.admin-user-menu__item--danger:hover { background: var(--clr-error-bg); }
+
+.admin-main {
+  flex: 1;
+  padding: var(--sp-8) var(--sp-6);
+  max-width: 1280px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+/* Mobile: sidebar vira barra de navegação inferior (estilo app) */
+@media (max-width: 900px) {
+  .admin-sidebar {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    padding: var(--sp-1) var(--sp-2);
+    padding-bottom: max(var(--sp-1), env(safe-area-inset-bottom));
+    border-right: none;
+    border-top: 1px solid var(--clr-border-dark);
+    z-index: var(--z-sticky);
+  }
+  .admin-sidebar__logo,
+  .admin-sidebar__foot { display: none; }
+  .admin-nav {
+    flex-direction: row;
+    width: 100%;
+  }
+  .admin-nav__btn {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: var(--sp-2);
+    font-size: var(--text-xs);
+    min-height: 52px;
+    border-radius: var(--radius-md);
+  }
+  .admin-nav__btn--soon .admin-nav__soon-tag { display: none; }
+  /* espaço para o conteúdo não ficar atrás da barra inferior */
+  .admin-main { padding-bottom: calc(var(--sp-20) + env(safe-area-inset-bottom)); }
+}

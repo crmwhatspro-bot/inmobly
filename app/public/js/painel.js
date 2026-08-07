@@ -1,28 +1,14 @@
 // ════════════════════════════════════════════════
-// painel.html — stub pós-onboarding. Mostra o status direto de
-// brokers/{tenantId}; não é o CMS completo (isso é a próxima etapa,
-// migrar template/admin/ pro modelo multi-tenant).
+// painel.html — Dashboard. Auth-gate e dados do broker agora vêm
+// de shell.js (initShell), que também monta a sidebar/topbar.
 // ════════════════════════════════════════════════
-import { logout, onAuthChange } from './firebase.js';
-import { tenantIdAtual, buscarBroker } from './tenant.js';
+import { initShell } from './shell.js';
 
 const $ = (id) => document.getElementById(id);
 
-$('btnSair').addEventListener('click', () => logout().then(() => location.href = 'login.html'));
-
-onAuthChange(async (user) => {
-  if (!user) { location.href = 'login.html'; return; }
-  $('userEmail').textContent = user.email;
-
-  const tenantId = await tenantIdAtual();
-  if (!tenantId) { location.href = 'criar-conta.html'; return; }
-
-  const broker = await buscarBroker(tenantId);
-  if (!broker) return;
-
+initShell({ active: 'dashboard', title: 'Dashboard' }).then(({ tenantId, broker }) => {
   $('nomeNegocio').textContent = broker.name || tenantId;
   $('slugAtual').textContent = tenantId;
-  $('planoAtual').textContent = `${broker.plan || 'trial'} · ${broker.status || 'trialing'}`;
-  $('imoveisAtual').textContent = `${broker.usage?.imoveisCount ?? 0} de ${broker.imoveisLimit ?? 6}`;
-  $('dominioAtual').textContent = broker.domainIncluded ? (broker.customDomainStatus || 'pendente') : 'inmobly.app';
+  $('planoAtual').textContent = broker.plan || 'trial';
+  $('imoveisAtual').textContent = `${broker.usage?.imoveisCount ?? 0} / ${broker.imoveisLimit ?? 6}`;
 });

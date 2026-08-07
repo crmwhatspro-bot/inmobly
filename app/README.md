@@ -37,16 +37,50 @@ public/inmobiliario.html (puntoalto/v1, outro repo)
   obrigado.html        → confirmação, manda pro painel
         │
         ▼
-  painel.html          → status atual + "Gerenciar meus imóveis"
+  ══════════ a partir daqui, tudo dentro do app shell (ver abaixo) ══════════
+        ▼
+  painel.html (Dashboard)  → status atual + atalhos
         │
         ▼
-  admin.html           → CMS real: CRUD de imóveis, fotos, comodidades
-                          (brokers/{tenantId}/imoveis) — só falta a vitrine
-                          pública que o cliente final visitaria, ver pendências
+  admin.html (Meus Imóveis) → CMS real: CRUD de imóveis, fotos, comodidades
+                          (brokers/{tenantId}/imoveis)
+        │
+        ▼
+  planos.html (Plano), em-breve.html (Meu Site / Leads / Domínio / Perfil /
+  Configurações — stubs honestos, sem funcionalidade ainda)
 ```
 
 Um usuário que já tem tenant e já fez o tour pula direto pra `painel.html` —
 `js/tenant.js` decide isso lendo o custom claim `tenantId` + `onboardingCompleted`.
+
+### App shell (pós-login)
+
+`painel.html`, `admin.html`, `planos.html` e `em-breve.html` compartilham a
+mesma casca — sidebar fixa à esquerda (Dashboard / Meus Imóveis / Meu Site /
+Leads / Domínio / Plano, com "Em breve" nos itens sem UI própria ainda) +
+topbar com dropdown de avatar (Meu perfil / Configurações / Sair). Antes
+disso cada página tinha seu próprio header solto e nenhuma navegação entre
+elas — só dava pra "descobrir" outra página por um botão específico.
+
+- `css/shell.css` — toda a casca (sidebar, topbar, dropdown de avatar,
+  card "Novidades" e bloco de perfil/plano/uso no rodapé da sidebar,
+  conversão pra bottom-nav no mobile). Antes vivia dentro de `admin.css`
+  como `.admin-sidebar`/`.admin-topbar`, sem estar de fato conectado no
+  `admin.html` — por isso a tela ficava em branco (ver commit anterior).
+  Nomes de classe mantidos com prefixo `admin-` por herança, mas o arquivo
+  não é mais exclusivo do CMS de imóveis.
+- `js/shell.js` — `initShell({active, title})`: renderiza sidebar/topbar e
+  **centraliza o auth-gate** (login → tenantId → broker) que antes estava
+  triplicado em `painel.js`/`admin-imoveis.js`/`planos.js`. Cada página
+  chama isso e recebe `{user, tenantId, broker}` de volta pra sua própria
+  lógica de conteúdo. Também popula o rodapé da sidebar (nome, plano, uso
+  de imóveis com barrinha) e o avatar (foto do Google se existir, senão
+  iniciais do nome).
+- `em-breve.html`/`js/em-breve.js` — placeholder genérico pros itens do
+  menu sem UI ainda; `?f=site|leads|dominio|perfil|configuracoes` decide o
+  título/texto mostrado.
+- **Pendente**: aplicar um product tour (destacando os itens da sidebar)
+  depois que essa interface for validada — combinado, ainda não construído.
 
 ## Estrutura
 
@@ -55,23 +89,27 @@ firestore.rules          ← ver schema abaixo
 firestore.indexes.json
 firebase.json            ← hosting de public/ + firestore + functions
 public/
-  login.html, criar-conta.html, tour.html, planos.html, obrigado.html, painel.html
-  admin.html               ← CMS de imóveis (CRUD + fotos) — HTML portado quase
-                              intacto de template/admin/index.html
-  css/app.css              ← visual da jornada (login/tour/planos/painel) — próprio
+  login.html, criar-conta.html, tour.html, obrigado.html  ← jornada pré-app
+  painel.html, admin.html, planos.html, em-breve.html     ← dentro do app shell
+  css/app.css              ← visual da jornada (login/tour/obrigado) — próprio
                               do Inmobly, não é o tema por broker
+  css/shell.css            ← sidebar + topbar do app shell, ver seção acima
   css/tokens.css           ← "assado" a partir de template/css/tokens.css: mesmos
                               {{CLR_PRIMARY}}/{{CLR_ACCENT}}/etc. de sempre, só que
                               resolvidos 1x pra cores fixas do Inmobly (não há
                               build.js aqui, então não podem ficar como placeholder)
   css/base.css, components.css, admin.css
                             ← copiados verbatim de template/css/ (zero placeholder
-                              nesses três — só tokens.css precisou ser assado)
+                              nesses três — só tokens.css precisou ser assado).
+                              admin.css hoje só tem o que é específico de "Meus
+                              Imóveis" (métricas, tabela, formulário) — a sidebar/
+                              topbar saiu de lá pra shell.css
   js/firebase.js           ← init do projeto único (config literal, PREENCHER)
   js/tenant.js             ← lê custom claim tenantId, decide a próxima página, e
                               agora também limiteEfetivo(broker) — lê o limite do
                               plano direto do doc do tenant, sem o config/plan
                               sincronizado que o template/js/plano.js antigo usava
+  js/shell.js              ← sidebar/topbar/auth-gate compartilhados, ver seção acima
   js/admin-imoveis.js      ← CRUD de imóveis, portado de
                               template/js/admin-imoveis.js: mesma compressão de
                               fotos (canvas → WebP/JPEG, máx 900px, sem Storage),
@@ -141,17 +179,23 @@ o checkout é criado, não os produtos vendidos. Webhook endpoint aponta pra
 
 ## O que ainda não existe (de propósito)
 
-- **Site público por tenant** (a página que o cliente final do broker vê — home +
-  catálogo navegável, sem login). O CMS (`admin.html`) já escreve dados reais em
-  `brokers/{tenantId}/imoveis`; falta só quem lê e exibe isso publicamente. Precisa
-  decidir entre gerar estático por tenant (automatizando o antigo `build.js` +
-  deploy) ou virar um app único que resolve o tenant em tempo de execução — ainda
-  não decidido de propósito (ver conversa que precedeu o commit do pivô).
-- **Leads** — a aba "Leads" que existia no `template/admin/` antigo não foi portada,
-  só o CRUD de imóveis (era o que foi pedido). `brokers/{tenantId}/leads` já existe
-  no schema/rules, só não tem UI ainda.
-- **Domínio próprio automatizado** — segue igual ao que já estava definido em
+Já tem lugar reservado na sidebar do app shell (item visível, mas cai em
+`em-breve.html` — não é link morto, é honesto sobre o status):
+
+- **Meu Site** — pré-visualização + configuração (whatsapp, publicar) do
+  catálogo público que o cliente final do broker vê. Design já fechado
+  (ver conversa que precedeu este commit): resolve o tenant por
+  `location.hostname` (um Hosting site por tenant, criado via botão
+  "Publicar site" — também não construído ainda) com fallback `?t=slug`
+  pra teste, function `perfilPublico` pra não expor `brokers/{tenantId}`
+  inteiro publicamente. Ainda não implementado.
+- **Leads** — a aba "Leads" que existia no `template/admin/` antigo não foi
+  portada, só o CRUD de imóveis. `brokers/{tenantId}/leads` já existe no
+  schema/rules, só não tem UI ainda.
+- **Domínio** — segue igual ao que já estava definido em
   `docs/REGRAS-DE-NEGOCIO.md`, seção 6: concierge manual por enquanto.
+- **Meu perfil / Configurações** (dropdown do avatar) — edição de dados da
+  conta, ainda não construído.
 
 ⚠️ **`admin.html`/`admin-imoveis.js` também não foram testados contra infraestrutura
 real ainda** — só `node --check` (sintaxe), verificação de IDs cruzados entre

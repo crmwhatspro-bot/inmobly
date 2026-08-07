@@ -8,12 +8,13 @@
 // Fotos seguem comprimidas no navegador (canvas → WebP/JPEG, máx
 // 900px) e salvas como data-URL no Firestore — sem Firebase Storage.
 // ════════════════════════════════════════════════
-import { db, auth, onAuthChange, logout } from './firebase.js';
+import { db } from './firebase.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
   query, orderBy, serverTimestamp, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { tenantIdAtual, buscarBroker, limiteEfetivo } from './tenant.js';
+import { limiteEfetivo } from './tenant.js';
+import { initShell } from './shell.js';
 
 const MAX_FOTOS      = 16;
 const MAX_DATAURL    = 950_000; // ~712KB binário — folga no limite de 1MiB do doc
@@ -58,17 +59,14 @@ function separarPorLimite() {
 }
 
 // ════════════════════════════════════════════════
-// Gate de acesso — precisa estar logado E já ter um tenant
+// Gate de acesso — shell.js cuida do login/tenant/logout e monta a
+// sidebar/topbar; aqui só usamos o tenantId/broker que ele resolve.
 // ════════════════════════════════════════════════
-onAuthChange(async (user) => {
-  if (!user) { location.href = 'login.html'; return; }
-  tenantId = await tenantIdAtual();
-  if (!tenantId) { location.href = 'criar-conta.html'; return; }
-  broker = await buscarBroker(tenantId);
+initShell({ active: 'imoveis', title: 'Meus Imóveis' }).then((resultado) => {
+  tenantId = resultado.tenantId;
+  broker = resultado.broker;
   carregarLista();
 });
-
-$('logout-btn').addEventListener('click', () => logout().then(() => location.href = 'login.html'));
 
 // ════════════════════════════════════════════════
 // Compressão de imagens

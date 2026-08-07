@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Em breve — Inmobly</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<style>
+  .em-breve {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: var(--sp-4);
+    padding: var(--sp-16) 0;
+    max-width: 480px;
+  }
+  .em-breve__icon {
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-xl);
+    background: var(--clr-accent-ghost);
+    color: var(--clr-accent-light);
+  }
+  .em-breve h2 { font-family: var(--font-display); font-size: var(--text-2xl); color: white; }
+  .em-breve p { color: var(--clr-text-light-2); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+    <main class="admin-main">
+      <div class="em-breve">
+        <div class="em-breve__icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h2 id="ebTitulo">Em construção</h2>
+        <p id="ebDesc">Essa área ainda está sendo desenvolvida — em breve você vai poder gerenciar isso direto por aqui.</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/em-breve.js"></script>
+</body>
+</html>

@@ -3,38 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meu painel — Inmobly</title>
-<link rel="stylesheet" href="css/app.css">
+<title>Dashboard — Inmobly</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
 
-<header class="topbar">
-  <div class="card__logo" style="margin:0;">Inmobly<span>.</span></div>
-  <div style="display:flex; gap:0.75rem; align-items:center;">
-    <span id="userEmail" style="color:var(--muted); font-size:0.85rem;"></span>
-    <button class="btn btn--ghost" id="btnSair">Sair</button>
-  </div>
-</header>
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+    <main class="admin-main">
 
-<div class="painel-wrap">
-  <div class="status-card">
-    <h1 style="margin:0 0 0.25rem;" id="nomeNegocio">—</h1>
-    <p style="color:var(--muted); font-size:0.85rem; margin:0 0 1.5rem;">inmobly.app/<span id="slugAtual">—</span></p>
+      <div class="admin-metrics">
+        <div class="metric-card">
+          <p class="metric-card__label">Negócio</p>
+          <p class="metric-card__value" style="font-size: var(--text-2xl);" id="nomeNegocio">—</p>
+          <p style="color:var(--clr-text-light-2); font-size:var(--text-xs); margin-top:var(--sp-2);">inmobly.app/<span id="slugAtual">—</span></p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-card__label">Plano</p>
+          <p class="metric-card__value" style="font-size: var(--text-2xl); text-transform:capitalize;" id="planoAtual">—</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-card__label">Imóveis</p>
+          <p class="metric-card__value" style="font-size: var(--text-2xl);" id="imoveisAtual">—</p>
+        </div>
+      </div>
 
-    <dl>
-      <dt>Plano</dt><dd id="planoAtual">—</dd>
-      <dt>Imóveis</dt><dd id="imoveisAtual">—</dd>
-      <dt>Domínio</dt><dd id="dominioAtual">—</dd>
-    </dl>
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom: var(--sp-8);">
+        <a href="admin.html" class="btn btn--primary">Gerenciar meus imóveis →</a>
+        <a href="planos.html" class="btn btn--ghost">Ver / trocar plano</a>
+      </div>
 
-    <div style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
-      <a href="admin.html" class="btn btn--primary">Gerenciar meus imóveis →</a>
-      <a href="planos.html" class="btn btn--ghost">Ver / trocar plano</a>
-    </div>
+      <p style="color:var(--clr-text-light-2); font-size:0.8rem; max-width:640px; padding-top:var(--sp-6); border-top:1px dashed var(--clr-border-dark);">
+        A página pública do catálogo (o que seus clientes veem) ainda não existe nesse modelo multi-tenant — "Gerenciar meus imóveis" já cadastra de verdade em <code>brokers/{tenantId}/imoveis</code>, falta só a vitrine pública.
+      </p>
 
-    <p style="color:var(--muted); font-size:0.78rem; margin-top:2rem; padding-top:1.5rem; border-top:1px dashed var(--line);">
-      A página pública do catálogo (o que seus clientes veem) ainda não existe nesse modelo multi-tenant — "Gerenciar meus imóveis" já cadastra de verdade em <code>brokers/{tenantId}/imoveis</code>, falta só a vitrine pública.
-    </p>
+    </main>
   </div>
 </div>
 
