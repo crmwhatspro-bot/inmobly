@@ -49,7 +49,7 @@ const IDIOMAS = {
     ctaSub: 'Contame qué estás buscando y te ayudo a encontrarlo.',
     ctaBtn: 'Hablar por WhatsApp',
     footerDesc: 'Hablá directo por WhatsApp para más información.',
-    footerInmobly: 'Creado con orgullo por',
+    footerRightsPrefix: 'Todos los derechos reservados a',
     tituloSufixo: 'Inmuebles',
     seleccionadosPor: (n) => `Seleccionados por ${n}.`,
     catalogoDe: (n) => `Catálogo de inmuebles de ${n}.`,
@@ -76,7 +76,7 @@ const IDIOMAS = {
     ctaSub: 'Me conte o que você está buscando que eu te ajudo a encontrar.',
     ctaBtn: 'Falar no WhatsApp',
     footerDesc: 'Fale direto pelo WhatsApp para mais informações.',
-    footerInmobly: 'Criado com orgulho por',
+    footerRightsPrefix: 'Todos os direitos reservados a',
     tituloSufixo: 'Imóveis',
     seleccionadosPor: (n) => `Selecionados por ${n}.`,
     catalogoDe: (n) => `Catálogo de imóveis de ${n}.`,
@@ -103,7 +103,7 @@ const IDIOMAS = {
     ctaSub: "Tell me what you're looking for and I'll help you find it.",
     ctaBtn: 'Chat on WhatsApp',
     footerDesc: 'Reach out directly on WhatsApp for more information.',
-    footerInmobly: 'Proudly built with',
+    footerRightsPrefix: 'All rights reserved to',
     tituloSufixo: 'Properties',
     seleccionadosPor: (n) => `Selected by ${n}.`,
     catalogoDe: (n) => `Property catalog by ${n}.`,
@@ -122,7 +122,7 @@ function aplicarIdioma(idiomaPedido) {
   STR = IDIOMAS[idioma];
   document.documentElement.lang = idioma;
 
-  document.getElementById('hero-label').textContent = STR.portfolio;
+  document.getElementById('portfolio-label').textContent = STR.portfolio;
   document.getElementById('pill-todos').textContent = STR.todos;
   document.getElementById('pill-venda').textContent = STR.venda;
   document.getElementById('pill-aluguel').textContent = STR.aluguel;
@@ -139,7 +139,7 @@ function aplicarIdioma(idiomaPedido) {
   document.getElementById('cta-whatsapp').textContent = STR.ctaBtn;
   document.getElementById('sobre-label').textContent = STR.sobre;
   document.getElementById('footer-desc').textContent = STR.footerDesc;
-  document.getElementById('footer-inmobly-texto').textContent = STR.footerInmobly;
+  document.getElementById('footer-rights-prefix').textContent = STR.footerRightsPrefix;
 }
 
 const ICONS = {
@@ -171,13 +171,23 @@ const EXEMPLO_TEXTOS = {
 const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const normalizar = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-const fmtUSD = (v) => 'US$ ' + Number(v).toLocaleString('en-US');
+
+// Só essas 3 moedas por enquanto (ver admin-imoveis.js — mesmo mapa).
+const MOEDA = {
+  USD: { simbolo: 'US$', locale: 'en-US' },
+  PYG: { simbolo: 'Gs.', locale: 'es-PY' },
+  BRL: { simbolo: 'R$',  locale: 'pt-BR' },
+};
+const fmtPreco = (v, moeda) => {
+  const m = MOEDA[moeda] || MOEDA.USD;
+  return `${m.simbolo} ${Number(v).toLocaleString(m.locale)}`;
+};
 
 function precoHTML(imv, detalhe = false) {
   const tag = detalhe ? 'p class="imv-detail__price"' : 'p class="imv-card__price"';
   const partes = [];
-  if (imv.operacao !== 'aluguel' && imv.precoVenda) partes.push(`<${tag}>${fmtUSD(imv.precoVenda)}</p>`);
-  if (imv.operacao !== 'venda' && imv.precoAluguel) partes.push(`<${tag}>${fmtUSD(imv.precoAluguel)} <small>${STR.mes}</small></p>`);
+  if (imv.operacao !== 'aluguel' && imv.precoVenda) partes.push(`<${tag}>${fmtPreco(imv.precoVenda, imv.moeda)}</p>`);
+  if (imv.operacao !== 'venda' && imv.precoAluguel) partes.push(`<${tag}>${fmtPreco(imv.precoAluguel, imv.moeda)} <small>${STR.mes}</small></p>`);
   if (!partes.length) partes.push(`<${tag}>${STR.consulta}</p>`);
   return partes.join('');
 }
@@ -452,9 +462,13 @@ function aplicarPerfil(p) {
   document.getElementById('meta-description').setAttribute('content', p.subheadline || STR.catalogoDe(nome));
   document.getElementById('meta-keywords').setAttribute('content', p.keywords || STR.keywordsDefault(nome));
 
-  const logoEl = document.getElementById('hero-logo');
-  if (p.logo) { logoEl.src = p.logo; logoEl.alt = nome; logoEl.hidden = false; }
-  else { logoEl.hidden = true; }
+  // Navbar: nome/logo do corretor sempre visíveis no topo, mesmo
+  // rolando a página — sem isso o site inteiro parecia um template
+  // genérico, sem nenhuma identidade fixa na tela.
+  const navLogoEl = document.getElementById('nav-logo');
+  if (p.logo) { navLogoEl.src = p.logo; navLogoEl.alt = nome; navLogoEl.hidden = false; }
+  else { navLogoEl.hidden = true; }
+  document.getElementById('nav-nome').textContent = nome;
 
   document.getElementById('imoveis-titulo').textContent = p.headline
     || (MODO_PREVIEW ? EXEMPLO_TEXTOS.headline : STR.tituloSufixo + ' disponibles');
@@ -476,6 +490,7 @@ function aplicarPerfil(p) {
 
   const msgPadrao = encodeURIComponent(STR.waHero);
   const waHref = p.whatsapp ? `https://wa.me/${p.whatsapp}?text=${msgPadrao}` : '#';
+  document.getElementById('nav-whatsapp').href = waHref;
   document.getElementById('cta-whatsapp').href = waHref;
   document.getElementById('footer-whatsapp').href = waHref;
   document.getElementById('footer-nome').textContent = nome;
@@ -517,12 +532,22 @@ async function iniciarPreview() {
   initComum();
   tenantId = tenantIdAtual();
 
+  let recebeuPerfil = false;
   window.addEventListener('message', (e) => {
     if (e.data?.tipo !== 'pa-preview-perfil') return;
+    recebeuPerfil = true;
     aplicarPerfil(e.data.perfil);
     mostrarConteudo();
   });
   window.parent?.postMessage({ tipo: 'pa-preview-pronto' }, '*');
+
+  // Se o handshake com meu-site.html não completar em tempo (aba/iframe
+  // em segundo plano no mobile, rede lenta, mensagem perdida), mostra o
+  // conteúdo de exemplo mesmo assim — sem isso o spinner ficava girando
+  // pra sempre esperando um postMessage que talvez nunca chegasse.
+  setTimeout(() => {
+    if (!recebeuPerfil) { aplicarPerfil({}); mostrarConteudo(); }
+  }, 6000);
 
   let reais = [];
   if (tenantId) {

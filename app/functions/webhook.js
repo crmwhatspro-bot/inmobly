@@ -24,6 +24,7 @@
 
 const { onRequest } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
+const { FieldValue } = require('firebase-admin/firestore');
 const Stripe = require('stripe');
 const { db } = require('./admin');
 
@@ -89,16 +90,35 @@ async function processarCompraAvulsa(session) {
     console.warn('[stripeWebhook] checkout payment sem client_reference_id:', session.id);
     return;
   }
+  const produto = session.metadata?.product || 'desconhecido';
+
   // doc ID determinístico (session.id) — reentrega do mesmo evento
-  // atualiza o mesmo doc em vez de duplicar a compra
-  await db.doc(`brokers/${slug}/purchases/${session.id}`).set({
-    product:               session.metadata?.product || 'desconhecido',
+  // atualiza o mesmo doc em vez de duplicar a compra. Precisa saber se
+  // já existia ANTES de gravar pra decidir se credita o saldo de
+  // páginas — Stripe reentrega o mesmo evento às vezes (at-least-once),
+  // e FieldValue.increment não é idempotente por si só.
+  const ref = db.doc(`brokers/${slug}/purchases/${session.id}`);
+  const jaExistia = (await ref.get()).exists;
+
+  await ref.set({
+    product:               produto,
     status:                 'paid',
     amountUsd:               (session.amount_total || 0) / 100,
     stripePaymentIntentId:   session.payment_intent || null,
     createdAt:               new Date(),
   }, { merge: true });
   console.log(`[stripeWebhook] compra avulsa registrada: ${slug}/${session.id}`);
+
+  // Página de Emprendimento é pré-paga: cada compra credita um slot em
+  // usage.paginasCompradas, que paginas.html usa pra liberar "+ Nova
+  // página" — sem exigir conteúdo/slug no momento da compra.
+  if (!jaExistia && produto === 'emprendimento_page') {
+    await db.doc('brokers/' + slug).set({
+      'usage.paginasCompradas': FieldValue.increment(1),
+      updatedAt: new Date(),
+    }, { merge: true });
+    console.log(`[stripeWebhook] "${slug}" +1 página comprada`);
+  }
 }
 
 exports.stripeWebhook = onRequest(

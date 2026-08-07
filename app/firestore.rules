@@ -87,6 +87,15 @@ service cloud.firestore {
         }
       }
 
+      // Páginas de Empreendimento — pré-pagas (compra avulsa via
+      // checkout.js, ver usage.paginasCompradas), conteúdo gerenciado
+      // pelo próprio corretor. Leitura pública desde já: a ideia é que
+      // cada uma vire uma página institucional acessível por link direto.
+      match /paginas/{paginaId} {
+        allow read: if true;
+        allow write: if isTenantAdmin(tenantId);
+      }
+
       match /leads/{leadId} {
         allow create: if request.resource.data.keys().hasAll(['name', 'email', 'createdAt']);
         allow read, update, delete: if isTeam() || isTenantAdmin(tenantId);

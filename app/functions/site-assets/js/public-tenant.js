@@ -17,12 +17,19 @@ export function tenantIdAtual() {
 
 // Retorna null se o tenant não existir ou não estiver publicado —
 // nesses casos o chamador deve mostrar o estado de indisponível.
+// Timeout manual: sem isso, um fetch que nunca resolve (rede de
+// celular instável, por exemplo) deixava a página carregando pra
+// sempre — sem erro, sem fallback, o spinner nunca saía da tela.
 export async function carregarPerfilPublico(tenantId) {
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const res = await fetch(`${FUNCTIONS_BASE}/perfilPublico?tenant=${encodeURIComponent(tenantId)}`);
+    const res = await fetch(`${FUNCTIONS_BASE}/perfilPublico?tenant=${encodeURIComponent(tenantId)}`, { signal: ctrl.signal });
     if (!res.ok) return null;
     return await res.json();
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }

@@ -104,25 +104,28 @@ elas — só dava pra "descobrir" outra página por um botão específico.
     esquerda sobre um backdrop escurecido. `js/shell.js#wireDrawer()`
     cuida do abrir/fechar (clique no backdrop, Escape, ou o próprio
     hambúrguer).
-- **Product tour** (`js/product-tour.js`) — 4 passos guiando as primeiras
-  tarefas reais: conhecer a navegação (Dashboard), configurar o perfil
-  (Meu Site), cadastrar imóveis (Meus Imóveis), pré-visualizar antes de
-  publicar (Meu Site de novo). Diferente de `tour.html` (os slides
-  estáticos de onboarding logo após o signup, sem dado nenhum ainda) —
-  esse aponta pra elementos reais da UI em 3 páginas diferentes, com um
-  card flutuante + contorno pulsando no alvo (`.pa-tour-highlight`),
-  sem escurecer o resto da tela (nada de spotlight com máscara — mais
-  simples de implementar e a página continua legível/usável durante o
-  tour). Chamado de dentro de `shell.js#initShell()`, então já roda em
+- **Product tour** (`js/product-tour.js`) — 4 passos, todos dentro do
+  painel (`painel.html`), nunca troca de tela: boas-vindas (menu
+  inteiro), depois Meus Imóveis, Meu Site e Plano — cada passo destaca
+  o botão correspondente do menu lateral (`.pa-tour-highlight`, contorno
+  pulsando) com um card de instrução posicionado ao LADO do próprio
+  botão (`posicionarCard()`, calcula a posição via
+  `getBoundingClientRect()` do alvo — encosta à direita no desktop, cai
+  pra faixa acima/abaixo do botão no mobile), em vez do card fixo no
+  canto da tela de antes. Os botões do menu ganharam
+  `data-tour="nav-desktop-{key}"` (sidebar) e `data-tour="nav-mobile-{key}"`
+  (bottombar) em `shell.js` só pra servir de alvo confiável do tour,
+  independente do texto/ícone. "Próximo" avança o passo sem navegar —
+  `initShell()` só roda o tour quando `active === 'dashboard'`, então
+  em qualquer outra página (`admin.html`, `meu-site.html` etc.) a
+  chamada simplesmente não faz nada. Diferente de `tour.html` (os
+  slides estáticos de onboarding logo após o signup, sem dado nenhum
+  ainda). Chamado de dentro de `shell.js#initShell()`, então já roda em
   toda página que usa o shell sem precisar importar em cada uma.
   Estado em `localStorage['pa-tour-{tenantId}']`: `null`/ausente =
   nunca visto (começa no passo 0), um número = passo atual, `'done'` =
-  terminado ou pulado, nunca mais aparece. "Próximo" navega pra próxima
-  página quando o passo seguinte é de outra página; "Pular tour" marca
-  como `done` na hora. No mobile, o passo 1 (menu completo) teria como
-  alvo a sidebar — mas ela fica escondida dentro do drawer fechado por
-  padrão, então nesse caso o alvo vira a bottombar (sempre visível) em
-  vez do `.admin-nav`.
+  terminado ou pulado, nunca mais aparece. "Pular tour" marca como
+  `done` na hora.
 
 ### Meus Imóveis (`admin.html`)
 
@@ -144,6 +147,16 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   grava a contagem de imóveis ATIVOS em `brokers/{tenantId}.usage` e
   chama `shell.js#atualizarUso()` pra a barra da sidebar atualizar na
   hora, sem precisar recarregar a página.
+- **Moeda por imóvel** — campo `imv-moeda` no editor (select), gravado
+  como `moeda: 'USD'|'PYG'|'BRL'` no doc (padrão `USD` quando ausente,
+  inclusive em imóveis antigos criados antes desse campo existir). Só
+  essas 3 opções por enquanto — as que fazem sentido pro mercado
+  paraguaio. O prefixo do campo de preço (`US$`/`Gs.`/`R$`) muda em
+  tempo real conforme a moeda selecionada; `fmtPreco()` formata o valor
+  com o símbolo e o agrupamento de milhar certos pra cada moeda (mesma
+  função duplicada em `js/admin-imoveis.js` — lista do CMS — e
+  `site/js/imoveis.js` — cards/detalhe do site público — sem módulo
+  compartilhado entre os dois por enquanto).
 - **Popup de upsell aos 4 de 6 imóveis do trial** — só corretores com
   `status: 'trialing'`, só uma vez por navegador (`localStorage`, chave
   `pa-upsell4-{tenantId}`). Oferece assinar o Starter com 50% off por 3
@@ -198,6 +211,55 @@ cliente final vê, sem login:
   era despublicar (catálogo mostra "indisponível" por um tempo) e
   publicar de novo — provavelmente a causa de confusão de "por que
   ficou indisponível" relatada ao testar.
+- **Preview (`#msPreviewModal`) não ficava mais "carregando" pra sempre
+  no mobile** — o iframe do preview (`site/index.html?preview=1`) só
+  esconde o spinner (`mostrarConteudo()`) depois de um handshake via
+  `postMessage` com `meu-site.js` (iframe avisa `pa-preview-pronto` →
+  pai responde com `pa-preview-perfil`). Se essa troca não completasse
+  por qualquer motivo (aba/iframe em segundo plano no mobile, rede
+  lenta, mensagem perdida), o spinner girava pra sempre, sem erro nem
+  fallback visível. `iniciarPreview()` (`site/js/imoveis.js`) agora tem
+  um `setTimeout` de 6s: se não recebeu o perfil de verdade até lá,
+  mostra o conteúdo de exemplo mesmo assim (mesmo texto/fotos que já
+  aparecia quando o corretor ainda não tinha preenchido nada) — se o
+  perfil real chegar depois, ele substitui normalmente. No modo normal
+  (site publicado de verdade, visitante real), `carregarPerfilPublico()`
+  (`site/js/public-tenant.js`) ganhou o mesmo tipo de proteção: o
+  `fetch` da function `perfilPublico` agora aborta em 12s em vez de
+  poder ficar pendurado indefinidamente numa rede ruim.
+- **Navbar própria, com nome/logo do corretor** — `site/index.html` não
+  tinha navbar nenhuma até agora, apesar do CSS pra isso já existir
+  desde antes (`--navbar-h` no padding do `.imv-hero` só fazia sentido
+  com uma navbar fixa por cima, mas nada a renderizava). O site inteiro
+  parecia um template sem identidade — rolar a página perdia qualquer
+  sinal de "de quem é esse catálogo". Agora `.site-navbar` (fixa, fundo
+  escuro + blur, não usa o `.navbar`/`.navbar--solid` genérico de
+  `components.css` porque aquele componente pressupõe menu multi-página
+  e hero clara com foto — aqui é página única e hero sempre escura, não
+  precisa de burger/drawer/scroll-toggle) mostra `logo`+`name` do
+  broker (`#nav-logo`/`#nav-nome`) e um CTA de WhatsApp, sempre visível.
+  Os campos já existiam (Identidade visual em `meu-site.html`) — só
+  faltava a navbar pra de fato usá-los fora do rodapé/hero.
+- **Hero separado do Portfolio** — `headline`/`subheadline` (+ logo)
+  ficavam todos espremidos dentro do `.imv-hero`, com o rótulo
+  "Portfolio" como eyebrow ACIMA do título — não marcava a grade de
+  imóveis, só decorava o hero. Agora o hero só tem headline+subheadline
+  (logo saiu pra navbar), e `#portfolio-label` virou o cabeçalho de
+  verdade da seção de filtros+grade, logo abaixo do hero — mesmo padrão
+  já usado em "Sobre" (`#sobre-label` acima de `#sobre-titulo`). A
+  sobreposição visual que `.imv-filters` fazia por cima do hero
+  (`margin-top` negativo) foi removida — com o label no meio, o
+  encaixe não fazia mais sentido; virou espaçamento normal.
+- **Rodapé: direitos reservados à Punto Alto, não mais "Criado por
+  Inmobly"** — a linha final do rodapé (`#footer-rights-prefix` +
+  link) agora é fixa em todos os sites de todos os tenants: "Todos los
+  derechos reservados a Punto Alto Marketing y Ventas — sponsored by
+  startup CRM WhatsPro", com o nome da Punto Alto linkado pra
+  puntoalto.com.py. Só o prefixo é traduzido (es/pt/en) — os nomes de
+  marca (Punto Alto, CRM WhatsPro) ficam fixos em qualquer idioma, como
+  já era com "Inmobly" antes. **Continua existindo** um `#footer-copy`
+  separado, por tenant, com `© {ano} {nome do broker}` — esse não
+  mudou, é o copyright do próprio corretor sobre o conteúdo dele.
 - **Bug real corrigido: "indisponível" aparecia sempre, publicado ou
   não** — `#site-indisponivel` tinha `hidden` E um `style="display:flex"`
   inline ao mesmo tempo. Estilo inline sempre vence a regra padrão do
@@ -286,11 +348,103 @@ cliente final vê, sem login:
   Viraram `<details>`/`<summary>` nativos (`.ms-accordion`) — sem JS
   pra abrir/fechar, funciona de teclado de graça. Só o ícone de
   chevron (`.ms-accordion__chevron`) gira via `[open]` no CSS.
+  **Bug corrigido**: o chevron ficava em posições diferentes em cada
+  card — a causa era `.imv-sec__head p { margin-left: auto }`
+  empurrando só o `<p>` pra direita, com `flex-wrap: wrap` quebrando
+  de jeitos diferentes dependendo do tamanho de cada descrição.
+  Título+descrição agora ficam num `.ms-accordion__text` (`flex:1`,
+  não quebra linha) e é o próprio `.ms-accordion__chevron` que carrega
+  `margin-left: auto` — sempre na ponta direita, não importa o texto.
 - **Limite de sites por projeto**: Firebase Hosting tem uma cota de sites
   por projeto (dezenas, não milhares). Não é problema na validação inicial
   do produto, mas é uma parede que existe — não resolvida agora de
   propósito, só registrada aqui pra não esquecer quando a base de
   corretores crescer.
+
+### Product tour — abandono expira
+
+`js/product-tour.js` mostrava o passo salvo (`localStorage`,
+`pa-tour-{tenantId}`) toda vez que `lerPasso()` via um índice numérico —
+mas nada distinguia "acabei de mostrar agora" de "mostrei há dias e o
+corretor ignorou": se ele navegasse pra outra área sem clicar em
+"Próximo"/"Pular tour", o passo ficava preso no mesmo índice pra
+sempre e reaparecia igual em toda visita futura. Agora cada exibição
+grava também um timestamp (`pa-tour-ts-{tenantId}`); se passar mais de
+`EXPIRA_MS` (2 minutos) sem interação, o passo expira sozinho e marca
+`'done'` — nunca mais interrompe. Um corretor que de fato clica
+"Próximo" a cada passo renova o prazo a cada clique e completa o tour
+normalmente, entre páginas, sem esbarrar nisso.
+
+### Checkout — troca de plano não duplicava mais assinatura
+
+`functions/checkout.js` sempre criava uma Checkout Session NOVA em
+`mode: 'subscription'`, mesmo pra quem já tinha assinatura ativa — o
+que criaria uma SEGUNDA assinatura paralela no Stripe (cobrando os
+dois planos ao mesmo tempo) em vez de trocar a existente, apesar do
+texto em `planos.html` já prometer "assinar um plano diferente troca
+automaticamente". Agora, se `broker.stripeSubscriptionId` existe e a
+assinatura no Stripe ainda está `active`/`past_due`, `criarCheckoutSession`
+troca o item da assinatura atual direto pela API
+(`stripe.subscriptions.update(...)`, `proration_behavior: 'create_prorations'`)
+e retorna `{ updated: true, plan }` em vez de uma URL de checkout —
+`planos.js` mostra uma mensagem de sucesso inline nesse caso, sem
+redirect. Se a troca direta falhar por qualquer motivo, cai pro fluxo
+normal (nova Checkout Session) em vez de travar o usuário.
+
+⚠️ Nenhum fluxo de checkout (assinatura nova, upgrade, ou compra
+avulsa) foi testado contra o Stripe real ainda. Antes de testar com
+cartão de teste: confirmar que `STRIPE_SECRET_KEY` é uma chave de
+**test mode** (`sk_test_...`), que os Prices existem no Stripe com os
+`lookup_key` exatos usados no código (`inmobly_starter_monthly`,
+`inmobly_pro_monthly`, `inmobly_emprendimento_page`), e que o webhook
+endpoint em Stripe Dashboard → Developers → Webhooks aponta pra
+`stripeWebhook` desse projeto com os 4 eventos certos e o
+`STRIPE_WEBHOOK_SECRET` correspondente configurado.
+
+### Páginas de Empreendimento (`paginas.html`)
+
+Item "Leads" do menu lateral não fazia sentido (nunca teve UI, só um
+stub "Em breve") — virou "Páginas", primeira UI real de um produto que
+já existia nas regras de negócio (`docs/REGRAS-DE-NEGOCIO.md`, seção
+5) mas nunca tinha sido construído: uma página institucional avulsa
+por empreendimento, US$ 400 de tabela / US$ 200 de lançamento (cupom
+`LANCAMENTO50`, já aplicado automaticamente pelo backend — ver
+`COUPON_LANCAMENTO` em `checkout.js`, não mudou nesse commit).
+
+- **Compra é pré-paga, criação é separada** — clicar em "Comprar
+  página" abre o checkout do Stripe (`priceLookupKey:
+  'inmobly_emprendimento_page'`, `mode: 'payment'`). Quando o webhook
+  processa o `checkout.session.completed`, credita
+  `brokers/{tenantId}.usage.paginasCompradas` (+1, protegido contra
+  reentrega do mesmo evento — só incrementa se o doc de `purchases/`
+  ainda não existia). O botão do topo da lista é dinâmico: sobra saldo
+  (`paginasCompradas > paginas.length`) → "+ Nova página" (abre o
+  editor direto, sem checkout); sem saldo → "Comprar página — US$
+  200" (abre o checkout). O formulário também barra a criação sem
+  saldo como segunda camada, caso o botão fique dessincronizado.
+- **Lista em linha, mesmo padrão de Meus Imóveis** — `imv-admin-row`,
+  paginação client-side, badge de status (Publicada/Rascunho)
+  reaproveitando `imv-admin-badge--destaque`/`--limite` sem CSS novo.
+- **Mais campos que um imóvel simples**, como pedido: previsão de
+  entrega, unidades disponíveis, link de tour virtual/vídeo, além do
+  que já existe em imóvel (nome, estágio, localização, valor,
+  comodidades, descrição). Capa é uma imagem só (não galeria) — mesmo
+  algoritmo de compressão canvas→WebP/JPEG de `admin-imoveis.js`, sem
+  Firebase Storage.
+- **`brokers/{tenantId}/paginas/{id}`** — regras espelham `imoveis`
+  (leitura pública, escrita só do tenant admin) pensando já na página
+  institucional pública que ainda não existe (ver abaixo).
+- **`obrigado.html` agora aceita `?next=`** — depois de pagar uma
+  Página de Emprendimento, o botão da tela de confirmação manda direto
+  pra `paginas.html` em vez do painel genérico (`PROXIMA_PAGINA` em
+  `checkout.js`).
+
+⚠️ **O que "Páginas" ainda NÃO faz**: não existe template público
+(`site/paginas/{id}.html` ou rota equivalente) pra de fato publicar o
+conteúdo num link compartilhável — o switch "Página publicada" hoje só
+muda um campo no Firestore, não gera nada visível fora do painel. Isso
+é trabalho futuro, do mesmo tamanho do que foi construir o catálogo
+público de imóveis.
 
 ## Estrutura
 
@@ -365,7 +519,10 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 ├─ status: 'trialing' | 'active' | 'past_due' | 'canceled'
 ├─ trialEndsAt, imoveisLimit, domainIncluded
 ├─ stripeCustomerId, stripeSubscriptionId
-├─ usage: { imoveisCount, imoveisUpdatedAt }
+├─ usage: { imoveisCount, imoveisUpdatedAt, paginasCompradas }
+│                                       ← paginasCompradas é novo — crédito de
+│                                        Páginas de Empreendimento pagas, só o
+│                                        stripeWebhook incrementa (Admin SDK)
 ├─ customDomainStatus: 'none' | 'requested' | 'configuring' | 'active'
 ├─ onboardingCompleted: boolean       ← novo — controla se pula o tour
 ├─ whatsapp: string                   ← novo — meu-site.html, formato "595..." (sem +)
@@ -385,8 +542,15 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 ├─ language: 'es' | 'pt' | 'en'               ← novo — meu-site.html, padrão 'es'
 ├─ createdAt, updatedAt
 ├─ purchases/{id}                    ← igual ao antigo, sem mudança de schema
-└─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,
-    └─ fotos/{id}                       agora aninhado sob o tenant (mesma forma)
+├─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,
+│   └─ fotos/{id}                       agora aninhado sob o tenant (mesma forma)
+└─ paginas/{id}                      ← NOVO — Páginas de Empreendimento, ver
+                                         seção própria acima. nome, estagio,
+                                         previsaoEntrega, unidadesDisponiveis,
+                                         cidade, bairro, endereco, valorDesde,
+                                         tourUrl, descricao, comodidades[],
+                                         capa (dataURL, sem subcoleção de fotos),
+                                         publicada: boolean
 ```
 
 O CRUD de `imoveis` (criar/editar/desativar/excluir + fotos) já está migrado —
@@ -435,9 +599,6 @@ o checkout é criado, não os produtos vendidos. Webhook endpoint aponta pra
 Já tem lugar reservado na sidebar do app shell (item visível, mas cai em
 `em-breve.html` — não é link morto, é honesto sobre o status):
 
-- **Leads** — a aba "Leads" que existia no `template/admin/` antigo não foi
-  portada, só o CRUD de imóveis. `brokers/{tenantId}/leads` já existe no
-  schema/rules, só não tem UI ainda.
 - **Domínio** — segue igual ao que já estava definido em
   `docs/REGRAS-DE-NEGOCIO.md`, seção 6: concierge manual por enquanto.
 - **Meu perfil / Configurações** (dropdown do avatar) — edição de dados da

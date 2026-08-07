@@ -14,7 +14,7 @@ const ICONS = {
   dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
   imoveis: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
   site: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18 15 15 0 010-18z"/></svg>',
-  leads: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+  paginas: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
   dominio: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
   plano: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
   chevron: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
@@ -22,13 +22,14 @@ const ICONS = {
 };
 
 // `primary: true` marca os itens que também aparecem na bottombar do
-// mobile (só os 4 que já têm UI de verdade — Leads/Domínio são stub
-// "Em breve", não merecem espaço fixo permanente na tela).
+// mobile (só os 4 que já têm UI de verdade — Domínio é stub "Em breve",
+// e Páginas fica só no drawer/sidebar completa por enquanto pra não
+// disputar espaço fixo com os itens de uso diário).
 const NAV = [
   { key: 'dashboard', href: 'painel.html',              label: 'Dashboard',      icon: ICONS.dashboard, primary: true },
   { key: 'imoveis',   href: 'admin.html',                label: 'Meus Imóveis',   icon: ICONS.imoveis,   primary: true },
   { key: 'site',      href: 'meu-site.html',              label: 'Meu Site',       icon: ICONS.site,      primary: true },
-  { key: 'leads',     href: 'em-breve.html?f=leads',     label: 'Leads',          icon: ICONS.leads,   soon: true },
+  { key: 'paginas',   href: 'paginas.html',               label: 'Páginas',        icon: ICONS.paginas },
   { key: 'dominio',   href: 'em-breve.html?f=dominio',   label: 'Domínio',        icon: ICONS.dominio, soon: true },
   { key: 'plano',     href: 'planos.html',                label: 'Plano',          icon: ICONS.plano,      primary: true },
 ];
@@ -37,6 +38,7 @@ const NAV = [
 // sidebar. Adicionar um item no topo a cada mudança relevante pro
 // usuário final (não é changelog técnico interno).
 const UPDATES = [
+  { date: '2026-08-07', title: 'Páginas de Empreendimento', desc: 'Compre e crie páginas institucionais para seus empreendimentos, com preço de lançamento.' },
   { date: '2026-08-07', title: 'Meu Site', desc: 'Configure seu WhatsApp e publique o catálogo público dos seus imóveis.' },
   { date: '2026-08-07', title: 'Painel reorganizado', desc: 'Menu lateral novo com todas as áreas do sistema, mais fácil de navegar.' },
   { date: '2026-08-07', title: 'Cadastro mais confiável', desc: 'Corrigido um caso raro que podia travar a criação de conta.' },
@@ -54,7 +56,7 @@ function avatarHTML(user, size) {
 
 function renderSidebar(active) {
   const navHTML = NAV.map(item => `
-    <a class="admin-nav__btn${item.key === active ? ' active' : ''}${item.soon ? ' admin-nav__btn--soon' : ''}" href="${item.href}">
+    <a class="admin-nav__btn${item.key === active ? ' active' : ''}${item.soon ? ' admin-nav__btn--soon' : ''}" href="${item.href}" data-tour="nav-desktop-${item.key}">
       <span class="admin-nav__btn-main">
         <span class="admin-nav__icon" aria-hidden="true">${item.icon}</span>
         <span class="admin-nav__label">${item.label}</span>
@@ -132,7 +134,7 @@ function renderTopbar(title) {
 // drawer da sidebar, aberto pelo hambúrguer da topbar.
 function renderBottomBar(active) {
   const itens = NAV.filter(item => item.primary).map(item => `
-    <a class="admin-bottombar__btn${item.key === active ? ' active' : ''}" href="${item.href}" aria-label="${item.label}">
+    <a class="admin-bottombar__btn${item.key === active ? ' active' : ''}" href="${item.href}" aria-label="${item.label}" data-tour="nav-mobile-${item.key}">
       ${item.icon}
     </a>`).join('');
   return `<nav class="admin-bottombar" aria-label="Navegação principal">${itens}</nav>`;

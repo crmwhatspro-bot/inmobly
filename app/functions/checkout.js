@@ -41,6 +41,12 @@ const PROMOS = {
 
 const BASE_URL = 'https://inmobly-project.web.app'; // atualizar se/quando tiver domínio próprio
 
+// Depois de pagar, manda pra onde faz sentido usar a compra — não
+// sempre pro painel genérico. Só afeta o "Ir pra..." de obrigado.html.
+const PROXIMA_PAGINA = {
+  inmobly_emprendimento_page: 'paginas.html',
+};
+
 exports.criarCheckoutSession = onCall(
   { region: 'southamerica-east1', secrets: [STRIPE_SECRET_KEY] },
   async (request) => {
@@ -65,11 +71,37 @@ exports.criarCheckoutSession = onCall(
     const mode = price.type === 'recurring' ? 'subscription' : 'payment';
     const produto = priceLookupKey.replace(/^inmobly_/, '').replace(/_monthly$/, '');
 
+    // Upgrade/downgrade de quem já tem assinatura ativa: uma Checkout
+    // Session NOVA em mode:subscription criaria uma SEGUNDA assinatura
+    // paralela no Stripe (cobrando os dois planos ao mesmo tempo), em
+    // vez de trocar a existente. Troca o item da assinatura atual
+    // direto pela API, com proration — sem passar pelo Checkout.
+    if (mode === 'subscription' && broker.stripeSubscriptionId) {
+      try {
+        const subAtual = await stripe.subscriptions.retrieve(broker.stripeSubscriptionId);
+        const itemAtual = subAtual.items.data[0];
+        if (
+          (subAtual.status === 'active' || subAtual.status === 'past_due') &&
+          itemAtual && itemAtual.price.id !== price.id
+        ) {
+          await stripe.subscriptions.update(broker.stripeSubscriptionId, {
+            items: [{ id: itemAtual.id, price: price.id }],
+            proration_behavior: 'create_prorations',
+          });
+          return { updated: true, plan: produto };
+        }
+      } catch (err) {
+        console.warn('[criarCheckoutSession] falha ao trocar assinatura existente, seguindo pra checkout novo:', err.message);
+        // cai pro fluxo normal abaixo — melhor abrir um checkout novo do que travar o usuário
+      }
+    }
+
+    const proxima = PROXIMA_PAGINA[priceLookupKey];
     const params = {
       mode,
       line_items: [{ price: price.id, quantity: 1 }],
       client_reference_id: tenantId,
-      success_url: `${BASE_URL}/obrigado.html`,
+      success_url: `${BASE_URL}/obrigado.html${proxima ? '?next=' + encodeURIComponent(proxima) : ''}`,
       cancel_url:  `${BASE_URL}/planos.html`,
     };
 

@@ -165,18 +165,26 @@
                   <p>Em branco = "Sob consulta"</p>
                 </header>
                 <div class="imv-sec__body imv-grid">
-                  <div class="form-group imv-col-3">
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="imv-moeda">Moeda</label>
+                    <select class="form-select" id="imv-moeda">
+                      <option value="USD">US$ — Dólar</option>
+                      <option value="PYG">Gs. — Guaraní</option>
+                      <option value="BRL">R$ — Real</option>
+                    </select>
+                  </div>
+                  <div class="form-group imv-col-2">
                     <label class="form-label" for="imv-preco-venda">Preço de venda</label>
                     <div class="imv-affix">
-                      <span aria-hidden="true">US$</span>
+                      <span aria-hidden="true" id="imv-preco-venda-prefixo">US$</span>
                       <input class="form-input" type="number" id="imv-preco-venda" min="0" step="100"
                              inputmode="numeric" placeholder="120000">
                     </div>
                   </div>
-                  <div class="form-group imv-col-3">
+                  <div class="form-group imv-col-2">
                     <label class="form-label" for="imv-preco-aluguel">Aluguel mensal</label>
                     <div class="imv-affix">
-                      <span aria-hidden="true">US$</span>
+                      <span aria-hidden="true" id="imv-preco-aluguel-prefixo">US$</span>
                       <input class="form-input" type="number" id="imv-preco-aluguel" min="0" step="10"
                              inputmode="numeric" placeholder="800">
                     </div>

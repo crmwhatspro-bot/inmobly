@@ -38,15 +38,25 @@
 
 <div id="site-conteudo" hidden>
 
+  <header class="site-navbar" id="site-navbar">
+    <div class="container site-navbar__inner">
+      <div class="site-navbar__brand">
+        <img id="nav-logo" src="" alt="" hidden>
+        <span id="nav-nome">—</span>
+      </div>
+      <a href="#" id="nav-whatsapp" target="_blank" rel="noopener" class="btn btn--whatsapp btn--sm">WhatsApp</a>
+    </div>
+  </header>
+
   <section class="imv-hero" aria-labelledby="imoveis-titulo">
-    <img id="hero-logo" src="" alt="" hidden style="max-height:64px; max-width:220px; object-fit:contain; margin-bottom: var(--sp-4); border-radius: var(--radius-md);">
-    <span class="section-label t-label" id="hero-label">Portfolio</span>
     <h1 class="t-display-md" id="imoveis-titulo">Inmuebles disponibles</h1>
     <p class="t-body-lg" id="imoveis-sub">Cargando...</p>
   </section>
 
-  <main class="section" style="padding-top: 0;">
+  <main class="section">
     <div class="container">
+
+      <span class="section-label t-label" id="portfolio-label">Portfolio</span>
 
       <div class="imv-filters" role="search" aria-label="Filtrar inmuebles">
         <div class="imv-pills" role="group" aria-label="Operación" id="pills-operacao">
@@ -116,7 +126,9 @@
         </div>
       </div>
       <p style="text-align:center; margin-top: var(--sp-6); font-size: var(--text-xs); color: var(--clr-text-muted);">
-        <span id="footer-inmobly-texto">Creado con orgullo por</span> <a href="https://inmobly-project.web.app/" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Inmobly</a>
+        <span id="footer-rights-prefix">Todos los derechos reservados a</span>
+        <a href="https://puntoalto.com.py/" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Punto Alto Marketing y Ventas</a>
+        — sponsored by startup CRM WhatsPro.
       </p>
     </div>
   </footer>

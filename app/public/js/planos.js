@@ -37,6 +37,13 @@ document.querySelectorAll('[data-plano]').forEach(btn => {
 
     try {
       const { data } = await criarCheckoutSession({ priceLookupKey: btn.dataset.plano });
+      if (data.updated) {
+        msg.textContent = `Plano trocado para ${data.plan}! A cobrança já foi ajustada proporcionalmente.`;
+        msg.className = 'msg msg--ok';
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+        return;
+      }
       location.href = data.url;
     } catch (err) {
       msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;

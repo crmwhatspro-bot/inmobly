@@ -4,46 +4,56 @@
    ════════════════════════════════════════════════ */
 
 /* ── Navbar da página de imóveis ──────────────────
-   Topo: fundo claro + letras escuras.
-   Após o scroll: fundo escuro + letras brancas
-   (main.js alterna .navbar--scrolled). ─────────── */
-.navbar--solid {
-  background: rgba(250, 250, 247, 0.92);
+   Fixa, sempre com o mesmo tratamento escuro + blur — diferente do
+   componente genérico .navbar de components.css (feito pra um site
+   multi-página com menu e hero clara com foto), aqui é uma página só
+   e o hero é sempre um gradiente escuro, então não precisa de lógica
+   de scroll pra trocar de tema. Nome/logo vêm de brokers/{tenantId}
+   (identidade visual em meu-site.html) — sem isso o site parecia um
+   template genérico, sem identidade nenhuma no topo da página. ── */
+.site-navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--navbar-h);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  background: rgba(11, 16, 23, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-sm);
-  border-bottom: 1px solid var(--clr-border);
-}
-
-/* topo (sem scroll): anula o padrão "letras brancas" do components.css */
-.navbar--solid:not(.navbar--scrolled) .navbar__logo        { color: var(--clr-primary); }
-.navbar--solid:not(.navbar--scrolled) .navbar__logo span   { color: var(--clr-accent); }
-.navbar--solid:not(.navbar--scrolled) .navbar__nav a       { color: var(--clr-text-2); }
-.navbar--solid:not(.navbar--scrolled) .navbar__nav a:hover { color: var(--clr-primary); }
-.navbar--solid:not(.navbar--scrolled) .navbar__burger span { background: var(--clr-text); }
-.navbar--solid:not(.navbar--scrolled) .lang-switcher       { border-color: var(--clr-border); }
-.navbar--solid:not(.navbar--scrolled) .lang-switcher button { color: var(--clr-text-muted); }
-.navbar--solid:not(.navbar--scrolled) .lang-switcher button.active {
-  background: var(--clr-primary);
-  color: white;
-}
-
-/* com scroll: navbar escurece e as letras passam a brancas */
-.navbar--solid.navbar--scrolled {
-  background: rgba(17, 24, 32, 0.92);
   border-bottom: 1px solid var(--clr-border-dark);
 }
-.navbar--solid.navbar--scrolled .navbar__logo        { color: white; }
-.navbar--solid.navbar--scrolled .navbar__logo span   { color: var(--clr-accent-light); }
-.navbar--solid.navbar--scrolled .navbar__nav a       { color: rgba(255, 255, 255, 0.78); }
-.navbar--solid.navbar--scrolled .navbar__nav a:hover { color: white; }
-.navbar--solid.navbar--scrolled .navbar__burger span { background: white; }
-.navbar--solid.navbar--scrolled .lang-switcher       { border-color: rgba(255, 255, 255, 0.28); }
-.navbar--solid.navbar--scrolled .lang-switcher button { color: rgba(255, 255, 255, 0.65); }
-.navbar--solid.navbar--scrolled .lang-switcher button.active {
-  background: white;
-  color: var(--clr-primary);
+.site-navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--sp-4);
 }
+.site-navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  color: var(--clr-text-light);
+}
+.site-navbar__brand img {
+  height: 34px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.site-navbar__brand span {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-navbar .btn--whatsapp { flex-shrink: 0; }
 
 /* ── Hero compacto ────────────────────────────── */
 .imv-hero {
@@ -69,7 +79,7 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   padding: var(--sp-4);
-  margin-top: calc(-1 * var(--sp-12));
+  margin-top: var(--sp-4);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);

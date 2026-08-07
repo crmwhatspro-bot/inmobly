@@ -39,6 +39,16 @@ const paginacaoEl      = $('imv-pagination');
 const paginaInfoEl     = $('imv-pagina-info');
 const paginaAnteriorBtn = $('imv-pagina-anterior');
 const paginaProximaBtn  = $('imv-pagina-proxima');
+const moedaSelect       = $('imv-moeda');
+const precoVendaPrefixo   = $('imv-preco-venda-prefixo');
+const precoAluguelPrefixo = $('imv-preco-aluguel-prefixo');
+
+function atualizarPrefixosMoeda() {
+  const simbolo = (MOEDA[moedaSelect.value] || MOEDA.USD).simbolo;
+  precoVendaPrefixo.textContent = simbolo;
+  precoAluguelPrefixo.textContent = simbolo;
+}
+moedaSelect.addEventListener('change', atualizarPrefixosMoeda);
 
 // ── Estado ──────────────────────────────────────
 let tenantId = null;
@@ -208,7 +218,18 @@ async function comprimirArquivo(file, larguraMax) {
 // ════════════════════════════════════════════════
 // Lista de imóveis
 // ════════════════════════════════════════════════
-const fmtUSD = (v) => 'US$ ' + Number(v).toLocaleString('en-US');
+// Só essas 3 moedas por enquanto — as que fazem sentido pro mercado
+// paraguaio (USD é o padrão do setor imobiliário, PYG e BRL cobrem
+// cliente local e fronteiriço).
+const MOEDA = {
+  USD: { simbolo: 'US$', locale: 'en-US' },
+  PYG: { simbolo: 'Gs.', locale: 'es-PY' },
+  BRL: { simbolo: 'R$',  locale: 'pt-BR' },
+};
+const fmtPreco = (v, moeda) => {
+  const m = MOEDA[moeda] || MOEDA.USD;
+  return `${m.simbolo} ${Number(v).toLocaleString(m.locale)}`;
+};
 const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -255,8 +276,8 @@ function renderLista() {
   const pagina = imoveis.slice(inicio, inicio + tamanhoPagina);
 
   listaEl.innerHTML = pagina.map(imv => {
-    const preco = imv.precoVenda ? fmtUSD(imv.precoVenda)
-                : imv.precoAluguel ? fmtUSD(imv.precoAluguel) + '/mês' : 'Sob consulta';
+    const preco = imv.precoVenda ? fmtPreco(imv.precoVenda, imv.moeda)
+                : imv.precoAluguel ? fmtPreco(imv.precoAluguel, imv.moeda) + '/mês' : 'Sob consulta';
     const loc = [imv.bairro, imv.cidade].filter(Boolean).join(', ');
     const img = imv.capa
       ? `<img src="${imv.capa}" alt="" loading="lazy">`
@@ -350,6 +371,8 @@ async function abrirEditor(imv) {
   mostrarMsg(null);
   form.reset();
   $('imv-cidade').value = imv?.cidade ?? 'Assunção';
+  moedaSelect.value = imv?.moeda || 'USD';
+  atualizarPrefixosMoeda();
 
   if (imv) {
     $('imv-titulo').value       = imv.titulo || '';
@@ -495,6 +518,7 @@ form.addEventListener('submit', async (e) => {
       estagio:      $('imv-estagio').value,
       cidade:       $('imv-cidade').value.trim(),
       bairro:       $('imv-bairro').value.trim(),
+      moeda:        moedaSelect.value || 'USD',
       precoVenda:   Number($('imv-preco-venda').value)   || null,
       precoAluguel: Number($('imv-preco-aluguel').value) || null,
       quartos:      Number($('imv-quartos').value)   || null,

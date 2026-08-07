@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Páginas de Empreendimento — Inmobly</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+
+    <main class="admin-main">
+      <div class="admin-tab-panel active" id="tab-paginas">
+
+        <!-- Lista de páginas -->
+        <div id="pg-lista-view">
+
+          <div class="imv-toolbar">
+            <div>
+              <h2 class="imv-toolbar__title">Páginas de Empreendimento</h2>
+              <span class="imv-toolbar__count" id="pg-count">—</span>
+            </div>
+            <button type="button" class="btn btn--accent btn--md" id="pg-acao-btn">Comprar página — US$ 200</button>
+          </div>
+
+          <p class="imv-plano-banner" id="pg-saldo-banner" hidden></p>
+          <p id="pg-acao-msg" class="imv-form-msg" role="alert" hidden></p>
+
+          <div class="imv-list-controls" id="pg-list-controls" hidden>
+            <label for="pg-tamanho-pagina">Mostrar</label>
+            <select id="pg-tamanho-pagina" class="form-select" style="width:auto; height:36px; padding:0 var(--sp-6) 0 var(--sp-3);">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="40">40</option>
+              <option value="50">50</option>
+            </select>
+            <span>por página</span>
+          </div>
+
+          <div class="imv-admin-list" id="pg-admin-list">
+            <p class="admin-empty">Carregando...</p>
+          </div>
+
+          <div class="imv-pagination" id="pg-pagination" hidden>
+            <button type="button" id="pg-pagina-anterior" aria-label="Página anterior">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span id="pg-pagina-info">—</span>
+            <button type="button" id="pg-pagina-proxima" aria-label="Próxima página">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Editor (criar / editar) -->
+        <div id="pg-editor-view" hidden>
+
+          <div class="imv-editor-head">
+            <button type="button" class="imv-voltar" id="pg-voltar-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Voltar
+            </button>
+            <h2 class="imv-editor-head__title" id="pg-form-titulo">Nova Página</h2>
+          </div>
+
+          <form id="pg-form" class="imv-form" novalidate>
+
+            <!-- Coluna principal -->
+            <div class="imv-form__main">
+
+              <!-- Capa -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <h3>Capa</h3>
+                  <p>Imagem principal do empreendimento</p>
+                </header>
+                <div class="imv-sec__body">
+                  <div class="imv-fotos-grid" id="pg-capa-grid"></div>
+                  <label class="imv-dropzone" for="pg-capa-input" id="pg-capa-label">
+                    <span class="imv-dropzone__icon" aria-hidden="true">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </span>
+                    <span class="imv-dropzone__title">Adicionar capa</span>
+                    <small class="imv-dropzone__sub">Toque para tirar foto ou escolher da galeria</small>
+                    <span class="imv-dropzone__btn" aria-hidden="true">Escolher foto</span>
+                  </label>
+                  <input type="file" id="pg-capa-input" accept="image/*" hidden>
+                </div>
+              </section>
+
+              <!-- Informações básicas -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <h3>Informações básicas</h3>
+                </header>
+                <div class="imv-sec__body imv-grid">
+                  <div class="form-group imv-col-6">
+                    <label class="form-label" for="pg-nome">Nome do empreendimento *</label>
+                    <input class="form-input" type="text" id="pg-nome" required
+                           placeholder="Ex.: Residencial Costa Azul">
+                  </div>
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="pg-estagio">Estágio da obra</label>
+                    <select class="form-select" id="pg-estagio">
+                      <option value="pronto">Pronto</option>
+                      <option value="construcao">Em construção</option>
+                      <option value="planta">Na planta</option>
+                    </select>
+                  </div>
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="pg-entrega">Previsão de entrega</label>
+                    <input class="form-input" type="text" id="pg-entrega" placeholder="Ex.: Dez/2027">
+                  </div>
+                  <div class="form-group imv-col-2">
+                    <label class="form-label" for="pg-unidades">Unidades disponíveis</label>
+                    <input class="form-input" type="number" id="pg-unidades" min="0" inputmode="numeric" placeholder="0">
+                  </div>
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="pg-cidade">Cidade</label>
+                    <input class="form-input" type="text" id="pg-cidade" placeholder="Assunção" value="Assunção">
+                  </div>
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="pg-bairro">Bairro</label>
+                    <input class="form-input" type="text" id="pg-bairro" placeholder="Ex.: Villa Morra">
+                  </div>
+                  <div class="form-group imv-col-6">
+                    <label class="form-label" for="pg-endereco">Endereço completo</label>
+                    <input class="form-input" type="text" id="pg-endereco" placeholder="Rua, número, referência">
+                  </div>
+                </div>
+              </section>
+
+              <!-- Valores -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                  <h3>Valores</h3>
+                  <p>Em branco = "Sob consulta"</p>
+                </header>
+                <div class="imv-sec__body imv-grid">
+                  <div class="form-group imv-col-3">
+                    <label class="form-label" for="pg-valor-desde">A partir de</label>
+                    <div class="imv-affix">
+                      <span aria-hidden="true">US$</span>
+                      <input class="form-input" type="number" id="pg-valor-desde" min="0" step="100"
+                             inputmode="numeric" placeholder="80000">
+                    </div>
+                  </div>
+                  <div class="form-group imv-col-6">
+                    <label class="form-label" for="pg-tour-url">Link do tour virtual / vídeo</label>
+                    <input class="form-input" type="url" id="pg-tour-url" placeholder="https://...">
+                  </div>
+                </div>
+              </section>
+
+              <!-- Comodidades -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <h3>Comodidades</h3>
+                  <p>Toque para marcar todas que se aplicam</p>
+                </header>
+                <div class="imv-sec__body">
+                  <div class="imv-chips" id="pg-comodidades">
+                    <label class="imv-chip"><input type="checkbox" value="piscina"><span>Piscina</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="churrasqueira"><span>Churrasqueira</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="academia"><span>Academia</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="seguranca"><span>Segurança 24h</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="elevador"><span>Elevador</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="salao"><span>Salão de festas</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="coworking"><span>Coworking</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="jardim"><span>Jardim</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="gerador"><span>Gerador</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="playground"><span>Playground</span></label>
+                    <label class="imv-chip"><input type="checkbox" value="coworking-rooftop"><span>Rooftop</span></label>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Descrição -->
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                  <h3>Descrição</h3>
+                </header>
+                <div class="imv-sec__body">
+                  <textarea class="form-textarea" id="pg-descricao" rows="6" aria-label="Descrição do empreendimento"
+                            placeholder="Descreva o empreendimento: conceito, diferenciais, localização, condições de pagamento..."></textarea>
+                </div>
+              </section>
+
+            </div>
+
+            <!-- Sidebar: publicação + ações -->
+            <aside class="imv-form__side">
+              <section class="imv-sec">
+                <header class="imv-sec__head">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/></svg>
+                  <h3>Publicação</h3>
+                </header>
+                <div class="imv-sec__body imv-sec__body--side">
+
+                  <label class="imv-switch">
+                    <input type="checkbox" id="pg-publicada">
+                    <span class="imv-switch__track" aria-hidden="true"></span>
+                    <span>
+                      <strong>Página publicada</strong>
+                      <small>Visível por link direto</small>
+                    </span>
+                  </label>
+
+                  <p id="pg-form-msg" class="imv-form-msg" role="alert" hidden></p>
+
+                  <div class="imv-actions">
+                    <button type="submit" class="btn btn--accent btn--md" id="pg-salvar-btn">Salvar página</button>
+                    <button type="button" class="btn btn--md imv-btn-ghost" id="pg-cancelar-btn">Cancelar</button>
+                    <button type="button" class="imv-btn-excluir" id="pg-excluir-btn" hidden>Excluir página</button>
+                  </div>
+
+                </div>
+              </section>
+            </aside>
+
+          </form>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script type="module" src="js/paginas.js"></script>
+</body>
+</html>
