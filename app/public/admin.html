@@ -42,8 +42,30 @@
 
           <p class="imv-plano-banner" id="imv-plano-banner" hidden></p>
 
+          <div class="imv-list-controls">
+            <label for="imv-tamanho-pagina">Mostrar</label>
+            <select id="imv-tamanho-pagina" class="form-select" style="width:auto; height:36px; padding:0 var(--sp-6) 0 var(--sp-3);">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="40">40</option>
+              <option value="50">50</option>
+            </select>
+            <span>por página</span>
+          </div>
+
           <div class="imv-admin-list" id="imv-admin-list">
             <p class="admin-empty">Carregando...</p>
+          </div>
+
+          <div class="imv-pagination" id="imv-pagination" hidden>
+            <button type="button" id="imv-pagina-anterior" aria-label="Página anterior">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span id="imv-pagina-info">—</span>
+            <button type="button" id="imv-pagina-proxima" aria-label="Próxima página">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
 
         </div>
@@ -274,6 +296,19 @@
       </div>
     </main>
 
+  </div>
+</div>
+
+<div class="modal-backdrop" id="upsell-modal" role="dialog" aria-modal="true" aria-labelledby="upsell-titulo">
+  <div class="modal" style="max-width: 460px; text-align: center; padding: var(--sp-8);">
+    <button class="modal__close" id="upsell-fechar" aria-label="Fechar" style="position: absolute; top: var(--sp-3); right: var(--sp-3);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <h2 id="upsell-titulo" style="font-family: var(--font-display); font-size: var(--text-xl); color: var(--clr-text);">Você já tem 4 dos 6 imóveis grátis</h2>
+    <p style="color: var(--clr-text-2); margin: var(--sp-4) 0 var(--sp-6);">Assine agora e garanta <strong>50% de desconto por 3 meses</strong> — sem perder nada do que você já configurou.</p>
+    <button type="button" class="btn btn--accent btn--md" id="upsell-assinar" style="width: 100%;">Assinar Starter com 50% OFF</button>
+    <a href="planos.html" style="display: block; margin-top: var(--sp-4); font-size: var(--text-sm); color: var(--clr-text-muted);">Ver todos os planos</a>
+    <p id="upsell-msg" class="imv-form-msg" role="alert" hidden style="margin-top: var(--sp-4);"></p>
   </div>
 </div>
 

@@ -226,11 +226,22 @@ function preencherPerfil(user, broker, tenantId) {
   assinarTexto.textContent = textoPorStatus[broker?.status] || 'Assinar';
   assinarLink.hidden = broker?.status === 'active';
 
+  atualizarUso(broker);
+}
+
+// Separado de preencherPerfil() pra dar pra chamar de novo depois de
+// uma mutação na mesma página (ex.: admin-imoveis.js criando/excluindo
+// um imóvel) sem precisar recarregar — senão a barra só atualizava no
+// próximo carregamento da página, mesmo o Firestore já tendo o número
+// certo.
+export function atualizarUso(broker) {
   const usados = broker?.usage?.imoveisCount ?? 0;
   const limite = broker ? limiteEfetivo(broker) : null;
   const limiteLabel = Number.isFinite(limite) ? limite : '∞';
-  document.getElementById('shellUsageLabel').textContent = `${usados} de ${limiteLabel} imóveis`;
+  const label = document.getElementById('shellUsageLabel');
   const fill = document.getElementById('shellUsageFill');
+  if (!label || !fill) return; // sidebar pode não estar montada ainda
+  label.textContent = `${usados} de ${limiteLabel} imóveis`;
   if (Number.isFinite(limite) && limite > 0) {
     const pct = Math.min(100, Math.round((usados / limite) * 100));
     fill.style.width = pct + '%';

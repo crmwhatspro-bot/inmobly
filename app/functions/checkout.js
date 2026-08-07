@@ -26,6 +26,19 @@ const COUPON_LANCAMENTO = {
   inmobly_emprendimento_page: 'LANCAMENTO50',
 };
 
+// Promoções que o CLIENT pode pedir, mas só por um nome fixo — nunca
+// manda o coupon direto (isso deixaria qualquer um aplicar qualquer
+// cupom em qualquer compra). Cada promo já vem com a lista de planos
+// em que faz sentido; se o priceLookupKey pedido não estiver na
+// lista, a promo é ignorada.
+//   imoveis4 — admin-imoveis.js oferece isso quando o trial chega a
+//   4 de 6 imóveis (ver README/PROXIMA-SESSAO.md): 50% off por 3
+//   meses, cupom precisa existir no Stripe Dashboard com esse ID
+//   exato (duration: repeating, duration_in_months: 3).
+const PROMOS = {
+  imoveis4: { coupon: 'LANCAMENTO3', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
+};
+
 const BASE_URL = 'https://inmobly-project.web.app'; // atualizar se/quando tiver domínio próprio
 
 exports.criarCheckoutSession = onCall(
@@ -67,9 +80,17 @@ exports.criarCheckoutSession = onCall(
       params.subscription_data = { metadata: { brokerSlug: tenantId } };
     } else {
       params.metadata = { brokerSlug: tenantId, product: produto };
-      const coupon = COUPON_LANCAMENTO[priceLookupKey];
-      if (coupon) params.discounts = [{ coupon }];
     }
+
+    // cupom: ou uma promo nomeada que o client pediu (validada contra
+    // PROMOS — nunca aceita um coupon cru do client) ou o automático
+    // por produto — nunca os dois, e nunca por confiar no que o client
+    // manda além do nome.
+    const promoPedida = PROMOS[String(request.data?.promo || '')];
+    const cupom = (promoPedida && promoPedida.planos.includes(priceLookupKey))
+      ? promoPedida.coupon
+      : COUPON_LANCAMENTO[priceLookupKey];
+    if (cupom) params.discounts = [{ coupon: cupom }];
 
     try {
       const session = await stripe.checkout.sessions.create(params);

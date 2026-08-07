@@ -107,6 +107,40 @@ elas — só dava pra "descobrir" outra página por um botão específico.
 - **Pendente**: aplicar um product tour (destacando os itens da sidebar)
   depois que essa interface for validada — combinado, ainda não construído.
 
+### Meus Imóveis (`admin.html`)
+
+- **Lista em linhas, não mais cards em grid** — cada imóvel é uma linha
+  (capa pequena + título/meta/preço + ações), pensado pra escanear
+  rápido uma lista maior. No mobile a capa fica maior (108px, contra
+  80px no desktop) pra continuar reconhecível, mas o layout continua em
+  linha — não vira card empilhado. As ações (`Editar`/`Ativar`) descem
+  pra uma linha própria só se não couberem ao lado do texto.
+- **Paginação client-side** — 10 por página por padrão, seletor pra
+  20/30/40/50. Todos os imóveis já vêm numa query só (nada de cursor no
+  Firestore, não vale a pena na escala atual); a paginação só corta o
+  que é renderizado.
+- **`usage.imoveisCount` finalmente é escrito** — as rules já validavam
+  o formato desde o commit que criou o CMS, mas nada gravava esse campo
+  de verdade: o rodapé da sidebar sempre mostrava a barra zerada, e
+  nenhum gatilho de limite tinha como funcionar. `sincronizarUsage()`
+  (chamada depois de criar/editar/excluir/ativar-desativar um imóvel)
+  grava a contagem de imóveis ATIVOS em `brokers/{tenantId}.usage` e
+  chama `shell.js#atualizarUso()` pra a barra da sidebar atualizar na
+  hora, sem precisar recarregar a página.
+- **Popup de upsell aos 4 de 6 imóveis do trial** — só corretores com
+  `status: 'trialing'`, só uma vez por navegador (`localStorage`, chave
+  `pa-upsell4-{tenantId}`). Oferece assinar o Starter com 50% off por 3
+  meses (cupom `LANCAMENTO3`, ver ⚠️ abaixo) — clica e já abre o
+  checkout do Stripe direto, sem passar por `planos.html`.
+
+⚠️ **O cupom `LANCAMENTO3` precisa ser criado no Stripe Dashboard antes
+do popup funcionar** — `functions/checkout.js` já sabe aplicá-lo (via
+`promo: 'imoveis4'`, nunca aceita o ID do cupom direto do client), mas
+não cria cupons sozinho. Criar em Dashboard → Product catalog →
+Coupons, com ID exatamente `LANCAMENTO3`, 50% off, duration
+**Repeating**, **3 months**. Sem isso, o clique em "Assinar" no popup
+vai falhar no Stripe com um erro de cupom não encontrado.
+
 ### Meu Site / catálogo público
 
 `meu-site.html`+`js/meu-site.js` — o corretor configura `whatsapp` (escrita
@@ -137,6 +171,14 @@ cliente final vê, sem login:
   direto do client — não desfaz o Hosting site nem os arquivos, só faz
   `perfilPublico` parar de responder (o catálogo publicado fica "no ar"
   mas mostra a tela de indisponível).
+- **"Atualizar site"** — botão novo, aparece ao lado de "Despublicar"
+  quando já publicado. Chama a mesma `publicarSite` (é segura pra rodar
+  de novo, sempre cria uma versão/release nova no Hosting com o
+  conteúdo mais recente de `site-assets/`). Antes desse botão, a única
+  forma de levar uma mudança de conteúdo pro site já publicado era
+  Despublicar (catálogo fica "indisponível" por um tempo) e Publicar de
+  novo — provavelmente a causa de alguma confusão de "por que ficou
+  indisponível" ao testar.
 - **Não lê `brokers/{tenantId}` direto** (tem e-mail, IDs do Stripe) — o
   catálogo chama `perfilPublico?tenant=slug`, que só responde se
   `published === true` (404 senão) e devolve uma projeção pública dos
@@ -151,7 +193,9 @@ cliente final vê, sem login:
   ("¿No encontraste lo que buscabas?", sempre visível, é onde o WhatsApp
   mora de verdade — não mais um botão gigante dominando o hero) + seção
   "Sobre" (`about`, só aparece se preenchido) antes do rodapé + rodapé
-  com WhatsApp/e-mail/Instagram. Referência visual: o mesmo site Nando
+  com WhatsApp/e-mail/Instagram + "Creado con orgullo por Inmobly"
+  (linka pro login — visitante curioso de um site de corretor pode
+  virar signup). Referência visual: o mesmo site Nando
   Barros que `template/` já clonava desde o início do projeto — não é
   mais a versão "enxuta" original, essa foi abandonada depois de ver o
   resultado. Ainda sem depoimentos/FAQ/formulário de contato — não

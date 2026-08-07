@@ -37,6 +37,14 @@
   }
   .ms-max { max-width: 640px; }
 
+  /* Espaço ENTRE seções (Identidade/Textos/Contato) — .imv-sec não
+     tem margin própria de propósito (em admin.html quem dá o gap é o
+     flex .imv-form__main), então aqui, sem um pai flex com gap,
+     ficavam coladas uma na outra. Escopado em .ms-max pra não afetar
+     admin.html (senão dobraria o espaçamento lá, que já usa flex+gap). */
+  .ms-max > .imv-sec,
+  .ms-max > .ms-status { margin-bottom: var(--sp-5); }
+
   /* Espaçamento entre campos dentro de cada seção — sem isso os
      .form-group ficam colados uns nos outros (imv-sec__body não tem
      gap próprio, só padding externo). */
@@ -132,6 +140,7 @@
           <div class="ms-status__actions">
             <a href="#" id="msVerSite" target="_blank" rel="noopener" class="btn btn--md imv-btn-ghost" hidden>Abrir publicado ↗</a>
             <button type="button" class="btn btn--accent btn--md" id="msPublicarBtn">Publicar site</button>
+            <button type="button" class="btn btn--md imv-btn-ghost" id="msAtualizarBtn" hidden>Atualizar site</button>
             <button type="button" class="imv-btn-excluir" id="msDespublicarBtn" hidden>Despublicar</button>
           </div>
         </div>

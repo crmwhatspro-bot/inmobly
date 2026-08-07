@@ -8,13 +8,14 @@
 // Fotos seguem comprimidas no navegador (canvas → WebP/JPEG, máx
 // 900px) e salvas como data-URL no Firestore — sem Firebase Storage.
 // ════════════════════════════════════════════════
-import { db } from './firebase.js';
+import { db, auth } from './firebase.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
   query, orderBy, serverTimestamp, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 import { limiteEfetivo } from './tenant.js';
-import { initShell } from './shell.js';
+import { initShell, atualizarUso } from './shell.js';
 
 const MAX_FOTOS      = 16;
 const MAX_DATAURL    = 950_000; // ~712KB binário — folga no limite de 1MiB do doc
@@ -33,10 +34,17 @@ const fotosInput  = $('imv-fotos-input');
 const formMsg     = $('imv-form-msg');
 const salvarBtn   = $('imv-salvar-btn');
 const excluirBtn  = $('imv-excluir-btn');
+const tamanhoPaginaSel = $('imv-tamanho-pagina');
+const paginacaoEl      = $('imv-pagination');
+const paginaInfoEl     = $('imv-pagina-info');
+const paginaAnteriorBtn = $('imv-pagina-anterior');
+const paginaProximaBtn  = $('imv-pagina-proxima');
 
 // ── Estado ──────────────────────────────────────
 let tenantId = null;
 let broker   = null;         // doc de brokers/{tenantId} — fonte do limite do plano
+let paginaAtual   = 1;
+let tamanhoPagina = 10;
 let imoveis  = [];
 let editId   = null;
 let fotos    = [];           // [{ id?: string (já salva), data: dataURL }]
@@ -59,12 +67,93 @@ function separarPorLimite() {
 }
 
 // ════════════════════════════════════════════════
+// Uso do plano — brokers/{tenantId}.usage.imoveisCount nunca era
+// escrito por lugar nenhum (as rules já validavam o formato, mas
+// nada gravava de verdade), então o rodapé da sidebar sempre mostrava
+// 0/6 e o gatilho de upsell abaixo nunca disparava. Chamado depois de
+// toda mutação que muda a contagem de imóveis ATIVOS (criar, excluir,
+// ativar/desativar — editar sem mudar o switch não muda a contagem,
+// mas rodar de novo não faz mal, só não teria efeito).
+async function sincronizarUsage() {
+  const ativos = imoveis.filter(i => i.ativo !== false).length;
+  if (broker?.usage?.imoveisCount === ativos) return ativos;
+  try {
+    await updateDoc(doc(db, 'brokers', tenantId), {
+      'usage.imoveisCount': ativos,
+      'usage.imoveisUpdatedAt': serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    if (broker) broker.usage = { ...broker.usage, imoveisCount: ativos };
+  } catch (err) {
+    console.error('[admin-imoveis] falha ao sincronizar usage.imoveisCount:', err);
+  }
+  atualizarUso(broker);
+  return ativos;
+}
+
+// Popup de upsell ao chegar em 4 dos 6 imóveis grátis do trial — só
+// pra quem ainda está no trial, só uma vez por navegador (localStorage,
+// mesmo padrão do "Novidades visto" em shell.js).
+const UPSELL_LIMIAR = 4;
+function upsellVistoKey() { return `pa-upsell4-${tenantId}`; }
+
+function verificarUpsell(ativos) {
+  if (broker?.status !== 'trialing') return;
+  if (ativos < UPSELL_LIMIAR) return;
+  if (localStorage.getItem(upsellVistoKey())) return;
+  localStorage.setItem(upsellVistoKey(), '1');
+  abrirUpsell();
+}
+
+function abrirUpsell() {
+  const modal = document.getElementById('upsell-modal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function fecharUpsell() {
+  const modal = document.getElementById('upsell-modal');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function initUpsell() {
+  const modal = document.getElementById('upsell-modal');
+  const assinarBtn = document.getElementById('upsell-assinar');
+  const msg = document.getElementById('upsell-msg');
+
+  document.getElementById('upsell-fechar').addEventListener('click', fecharUpsell);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fecharUpsell(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) fecharUpsell();
+  });
+
+  assinarBtn.addEventListener('click', async () => {
+    assinarBtn.disabled = true;
+    const original = assinarBtn.textContent;
+    assinarBtn.textContent = 'Abrindo checkout...';
+    try {
+      const functions = getFunctions(auth.app, 'southamerica-east1');
+      const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo: 'imoveis4' });
+      location.href = data.url;
+    } catch (err) {
+      msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;
+      msg.className = 'imv-form-msg imv-form-msg--erro';
+      msg.hidden = false;
+      assinarBtn.disabled = false;
+      assinarBtn.textContent = original;
+    }
+  });
+}
+
+// ════════════════════════════════════════════════
 // Gate de acesso — shell.js cuida do login/tenant/logout e monta a
 // sidebar/topbar; aqui só usamos o tenantId/broker que ele resolve.
 // ════════════════════════════════════════════════
 initShell({ active: 'imoveis', title: 'Meus Imóveis' }).then((resultado) => {
   tenantId = resultado.tenantId;
   broker = resultado.broker;
+  initUpsell();
   carregarLista();
 });
 
@@ -134,6 +223,8 @@ async function carregarLista() {
     const snap = await getDocs(query(colImoveis(), orderBy('createdAt', 'desc')));
     imoveis = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderLista();
+    const ativos = await sincronizarUsage();
+    verificarUpsell(ativos);
   } catch (e) {
     console.error('Erro ao carregar imóveis:', e);
     listaEl.innerHTML = '<p class="admin-empty">Erro ao carregar. Recarregue a página.</p>';
@@ -154,40 +245,61 @@ function renderLista() {
 
   if (!imoveis.length) {
     listaEl.innerHTML = '<p class="admin-empty">Nenhum imóvel cadastrado ainda.<br>Toque em "Novo Imóvel" para começar.</p>';
+    paginacaoEl.hidden = true;
     return;
   }
 
-  listaEl.innerHTML = imoveis.map(imv => {
+  const totalPaginas = Math.max(1, Math.ceil(imoveis.length / tamanhoPagina));
+  if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+  const inicio = (paginaAtual - 1) * tamanhoPagina;
+  const pagina = imoveis.slice(inicio, inicio + tamanhoPagina);
+
+  listaEl.innerHTML = pagina.map(imv => {
     const preco = imv.precoVenda ? fmtUSD(imv.precoVenda)
                 : imv.precoAluguel ? fmtUSD(imv.precoAluguel) + '/mês' : 'Sob consulta';
     const loc = [imv.bairro, imv.cidade].filter(Boolean).join(', ');
     const img = imv.capa
       ? `<img src="${imv.capa}" alt="" loading="lazy">`
-      : `<div class="imv-noimg"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>`;
+      : `<div class="imv-noimg"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>`;
     const imvAcimaDoLimite = acimaDoLimite.has(imv.id);
     return `
-      <article class="imv-admin-card ${imv.ativo === false || imvAcimaDoLimite ? 'imv-admin-card--inativo' : ''}">
-        <div class="imv-admin-card__media">
-          ${img}
-          <div class="imv-admin-card__badges">
+      <article class="imv-admin-row ${imv.ativo === false || imvAcimaDoLimite ? 'imv-admin-row--inativo' : ''}">
+        <div class="imv-admin-row__media">${img}</div>
+        <div class="imv-admin-row__body">
+          <div class="imv-admin-row__badges">
             <span class="imv-admin-badge imv-admin-badge--${imv.operacao === 'aluguel' ? 'aluguel' : 'venda'}">${OP_LABEL[imv.operacao] || 'Venda'}</span>
             ${imv.destaque ? '<span class="imv-admin-badge imv-admin-badge--destaque">Destaque</span>' : ''}
             ${imv.ativo === false ? '<span class="imv-admin-badge imv-admin-badge--inativo">Inativo</span>' : ''}
             ${imvAcimaDoLimite ? '<span class="imv-admin-badge imv-admin-badge--limite">Acima do limite</span>' : ''}
           </div>
+          <h3 class="imv-admin-row__title">${esc(imv.titulo)}</h3>
+          <p class="imv-admin-row__meta">${TIPO_LABEL[imv.tipo] || ''}${loc ? ' · ' + esc(loc) : ''}</p>
+          <p class="imv-admin-row__price">${preco}</p>
         </div>
-        <div class="imv-admin-card__body">
-          <h3 class="imv-admin-card__title">${esc(imv.titulo)}</h3>
-          <p class="imv-admin-card__meta">${TIPO_LABEL[imv.tipo] || ''}${loc ? ' · ' + esc(loc) : ''}</p>
-          <p class="imv-admin-card__price">${preco}</p>
-        </div>
-        <div class="imv-admin-card__actions">
+        <div class="imv-admin-row__actions">
           <button type="button" data-acao="editar" data-id="${imv.id}">Editar</button>
           <button type="button" data-acao="toggle" data-id="${imv.id}">${imv.ativo === false ? 'Reativar' : 'Desativar'}</button>
         </div>
       </article>`;
   }).join('');
+
+  paginacaoEl.hidden = totalPaginas <= 1;
+  paginaInfoEl.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+  paginaAnteriorBtn.disabled = paginaAtual <= 1;
+  paginaProximaBtn.disabled = paginaAtual >= totalPaginas;
 }
+
+tamanhoPaginaSel.addEventListener('change', () => {
+  tamanhoPagina = Number(tamanhoPaginaSel.value) || 10;
+  paginaAtual = 1;
+  renderLista();
+});
+paginaAnteriorBtn.addEventListener('click', () => {
+  if (paginaAtual > 1) { paginaAtual--; renderLista(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+});
+paginaProximaBtn.addEventListener('click', () => {
+  paginaAtual++; renderLista(); window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 listaEl.addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-acao]');
@@ -203,6 +315,8 @@ listaEl.addEventListener('click', async (e) => {
       await updateDoc(docImovel(imv.id), { ativo: imv.ativo === false, updatedAt: serverTimestamp() });
       imv.ativo = imv.ativo === false;
       renderLista();
+      const ativos = await sincronizarUsage();
+      verificarUpsell(ativos);
     } catch (err) {
       console.error(err);
       btn.disabled = false;

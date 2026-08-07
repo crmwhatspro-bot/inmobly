@@ -21,6 +21,7 @@ const $ = (id) => document.getElementById(id);
 
 // Status / publicação
 const publicarBtn     = $('msPublicarBtn');
+const atualizarBtn    = $('msAtualizarBtn');
 const despublicarBtn  = $('msDespublicarBtn');
 const verSiteLink     = $('msVerSite');
 const statusDot       = $('msStatusDot');
@@ -317,19 +318,26 @@ function atualizarStatusTexto() {
       : 'Configure seu WhatsApp de contato antes de publicar.';
 
   publicarBtn.hidden = publicado;
+  atualizarBtn.hidden = !publicado;
   despublicarBtn.hidden = !publicado;
   verSiteLink.hidden = !publicado;
   if (publicado) verSiteLink.href = `https://${tenantId}.web.app/`;
 }
 
-async function publicar() {
+// Publicar (1ª vez) e Atualizar (republicar o que já está no ar, com
+// o conteúdo mais recente) chamam a mesma function — ela já é segura
+// pra rodar de novo (cria uma versão/release nova no Hosting toda
+// vez). Sem o botão "Atualizar", a única forma de levar uma mudança
+// pro site já publicado era Despublicar (o catálogo fica indisponível
+// por um tempo) e Publicar de novo — desnecessário e confuso.
+async function publicarOuAtualizar(btn) {
   if (!broker.whatsapp) {
     mostrarMsg(contatoMsg, 'Configure e salve seu WhatsApp antes de publicar.', 'erro');
     return;
   }
-  publicarBtn.disabled = true;
-  const textoOriginal = publicarBtn.textContent;
-  publicarBtn.textContent = 'Publicando... (pode levar alguns segundos)';
+  btn.disabled = true;
+  const textoOriginal = btn.textContent;
+  btn.textContent = 'Publicando... (pode levar alguns segundos)';
   try {
     await publicarSiteFn();
     broker.published = true;
@@ -337,8 +345,8 @@ async function publicar() {
   } catch (err) {
     mostrarMsg(contatoMsg, 'Não foi possível publicar: ' + err.message, 'erro');
   } finally {
-    publicarBtn.disabled = false;
-    publicarBtn.textContent = textoOriginal;
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
   }
 }
 
@@ -358,7 +366,8 @@ async function despublicar() {
 salvarIdentidadeBtn.addEventListener('click', salvarIdentidade);
 salvarTextosBtn.addEventListener('click', salvarTextos);
 salvarContatoBtn.addEventListener('click', salvarContato);
-publicarBtn.addEventListener('click', publicar);
+publicarBtn.addEventListener('click', () => publicarOuAtualizar(publicarBtn));
+atualizarBtn.addEventListener('click', () => publicarOuAtualizar(atualizarBtn));
 despublicarBtn.addEventListener('click', despublicar);
 
 [whatsappInput, nomeInput, headlineInput, subheadlineInput, sobreInput, keywordsInput, emailInput, instagramInput].forEach(el => {
