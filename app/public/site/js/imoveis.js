@@ -7,11 +7,14 @@
 // operação/tipo/cidade, essa última montada dinamicamente a partir
 // das cidades que aparecem nos imóveis do corretor.
 //
-// Modo preview (?preview=1): usado dentro de um <iframe> em
+// Modo preview (?preview=1&t=slug): usado dentro de um <iframe> em
 // meu-site.html pra mostrar o modelo da página antes mesmo de
-// publicar ou cadastrar imóveis. Não chama Firestore nem
-// perfilPublico — recebe o perfil via postMessage do pai e mostra
-// 3 imóveis de exemplo fixos, só pra ilustrar o layout do grid.
+// publicar. Nunca chama perfilPublico (que exige published:true) —
+// recebe o perfil (rascunho ainda não salvo, ao vivo conforme o
+// corretor digita) via postMessage do pai. Os imóveis são buscados
+// direto do Firestore, igual ao modo normal (já são públicos de
+// qualquer forma) — só cai pros 3 de exemplo fixos se o tenant ainda
+// não tiver nenhum imóvel cadastrado.
 // ════════════════════════════════════════════════
 import { db } from './firebase.js';
 import { collection, query, where, getDocs, orderBy }
@@ -44,12 +47,22 @@ const ICONS = {
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
 };
 
-// Só usados no modo preview — nunca gravados/lidos do Firestore.
+// Só usados no modo preview quando o tenant ainda não tem nenhum
+// imóvel cadastrado de verdade — nunca gravados/lidos do Firestore.
 const IMOVEIS_EXEMPLO = [
   { id: 'exemplo-1', titulo: 'Departamento moderno de 2 dormitorios', operacao: 'venda', tipo: 'apartamento', precoVenda: 95000, quartos: 2, banheiros: 2, areaM2: 68, vagas: 1, cidade: 'Asunción', bairro: 'Villa Morra', capa: null, ativo: true },
   { id: 'exemplo-2', titulo: 'Casa con jardín y pileta', operacao: 'venda', tipo: 'casa', precoVenda: 180000, quartos: 3, banheiros: 2, areaM2: 210, vagas: 2, cidade: 'Lambaré', bairro: '', capa: null, ativo: true },
   { id: 'exemplo-3', titulo: 'Oficina lista para estrenar', operacao: 'aluguel', tipo: 'escritorio', precoAluguel: 650, quartos: 0, banheiros: 1, areaM2: 45, vagas: 1, cidade: 'Asunción', bairro: 'Centro', capa: null, ativo: true },
 ];
+
+// Idem — só pro preview, só quando o campo real está vazio, pra não
+// deixar a página parecendo vazia enquanto o corretor ainda não
+// escreveu nada. No site publicado de verdade nunca aparece isso.
+const EXEMPLO_TEXTOS = {
+  headline: 'Encontrá tu próxima casa en Asunción',
+  subheadline: 'Más de 10 años ayudando familias a encontrar el hogar ideal — para vivir o invertir.',
+  about: 'Somos un equipo dedicado a acompañarte en todo el proceso de compra, venta o alquiler de tu propiedad. Atención personalizada, conocimiento del mercado local y compromiso en cada paso.',
+};
 
 const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -240,7 +253,9 @@ async function abrirDetalhe(id) {
   detailBackdrop.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if (MODO_PREVIEW) return; // sem fotos de verdade pra buscar no Firestore
+  // só os 3 de exemplo não têm fotos reais no Firestore — imóveis de
+  // verdade mostrados no preview (ver iniciarPreview) buscam normal
+  if (id.startsWith('exemplo-')) return;
 
   try {
     const fotos = await carregarFotos(id);
@@ -321,13 +336,19 @@ function aplicarPerfil(p) {
   if (p.logo) { logoEl.src = p.logo; logoEl.alt = nome; logoEl.hidden = false; }
   else { logoEl.hidden = true; }
 
-  document.getElementById('imoveis-titulo').textContent = p.headline || 'Inmuebles disponibles';
-  document.getElementById('imoveis-sub').textContent = p.subheadline || `Seleccionados por ${nome}.`;
+  document.getElementById('imoveis-titulo').textContent = p.headline
+    || (MODO_PREVIEW ? EXEMPLO_TEXTOS.headline : 'Inmuebles disponibles');
+  document.getElementById('imoveis-sub').textContent = p.subheadline
+    || (MODO_PREVIEW ? EXEMPLO_TEXTOS.subheadline : `Seleccionados por ${nome}.`);
 
+  // "Sobre" fica escondida se vazia no site publicado de verdade — mas
+  // no preview mostra um texto de exemplo, pra dar pro corretor uma
+  // ideia real de como a seção fica preenchida antes de escrever a dele.
   const sobreSec = document.getElementById('sobre-section');
-  if (p.about) {
+  const sobreTexto = p.about || (MODO_PREVIEW ? EXEMPLO_TEXTOS.about : '');
+  if (sobreTexto) {
     document.getElementById('sobre-titulo').textContent = `Sobre ${nome}`;
-    document.getElementById('sobre-texto').textContent = p.about;
+    document.getElementById('sobre-texto').textContent = sobreTexto;
     sobreSec.hidden = false;
   } else {
     sobreSec.hidden = true;
@@ -335,7 +356,7 @@ function aplicarPerfil(p) {
 
   const msgPadrao = encodeURIComponent('Hola, quiero más información sobre sus propiedades.');
   const waHref = p.whatsapp ? `https://wa.me/${p.whatsapp}?text=${msgPadrao}` : '#';
-  document.getElementById('hero-whatsapp').href = waHref;
+  document.getElementById('cta-whatsapp').href = waHref;
   document.getElementById('footer-whatsapp').href = waHref;
   document.getElementById('footer-nome').textContent = nome;
   document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${nome}. Todos los derechos reservados.`;
@@ -363,20 +384,31 @@ function initComum() {
   });
 }
 
-// ── Modo preview: sem Firestore, sem perfilPublico. Recebe o
-// perfil (e atualizações ao vivo, conforme o corretor digita) via
-// postMessage do meu-site.html que montou o <iframe>.
-function iniciarPreview() {
+// ── Modo preview: nunca chama perfilPublico (mostra rascunho ainda
+// não salvo/publicado, via postMessage do meu-site.html) — mas os
+// imóveis já são reais e já são públicos de qualquer forma, então
+// busca eles direto do Firestore igual ao modo normal. Só cai pros 3
+// de exemplo se o tenant realmente não tiver nenhum imóvel ainda —
+// sem isso, um corretor que já cadastrou imóveis via Meus Imóveis via
+// só os de exemplo no preview e achava que não tinha salvo de verdade.
+async function iniciarPreview() {
   initComum();
-  cache = IMOVEIS_EXEMPLO;
-  montarFiltroCidade(cache);
-  renderGrid();
+  tenantId = tenantIdAtual();
 
   window.addEventListener('message', (e) => {
     if (e.data?.tipo !== 'pa-preview-perfil') return;
     aplicarPerfil(e.data.perfil);
   });
   window.parent?.postMessage({ tipo: 'pa-preview-pronto' }, '*');
+
+  let reais = [];
+  if (tenantId) {
+    try { reais = await carregarImoveis(); }
+    catch (e) { console.error('Erro ao carregar imóveis no preview:', e); }
+  }
+  cache = reais.length ? reais : IMOVEIS_EXEMPLO;
+  montarFiltroCidade(cache);
+  renderGrid();
 }
 
 // ── Modo normal: perfilPublico + Firestore de verdade.

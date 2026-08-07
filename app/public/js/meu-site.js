@@ -122,7 +122,10 @@ window.addEventListener('message', (e) => {
 
 function abrirPreview() {
   if (!previewCarregado) {
-    previewFrame.src = 'site/index.html?preview=1';
+    // ?t= deixa o preview buscar os imóveis reais do tenant direto do
+    // Firestore (já são públicos) — só cai pros de exemplo se não
+    // tiver nenhum ainda. Ver site/js/imoveis.js#iniciarPreview.
+    previewFrame.src = `site/index.html?preview=1&t=${encodeURIComponent(tenantId)}`;
     previewCarregado = true;
   }
   previewModal.hidden = false;
@@ -135,6 +138,13 @@ function fecharPreview() {
   document.body.style.overflow = '';
   setTimeout(() => { previewModal.hidden = true; }, 300);
 }
+document.querySelectorAll('.ms-preview-device').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ms-preview-device').forEach(b => b.classList.toggle('active', b === btn));
+    previewFrame.style.width = btn.dataset.w;
+  });
+});
+
 abrirPreviewBtn.addEventListener('click', abrirPreview);
 fecharPreviewBtn.addEventListener('click', fecharPreview);
 previewModal.addEventListener('click', (e) => { if (e.target === previewModal) fecharPreview(); });

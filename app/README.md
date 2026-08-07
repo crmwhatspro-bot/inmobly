@@ -144,9 +144,12 @@ cliente final vê, sem login:
   client-side, já eram públicos.
 - **Resolve o tenant** por `location.hostname` em produção
   (`<slug>.web.app`) com fallback `?t=slug` pra testar antes de publicar.
-- **Conteúdo**: hero (logo + `headline` + `subheadline` + WhatsApp) +
-  filtros básicos (operação/tipo/cidade, cidade montada dinamicamente a
-  partir dos imóveis do corretor) + grid + modal de detalhe + seção
+- **Conteúdo**: hero (logo + `headline` + `subheadline`, sem botão — o
+  hero do template original também não tem CTA, só texto) + filtros
+  básicos (operação/tipo/cidade, cidade montada dinamicamente a partir
+  dos imóveis do corretor) + grid + modal de detalhe + seção CTA
+  ("¿No encontraste lo que buscabas?", sempre visível, é onde o WhatsApp
+  mora de verdade — não mais um botão gigante dominando o hero) + seção
   "Sobre" (`about`, só aparece se preenchido) antes do rodapé + rodapé
   com WhatsApp/e-mail/Instagram. Referência visual: o mesmo site Nando
   Barros que `template/` já clonava desde o início do projeto — não é
@@ -168,18 +171,24 @@ cliente final vê, sem login:
 - **Textos do site** — `headline`, `subheadline`, `about`, `keywords`,
   tudo opcional: sem preencher, o site cai num texto padrão razoável
   (nunca fica quebrado ou vazio).
-- **Contato** — além do `whatsapp` (obrigatório pra publicar), `email` e
-  `instagramUrl` opcionais, aparecem no rodapé do site público se
+- **Contato** — além do `whatsapp` (obrigatório pra publicar), `contactEmail`
+  e `instagramUrl` opcionais, aparecem no rodapé do site público se
   preenchidos.
 - **Preview em popup** — botão "Pré-visualizar site" abre um modal com
-  `site/index.html?preview=1` num `<iframe>` — o `src` só é setado nesse
-  clique (não carrega sozinho ao abrir a página). Nesse modo o catálogo
-  não chama Firestore nem `perfilPublico`: espera receber o perfil por
-  `postMessage` do formulário (reenviado, com debounce, a cada campo
-  editado, mesmo antes de salvar — inclusive com o modal já aberto) e
-  mostra 3 imóveis de exemplo fixos só pra ilustrar o layout do grid, já
-  que um corretor recém-cadastrado ainda não tem imóveis reais pra
-  mostrar.
+  `site/index.html?preview=1&t=<tenantId>` num `<iframe>` — o `src` só é
+  setado nesse clique (não carrega sozinho ao abrir a página). Nesse
+  modo o perfil (nome/logo/cor/textos) nunca vem de `perfilPublico`
+  (exigiria `published:true`) — chega por `postMessage` do formulário,
+  reenviado com debounce a cada campo editado, mesmo antes de salvar.
+  **Os imóveis são outra história**: já são públicos e já existem de
+  verdade assim que cadastrados em Meus Imóveis, então o preview busca
+  eles direto do Firestore (`?t=` é só pra isso) — só cai pros 3 de
+  exemplo fixos se o tenant realmente não tiver nenhum imóvel ainda.
+  Headline/subheadline/sobre também mostram um texto de exemplo em vez
+  de ficar em branco quando ainda não preenchidos — só no preview, o
+  site publicado de verdade nunca mostra texto de exemplo. Um seletor
+  de dispositivo (desktop/tablet/celular, canto superior direito do
+  modal) troca a largura do iframe pra simular os três tamanhos.
 - **Três seções de salvamento** (Identidade / Textos / Contato), cada
   uma com seu próprio botão — evita um formulário gigante com um único
   "Salvar" para tudo, e mantém o WhatsApp junto do resto do contato em
