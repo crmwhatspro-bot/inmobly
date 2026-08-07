@@ -39,37 +39,48 @@ exports.criarConta = onCall(
     const ref = db.doc('brokers/' + slug);
 
     // Transação: evita dois signups simultâneos pegarem o mesmo slug.
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(ref);
-      if (snap.exists) {
-        throw new HttpsError('already-exists', 'Esse endereço já está em uso.');
-      }
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (snap.exists) {
+          throw new HttpsError('already-exists', 'Esse endereço já está em uso.');
+        }
 
-      const agora = new Date();
-      const trialEndsAt = new Date(agora.getTime() + TRIAL_DIAS * 24 * 60 * 60 * 1000);
+        const agora = new Date();
+        const trialEndsAt = new Date(agora.getTime() + TRIAL_DIAS * 24 * 60 * 60 * 1000);
 
-      tx.set(ref, {
-        name: nome,
-        email,
-        plan: 'trial',
-        status: 'trialing',
-        trialEndsAt,
-        imoveisLimit: TRIAL_LIMITE_IMOVEIS,
-        domainIncluded: false,
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        usage: { imoveisCount: 0, imoveisUpdatedAt: agora },
-        customDomainStatus: 'none',
-        onboardingCompleted: false,
-        createdAt: agora,
-        updatedAt: agora,
+        tx.set(ref, {
+          name: nome,
+          email,
+          plan: 'trial',
+          status: 'trialing',
+          trialEndsAt,
+          imoveisLimit: TRIAL_LIMITE_IMOVEIS,
+          domainIncluded: false,
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          usage: { imoveisCount: 0, imoveisUpdatedAt: agora },
+          customDomainStatus: 'none',
+          onboardingCompleted: false,
+          createdAt: agora,
+          updatedAt: agora,
+        });
       });
-    });
+    } catch (err) {
+      if (err instanceof HttpsError) throw err; // already-exists etc. — repassa como está
+      console.error(`[criarConta] falha na transação do Firestore (slug="${slug}", uid="${uid}"):`, err);
+      throw new HttpsError('internal', 'Não foi possível gravar a conta. Tente de novo em instantes.');
+    }
 
     // Custom claim — é o que as firestore.rules (isTenantAdmin) e o
     // resto do app usam pra saber a qual tenant esse usuário pertence.
     // Só entra no ID token depois de um refresh forçado no cliente.
-    await auth.setCustomUserClaims(uid, { tenantId: slug });
+    try {
+      await auth.setCustomUserClaims(uid, { tenantId: slug });
+    } catch (err) {
+      console.error(`[criarConta] falha ao setar custom claim (slug="${slug}", uid="${uid}"):`, err);
+      throw new HttpsError('internal', 'Conta criada, mas houve um erro ao vincular seu acesso. Tente entrar de novo.');
+    }
 
     return { tenantId: slug };
   }
