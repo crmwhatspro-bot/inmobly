@@ -612,12 +612,38 @@ por empreendimento, US$ 400 de tabela / US$ 200 de lançamento (cupom
   pra `paginas.html` em vez do painel genérico (`PROXIMA_PAGINA` em
   `checkout.js`).
 
-⚠️ **O que "Páginas" ainda NÃO faz**: não existe template público
-(`site/paginas/{id}.html` ou rota equivalente) pra de fato publicar o
-conteúdo num link compartilhável — o switch "Página publicada" hoje só
-muda um campo no Firestore, não gera nada visível fora do painel. Isso
-é trabalho futuro, do mesmo tamanho do que foi construir o catálogo
-público de imóveis.
+- **Página pública** (`site/emprendimiento.html?id=<paginaId>`) —
+  o que faltava: o switch "Página publicada" agora de fato gera um link
+  compartilhável. Mesmo bundle multi-tenant de `site/index.html`
+  (mesma resolução de tenant via `public-tenant.js#tenantIdAtual()` —
+  hostname `*.web.app`, meta `pa-tenant` gravada por `publicarSite.js`
+  em domínio próprio, ou `?t=` pra testar), só que lendo
+  `brokers/{tenantId}/paginas/{id}` direto (leitura pública já liberada
+  nas rules) em vez de `perfilPublico`. Só mostra conteúdo se
+  `publicada === true` — rascunho ou id inexistente cai no mesmo estado
+  "página não disponível" do catálogo. Hero com a foto de capa (ou
+  gradiente escuro se não tiver capa), fatos-chave (unidades
+  disponíveis, previsão de entrega, endereço), comodidades (reaproveita
+  `.imv-feats` de imoveis.css), descrição, botão de tour virtual (só o
+  link — não embeda iframe de terceiro) e CTA de WhatsApp com mensagem
+  pré-preenchida citando o nome do empreendimento. Suporta os mesmos
+  3 idiomas do catálogo (dicionário próprio e menor em
+  `emprendimiento.js`, sem módulo compartilhado com `imoveis.js` — mesmo
+  padrão de duplicação já aceito em `MOEDA`/`fmtPreco`).
+  - `publicarSite.js#popularEUpload()` deixou de gravar a meta
+    `pa-tenant` só em `/index.html`: agora checa QUALQUER arquivo
+    `.html` que contenha o placeholder da meta tag, então
+    `emprendimiento.html` (e qualquer página pública futura) já sai
+    coberta sem precisar lembrar de atualizar uma lista.
+  - **"Copiar link"** — novo botão na linha de cada página já publicada,
+    em `paginas.html`. Prefere o domínio próprio quando já está
+    `active` (`broker.customDomain`/`customDomainStatus`, ver seção
+    "Domínio próprio"), senão cai no `<tenantId>.web.app` padrão.
+  - Perfil do corretor (nome/logo/whatsapp pro navbar/rodapé/CTA) usa
+    `carregarPerfilPublico()` normalmente, mas **não bloqueia** a
+    página se vier `null` (catálogo principal nunca publicado) — a
+    Página de Empreendimento é um produto pago à parte, independente
+    do plano de assinatura ou de o corretor ter publicado o catálogo.
 
 ## Estrutura
 

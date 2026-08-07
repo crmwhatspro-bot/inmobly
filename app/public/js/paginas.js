@@ -162,6 +162,16 @@ const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ESTAGIO_LABEL = { pronto: 'Pronto', construcao: 'Em construção', planta: 'Na planta' };
 
+// Prefere o domínio próprio quando já está ativo (ver dominio.html) —
+// senão cai no <tenantId>.web.app padrão, que sempre existe depois de
+// "Publicar site" em Meu Site.
+function linkPublico(paginaId) {
+  const host = (broker?.customDomain && broker?.customDomainStatus === 'active')
+    ? broker.customDomain
+    : `${tenantId}.web.app`;
+  return `https://${host}/emprendimiento.html?id=${paginaId}`;
+}
+
 async function carregarLista() {
   try {
     const snap = await getDocs(query(colPaginas(), orderBy('createdAt', 'desc')));
@@ -213,6 +223,7 @@ function renderLista() {
         </div>
         <div class="imv-admin-row__actions">
           <button type="button" data-acao="editar" data-id="${pg.id}">Editar</button>
+          ${pg.publicada ? `<button type="button" data-acao="copiar-link" data-id="${pg.id}">Copiar link</button>` : ''}
           <button type="button" data-acao="toggle" data-id="${pg.id}">${pg.publicada ? 'Despublicar' : 'Publicar'}</button>
         </div>
       </article>`;
@@ -244,6 +255,17 @@ listaEl.addEventListener('click', async (e) => {
 
   if (btn.dataset.acao === 'editar') {
     abrirEditor(pg);
+  } else if (btn.dataset.acao === 'copiar-link') {
+    const url = linkPublico(pg.id);
+    const original = btn.textContent;
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = 'Copiado!';
+    } catch {
+      // clipboard bloqueado/indisponível — mostra o link pra copiar na mão
+      prompt('Copie o link:', url);
+    }
+    setTimeout(() => { btn.textContent = original; }, 1800);
   } else {
     btn.disabled = true;
     try {

@@ -7,11 +7,12 @@
    O conteúdo é quase sempre o mesmo pra qualquer tenant — quem resolve
    "de quem é esse site" é o próprio bundle, em tempo de execução,
    lendo location.hostname (ver public/site/js/public-tenant.js). A
-   única exceção é index.html: popularEUpload() grava o tenantId numa
-   meta tag (`pa-tenant`, vem vazia em site-assets/) antes de fazer o
-   upload dele — sem isso, um domínio próprio conectado (ver
-   functions/dominio.js) não bateria com o padrão *.web.app e o bundle
-   não teria como saber de quem é o site.
+   única exceção são as páginas HTML (index.html, emprendimiento.html):
+   popularEUpload() grava o tenantId numa meta tag (`pa-tenant`, vem
+   vazia em site-assets/) antes de fazer o upload de cada uma — sem
+   isso, um domínio próprio conectado (ver functions/dominio.js) não
+   bateria com o padrão *.web.app e o bundle não teria como saber de
+   quem é o site.
 
    Os arquivos vêm de functions/site-assets/ — uma CÓPIA de
    public/site/, porque uma Cloud Function só enxerga o que está
@@ -124,20 +125,25 @@ async function popularEUpload(versionName, tenantId) {
   const hashes = {};
 
   for (const arq of arquivos) {
-    // index.html é o único arquivo que muda por tenant — grava o
-    // tenantId na meta tag `pa-tenant` (vem vazia em site-assets/) pra
-    // o bundle (idêntico pra todo mundo, ver comentário no topo do
+    // Páginas HTML são os únicos arquivos que mudam por tenant — grava
+    // o tenantId na meta tag `pa-tenant` (vem vazia em site-assets/)
+    // pra o bundle (idêntico pra todo mundo, ver comentário no topo do
     // arquivo) saber de quem é o site quando o hostname é um domínio
-    // próprio e não bate com *.web.app (ver public-tenant.js).
+    // próprio e não bate com *.web.app (ver public-tenant.js). Checa
+    // pelo CONTEÚDO (não por um caminho fixo tipo '/index.html') —
+    // assim cobre sozinho qualquer página pública nova que apareça
+    // depois (ex.: emprendimiento.html), sem precisar lembrar de
+    // atualizar uma lista aqui.
     let conteudo = fs.readFileSync(arq.abs);
-    if (arq.publico === '/index.html') {
-      conteudo = Buffer.from(
-        conteudo.toString('utf8').replace(
-          '<meta name="pa-tenant" id="meta-pa-tenant" content="">',
-          `<meta name="pa-tenant" id="meta-pa-tenant" content="${tenantId}">`
-        ),
-        'utf8'
-      );
+    if (arq.publico.endsWith('.html')) {
+      const texto = conteudo.toString('utf8');
+      const placeholder = '<meta name="pa-tenant" id="meta-pa-tenant" content="">';
+      if (texto.includes(placeholder)) {
+        conteudo = Buffer.from(
+          texto.replace(placeholder, `<meta name="pa-tenant" id="meta-pa-tenant" content="${tenantId}">`),
+          'utf8'
+        );
+      }
     }
     const gz = zlib.gzipSync(conteudo);
     const hash = crypto.createHash('sha256').update(gz).digest('hex');

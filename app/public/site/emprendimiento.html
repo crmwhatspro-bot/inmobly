@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emprendimiento</title>
+<meta name="description" id="meta-description" content="">
+<meta name="pa-tenant" id="meta-pa-tenant" content="">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/imoveis.css">
+<link rel="stylesheet" href="css/emprendimiento.css">
+<style>
+  .pa-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(0,0,0,0.1);
+    border-top-color: var(--clr-accent);
+    border-radius: 50%;
+    animation: pa-spin 0.8s linear infinite;
+  }
+  @keyframes pa-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="ep-carregando" style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+  <div class="pa-spinner" role="status" aria-label="Cargando"></div>
+</div>
+
+<div id="ep-conteudo" hidden>
+
+  <header class="site-navbar" id="site-navbar">
+    <div class="container site-navbar__inner">
+      <div class="site-navbar__brand">
+        <img id="nav-logo" src="" alt="" hidden>
+        <span id="nav-nome">—</span>
+      </div>
+      <a href="#" id="nav-whatsapp" target="_blank" rel="noopener" class="btn btn--whatsapp btn--sm">WhatsApp</a>
+    </div>
+  </header>
+
+  <section class="emp-hero" id="emp-hero">
+    <img class="emp-hero__img" id="emp-capa" src="" alt="" hidden>
+    <div class="container emp-hero__content">
+      <div class="imv-detail__badges">
+        <span class="imv-badge imv-badge--estagio" id="emp-estagio-badge" hidden></span>
+      </div>
+      <h1 class="t-display-md" id="emp-nome">—</h1>
+      <p class="emp-hero__loc" id="emp-loc" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <span id="emp-loc-texto"></span>
+      </p>
+    </div>
+  </section>
+
+  <main class="section">
+    <div class="container emp-layout">
+
+      <div class="emp-main">
+        <div class="emp-facts" id="emp-facts" hidden></div>
+
+        <div id="emp-descricao-wrap" hidden>
+          <h2 class="t-heading" id="emp-sobre-titulo">Sobre el emprendimiento</h2>
+          <p class="t-body" id="emp-descricao" style="margin-top: var(--sp-3); white-space: pre-line; color: var(--clr-text-2);"></p>
+        </div>
+
+        <div id="emp-comodidades-wrap" hidden>
+          <h2 class="t-heading" id="emp-comodidades-titulo">Comodidades</h2>
+          <ul class="imv-feats" id="emp-comodidades" style="border-top: none; padding-top: var(--sp-3);"></ul>
+        </div>
+      </div>
+
+      <aside>
+        <div class="emp-side__card">
+          <span class="emp-side__label" id="emp-valor-label">Desde</span>
+          <p class="imv-detail__price" id="emp-valor">A consultar</p>
+          <a href="#" id="emp-whatsapp" class="btn btn--whatsapp btn--lg" target="_blank" rel="noopener">Hablar por WhatsApp</a>
+          <a href="#" id="emp-tour" class="btn btn--outline btn--md" target="_blank" rel="noopener" hidden>Ver tour virtual</a>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Pie de página">
+    <div class="container">
+      <div class="footer__grid" style="grid-template-columns: 1fr;">
+        <div>
+          <p class="footer__logo" id="footer-nome">—</p>
+          <p class="footer__desc" id="footer-desc">Hablá directo por WhatsApp para más información.</p>
+          <div style="margin-top: var(--sp-4); display:flex; gap: var(--sp-4); flex-wrap:wrap; align-items:center;">
+            <a href="#" id="footer-whatsapp" target="_blank" rel="noopener" class="btn btn--whatsapp btn--md">WhatsApp</a>
+            <a href="#" id="footer-email" target="_blank" hidden style="color:var(--clr-text-light-2); font-size:var(--text-sm); text-decoration:underline;"></a>
+          </div>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span id="footer-copy">—</span>
+        <div class="footer__socials">
+          <a href="#" id="footer-instagram" target="_blank" rel="noopener" aria-label="Instagram" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+          </a>
+        </div>
+      </div>
+      <p style="text-align:center; margin-top: var(--sp-6); font-size: var(--text-xs); color: var(--clr-text-muted);">
+        <span id="footer-rights-prefix">Todos los derechos reservados a</span>
+        <a href="https://puntoalto.com.py/" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Punto Alto Marketing y Ventas</a>
+        — sponsored by startup CRM WhatsPro.
+      </p>
+      <p style="text-align:center; margin-top: var(--sp-3);">
+        <a href="index.html" id="emp-voltar" style="font-size: var(--text-sm); color: var(--clr-text-light-2); text-decoration: underline;">← Volver al catálogo</a>
+      </p>
+    </div>
+  </footer>
+
+</div><!-- /ep-conteudo -->
+
+<div id="ep-indisponivel" hidden style="min-height:100vh; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: var(--sp-8); gap: var(--sp-3);">
+  <h1 class="t-display-md">Página no disponible</h1>
+  <p class="t-body-lg" style="color: var(--clr-text-2); max-width: 420px;">Este enlace todavía no tiene una página publicada.</p>
+  <a href="index.html" class="btn btn--outline btn--md" style="margin-top: var(--sp-4);">Ver catálogo</a>
+</div>
+
+<script type="module" src="js/emprendimiento.js"></script>
+</body>
+</html>
