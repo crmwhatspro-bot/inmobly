@@ -47,12 +47,14 @@ public/inmobiliario.html (puntoalto/v1, outro repo)
         │
         ▼
   meu-site.html (Meu Site) → configura whatsapp + botão Publicar site
-                          (brokers/{tenantId}.whatsapp/.published)
+                          → chama a function publicarSite() (cria o
+                          Hosting site <slug>.web.app + deploy do catálogo)
         │
         ▼ (published: true)
-  site/index.html          → catálogo público (sem login) — resolve o tenant
-                          por ?t=slug hoje, por hostname quando existir um
-                          Hosting site por tenant (ver pendências)
+  site/index.html          → catálogo público (sem login), ao vivo em
+                          https://<slug>.web.app — resolve o tenant por
+                          location.hostname (?t=slug só serve de fallback
+                          pra testar sem ter publicado ainda)
         │
   planos.html (Plano), em-breve.html (Leads / Domínio / Perfil /
   Configurações — stubs honestos, sem funcionalidade ainda)
@@ -93,28 +95,52 @@ elas — só dava pra "descobrir" outra página por um botão específico.
 
 ### Meu Site / catálogo público
 
-`meu-site.html`+`js/meu-site.js` — o corretor configura `whatsapp` e clica
-"Publicar site" (grava `published: true` em `brokers/{tenantId}`, bloqueado
-no client E na regra do Firestore até `whatsapp` existir). `site/index.html`
-é o catálogo que o cliente final vê, sem login:
+`meu-site.html`+`js/meu-site.js` — o corretor configura `whatsapp` (escrita
+direta em `brokers/{tenantId}`) e clica "Publicar site", que chama a
+function `publicarSite` (onCall). `site/index.html` é o catálogo que o
+cliente final vê, sem login:
 
-- **Não lê `brokers/{tenantId}` direto** (tem e-mail, IDs do Stripe) — chama
-  a function `perfilPublico?tenant=slug`, que só responde se
+- **`publicarSite` (`functions/publicarSite.js`)** — cria (se ainda não
+  existir — 409 é tratado como sucesso) um Hosting site dedicado com
+  `siteId = tenantId`, faz o deploy do bundle estático de
+  `functions/site-assets/` nele (fluxo completo da Hosting REST API:
+  criar versão → hash sha256 do gzip de cada arquivo → `populateFiles` →
+  upload dos arquivos que a API pedir → finalizar versão → criar release)
+  e só então marca `published: true`. Se qualquer etapa falhar, não marca
+  `published` — evita "publicado" mentiroso sem o site de fato existir.
+  Usa as credenciais padrão da function (`applicationDefault()`) pra
+  chamar a API do Hosting, então precisa de `roles/firebasehosting.admin`
+  na service account (ver Setup abaixo — não concedido por padrão, mesmo
+  tipo de passo manual já feito pras outras functions).
+- **`functions/site-assets/`** — CÓPIA de `public/site/`. Uma Cloud
+  Function só enxerga o que está dentro da própria pasta de deploy
+  (`functions/`), não lê `public/site/` de fora dela. **Sempre que
+  `public/site/` mudar, copiar de novo pra `functions/site-assets/`** —
+  sem isso, "Publicar site" continua publicando uma versão desatualizada
+  do catálogo pra todo mundo que clicar. Nenhum passo automático garante
+  essa sincronia hoje.
+- **Despublicar continua simples**: `updateDoc(..., {published: false})`
+  direto do client — não desfaz o Hosting site nem os arquivos, só faz
+  `perfilPublico` parar de responder (o catálogo publicado fica "no ar"
+  mas mostra a tela de indisponível).
+- **Não lê `brokers/{tenantId}` direto** (tem e-mail, IDs do Stripe) — o
+  catálogo chama `perfilPublico?tenant=slug`, que só responde se
   `published === true` (404 senão) e devolve só `{name, whatsapp,
   imoveisLimit}`. `imoveis`/`fotos` continuam lidos direto do Firestore
   client-side, já eram públicos.
-- **Resolve o tenant** por `location.hostname` (`slug.web.app`, quando
-  existir um Hosting site por tenant — ver pendências) com fallback
-  `?t=slug`, que é o único jeito de acessar/testar hoje.
-- **Pasta autocontida** (`site/css/`, `site/js/`, paths relativos) —
-  pensada pra um futuro "Publicar site" mover só esse conteúdo pro Hosting
-  site do tenant, sem depender de nada fora de `site/`.
+- **Resolve o tenant** por `location.hostname` em produção
+  (`<slug>.web.app`) com fallback `?t=slug` pra testar antes de publicar.
 - **Versão enxuta**, não o template completo: hero (nome + WhatsApp) +
   filtros básicos (operação/tipo/cidade, cidade montada dinamicamente a
   partir dos imóveis do corretor) + grid + modal de detalhe + rodapé. Sem
   bio, depoimentos, FAQ ou formulário de contato — só WhatsApp direto.
   `site/js/imoveis.js` é a versão adaptada de `template/js/imoveis.js`
   (paths viram `brokers/{tenantId}/imoveis/...`, idioma fixo em `es`).
+- **Limite de sites por projeto**: Firebase Hosting tem uma cota de sites
+  por projeto (dezenas, não milhares). Não é problema na validação inicial
+  do produto, mas é uma parede que existe — não resolvida agora de
+  propósito, só registrada aqui pra não esquecer quando a base de
+  corretores crescer.
 
 ## Estrutura
 
@@ -161,6 +187,11 @@ functions/
                                  sempre escreveu só no doc "central")
   perfilPublico.js              ← onRequest público (cors:true), usado por
                                    site/index.html — ver seção "Meu Site" acima
+  publicarSite.js                 ← onCall: cria o Hosting site do tenant e
+                                     faz deploy de site-assets/ — ver seção
+                                     "Meu Site" acima
+  site-assets/                      ← CÓPIA de public/site/, ver aviso na
+                                       seção "Meu Site" acima
   index.js, package.json
 ```
 
@@ -193,9 +224,9 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 
 O CRUD de `imoveis` (criar/editar/desativar/excluir + fotos) já está migrado —
 `public/admin.html` + `public/js/admin-imoveis.js`. O catálogo público que os
-clientes dos brokers veem também já existe (`public/site/`, ver seção "Meu
-Site" acima) — o que falta é só a automação de Hosting por tenant, ver
-pendências abaixo.
+clientes dos brokers veem também já existe, com Hosting site dedicado por
+tenant (`public/site/` + `functions/publicarSite.js`, ver seção "Meu Site"
+acima).
 
 ## Setup (quando for para produção)
 
@@ -209,8 +240,14 @@ pendências abaixo.
 4. `cd functions && npm install`.
 5. Cadastrar os secrets: `firebase functions:secrets:set STRIPE_SECRET_KEY` e
    `firebase functions:secrets:set STRIPE_WEBHOOK_SECRET`.
-6. Deploy: `firebase deploy` (hosting + firestore rules/indexes + functions).
-7. Atualizar `BASE_URL` em `functions/checkout.js` se/quando tiver domínio próprio
+6. Conceder `roles/firebasehosting.admin` à service account padrão do
+   compute (`{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`) —
+   necessário pra `publicarSite` poder criar Hosting sites e fazer deploy
+   via API. Mesmo padrão dos outros grants já feitos (`cloudbuild.builds.builder`,
+   `run.invoker`, `datastore.user`, `firebaseauth.admin`):
+   `gcloud projects add-iam-policy-binding inmobly-project --member="serviceAccount:{PROJECT_NUMBER}-compute@developer.gserviceaccount.com" --role="roles/firebasehosting.admin"`
+7. Deploy: `firebase deploy` (hosting + firestore rules/indexes + functions).
+8. Atualizar `BASE_URL` em `functions/checkout.js` se/quando tiver domínio próprio
    (hoje aponta pro `*.web.app` do projeto).
 
 ### Stripe
@@ -225,14 +262,6 @@ o checkout é criado, não os produtos vendidos. Webhook endpoint aponta pra
 Já tem lugar reservado na sidebar do app shell (item visível, mas cai em
 `em-breve.html` — não é link morto, é honesto sobre o status):
 
-- **"Publicar site" com Hosting de verdade** — `meu-site.html` já publica
-  (`published: true`) e `site/index.html` já funciona, mas hoje só é
-  acessível via `?t=slug` no site padrão do projeto. Falta o botão criar de
-  fato um Hosting site próprio (`<slug>.web.app`) via Hosting Admin API —
-  precisa de `roles/firebasehosting.admin` na service account e um novo
-  fluxo (provavelmente uma function chamada a partir de "Publicar site")
-  que faz deploy do conteúdo de `site/` nesse novo site. Não decidido se
-  isso acontece síncrono no clique ou assíncrono com feedback depois.
 - **Leads** — a aba "Leads" que existia no `template/admin/` antigo não foi
   portada, só o CRUD de imóveis. `brokers/{tenantId}/leads` já existe no
   schema/rules, só não tem UI ainda.
