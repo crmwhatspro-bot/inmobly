@@ -403,6 +403,9 @@ body {
    posição/animação mudam. A navegação rápida do dia a dia fica na
    bottombar abaixo, com só os itens "primary". */
 @media (max-width: 900px) {
+  /* em body, não em .admin-bottombar — assim .admin-main (elemento
+     irmão, não descendente da bottombar) também enxerga a variável */
+  body { --bottombar-h: 60px; }
   .admin-topbar__hamburger { display: flex; }
 
   .admin-sidebar {
@@ -436,17 +439,28 @@ body {
   }
   .admin-drawer-backdrop.is-open { opacity: 1; pointer-events: all; }
 
+  /* Altura fixa e explícita (não soma implícita de min-height +
+     padding dos filhos) — assim .admin-main consegue reservar
+     exatamente esse espaço embaixo, sem depender de recalcular a
+     "conta" toda vez que a bottombar mudar. */
   .admin-bottombar {
     display: flex;
+    align-items: center;
     position: fixed;
     bottom: 0; left: 0; right: 0;
+    height: calc(var(--bottombar-h) + env(safe-area-inset-bottom));
+    padding: 0 var(--sp-2);
+    padding-bottom: env(safe-area-inset-bottom);
     background: var(--clr-surface-dark);
     border-top: 1px solid var(--clr-border-dark);
-    padding: var(--sp-1) var(--sp-2);
-    padding-bottom: max(var(--sp-1), env(safe-area-inset-bottom));
     z-index: var(--z-sticky);
   }
+  .admin-bottombar__btn { min-height: 0; height: 100%; }
 
-  /* espaço para o conteúdo não ficar atrás da bottombar */
-  .admin-main { padding-bottom: calc(var(--sp-20) + env(safe-area-inset-bottom)); }
+  /* Espaço pro conteúdo não ficar atrás da bottombar — mesma altura
+     dela (--bottombar-h + safe-area) mais uma folga extra de
+     var(--sp-6), pra nunca ficar coladinho no limite. */
+  .admin-main {
+    padding-bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--sp-6));
+  }
 }
