@@ -7,14 +7,18 @@
 // ════════════════════════════════════════════════
 import { db, auth } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getIdTokenResult } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 // Custom claims só atualizam no ID token depois de um refresh forçado
 // — precisa disso logo após criar a conta, quando o claim acabou de
 // ser setado pela function e o token em memória ainda não sabe disso.
+// Usa a função standalone (não user.getIdTokenResult()) — é a forma
+// garantidamente correta no SDK modular, confirmada contra os exports
+// reais de firebase-auth.js antes de usar.
 export async function tenantIdAtual(forcarRefresh = false) {
   const user = auth.currentUser;
   if (!user) return null;
-  const resultado = await user.getIdTokenResult(forcarRefresh);
+  const resultado = await getIdTokenResult(user, forcarRefresh);
   return resultado.claims.tenantId || null;
 }
 

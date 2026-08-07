@@ -5,6 +5,7 @@
 // ════════════════════════════════════════════════
 import { auth, onAuthChange } from './firebase.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+import { getIdToken } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { tenantIdAtual } from './tenant.js';
 
 const $ = (id) => document.getElementById(id);
@@ -55,7 +56,7 @@ form.addEventListener('submit', async (e) => {
     await criarConta({ nome, slug });
     // custom claim acabou de ser setado pela function — força refresh
     // do token antes de seguir, senão a próxima página não enxerga o tenant
-    await auth.currentUser.getIdToken(true);
+    await getIdToken(auth.currentUser, true);
     location.href = 'tour.html';
   } catch (err) {
     if (err.code === 'functions/already-exists') {

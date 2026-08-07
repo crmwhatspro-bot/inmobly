@@ -22,14 +22,16 @@ service cloud.firestore {
       allow read: if isTeam() || isTenantAdmin(tenantId);
       allow create, delete: if isTeam();
       // corretor só pode mexer no próprio `usage` (auto-relato de
-      // quantidade de imóveis) — plano/status/billing só a equipe ou
-      // o stripeWebhook (que roda com Admin SDK, ignora rules).
+      // quantidade de imóveis) e em `onboardingCompleted` (marcado por
+      // tour.js ao terminar o onboarding) — plano/status/billing só a
+      // equipe ou o stripeWebhook (que roda com Admin SDK, ignora rules).
       allow update: if isTeam()
                     || (
                       isTenantAdmin(tenantId) &&
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usage', 'updatedAt']) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usage', 'onboardingCompleted', 'updatedAt']) &&
                       request.resource.data.usage.imoveisCount is int &&
-                      request.resource.data.usage.imoveisCount >= 0
+                      request.resource.data.usage.imoveisCount >= 0 &&
+                      request.resource.data.onboardingCompleted is bool
                     );
 
       match /purchases/{purchaseId} {
