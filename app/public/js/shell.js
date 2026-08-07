@@ -79,6 +79,9 @@ function renderSidebar(active) {
           <div class="admin-sidebar__profile-info">
             <p class="admin-sidebar__profile-name" id="shellBrokerName">—</p>
             <p class="admin-sidebar__profile-plan" id="shellBrokerPlan">—</p>
+            <a href="planos.html" class="admin-sidebar__assinar" id="shellAssinarLink" hidden>
+              <span id="shellAssinarTexto">Assinar</span><span aria-hidden="true">→</span>
+            </a>
           </div>
         </div>
         <div class="admin-sidebar__usage">
@@ -161,6 +164,14 @@ function preencherPerfil(user, broker, tenantId) {
   document.getElementById('shellBrokerName').textContent = broker?.name || tenantId;
   const planoLabel = broker ? `${broker.plan || 'trial'} · ${broker.status || 'trialing'}` : '—';
   document.getElementById('shellBrokerPlan').textContent = planoLabel;
+
+  // CTA discreto — some quando já é pagante (status active), aparece
+  // com texto diferente conforme a urgência do motivo.
+  const assinarLink = document.getElementById('shellAssinarLink');
+  const assinarTexto = document.getElementById('shellAssinarTexto');
+  const textoPorStatus = { past_due: 'Regularizar', canceled: 'Reativar' };
+  assinarTexto.textContent = textoPorStatus[broker?.status] || 'Assinar';
+  assinarLink.hidden = broker?.status === 'active';
 
   const usados = broker?.usage?.imoveisCount ?? 0;
   const limite = broker ? limiteEfetivo(broker) : null;

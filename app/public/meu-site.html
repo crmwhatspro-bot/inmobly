@@ -29,7 +29,36 @@
   .ms-status__text strong { display: block; color: white; font-size: var(--text-sm); }
   .ms-status__text small { color: var(--clr-text-light-2); font-size: var(--text-xs); }
   .ms-status__actions { margin-left: auto; display: flex; gap: var(--sp-2); }
-  .ms-max { max-width: 560px; }
+  .ms-max { max-width: 640px; }
+  .ms-preview-wrap { max-width: 960px; margin-bottom: var(--sp-6); }
+  .ms-preview-frame {
+    width: 100%; height: 620px; border: 0; display: block; background: #fff;
+  }
+  .ms-logo-row { display: flex; align-items: center; gap: var(--sp-4); }
+  .ms-logo-preview {
+    width: 72px; height: 72px; flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--clr-border-dark);
+    background: var(--clr-surface-dark-2);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .ms-logo-preview img { width: 100%; height: 100%; object-fit: contain; }
+  .ms-color-swatches { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-2); }
+  .ms-color-swatch {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: transform var(--dur-fast);
+  }
+  .ms-color-swatch:hover { transform: scale(1.08); }
+  .ms-color-swatch.active { border-color: white; box-shadow: 0 0 0 2px var(--clr-border-dark); }
+  .ms-color-swatch.active::after {
+    content: ''; position: absolute; inset: 0; margin: auto;
+    width: 8px; height: 8px; border-radius: 50%; background: white;
+  }
 </style>
 </head>
 <body>
@@ -40,6 +69,17 @@
     <div id="shell-topbar-mount"></div>
     <main class="admin-main">
 
+      <section class="imv-sec ms-preview-wrap">
+        <header class="imv-sec__head">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <h3>Vista previa</h3>
+          <p>Assim vai ficar seu site — atualiza conforme você edita, mesmo antes de publicar.</p>
+        </header>
+        <div class="imv-sec__body" style="padding: 0;">
+          <iframe class="ms-preview-frame" id="msPreviewFrame" src="site/index.html?preview=1" title="Vista previa do seu site"></iframe>
+        </div>
+      </section>
+
       <div class="ms-max">
 
         <div class="ms-status" id="msStatus">
@@ -49,11 +89,62 @@
             <small id="msStatusSub"></small>
           </div>
           <div class="ms-status__actions">
-            <a href="#" id="msVerSite" target="_blank" rel="noopener" class="btn btn--md imv-btn-ghost" hidden>Visualizar site ↗</a>
+            <a href="#" id="msVerSite" target="_blank" rel="noopener" class="btn btn--md imv-btn-ghost" hidden>Abrir publicado ↗</a>
             <button type="button" class="btn btn--accent btn--md" id="msPublicarBtn">Publicar site</button>
             <button type="button" class="imv-btn-excluir" id="msDespublicarBtn" hidden>Despublicar</button>
           </div>
         </div>
+
+        <section class="imv-sec">
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <h3>Identidade visual</h3>
+            <p>Logo, nome, descrição e cor do seu site público.</p>
+          </header>
+          <div class="imv-sec__body">
+
+            <div class="form-group">
+              <label class="form-label">Logo</label>
+              <div class="ms-logo-row">
+                <div class="ms-logo-preview" id="msLogoPreview">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--clr-text-muted);" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <div style="flex:1;">
+                  <label class="imv-dropzone" for="ms-logo-input" style="padding: var(--sp-4);">
+                    <span class="imv-dropzone__btn" aria-hidden="true">Escolher imagem</span>
+                    <small class="imv-dropzone__sub">PNG ou JPG, fundo transparente fica melhor</small>
+                  </label>
+                  <input type="file" id="ms-logo-input" accept="image/*" hidden>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ms-nome">Nome da empresa</label>
+              <input class="form-input" type="text" id="ms-nome" placeholder="Ex.: Imóveis Assunção">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ms-descricao">Descrição curta</label>
+              <textarea class="form-textarea" id="ms-descricao" rows="3" placeholder="Ex.: Mais de 10 anos ajudando famílias a encontrar o imóvel ideal em Assunção."></textarea>
+              <p class="imv-hint">Aparece no topo do site e nos resultados de busca do Google.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ms-keywords">Palavras-chave (SEO)</label>
+              <input class="form-input" type="text" id="ms-keywords" placeholder="Ex.: imóveis Asunción, casas en venta, departamentos">
+              <p class="imv-hint">Separadas por vírgula. Ajuda a aparecer em buscas do Google.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Cor de destaque</label>
+              <div class="ms-color-swatches" id="msColorSwatches"></div>
+            </div>
+
+            <p id="msIdentidadeMsg" class="imv-form-msg" role="alert" hidden></p>
+            <button type="button" class="btn btn--accent btn--md" id="msSalvarIdentidadeBtn" style="margin-top: var(--sp-2);">Salvar identidade</button>
+          </div>
+        </section>
 
         <section class="imv-sec">
           <header class="imv-sec__head">

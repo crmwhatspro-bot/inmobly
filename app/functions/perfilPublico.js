@@ -46,6 +46,10 @@ exports.perfilPublico = onRequest(
       res.status(200).json({
         name: broker.name || tenantId,
         whatsapp: broker.whatsapp || null,
+        logo: broker.logo || null,
+        description: broker.description || null,
+        keywords: broker.keywords || null,
+        accentColor: broker.accentColor || '#C8922A',
         // Infinity não serializa em JSON (vira null de qualquer jeito
         // via JSON.stringify) — explícito aqui pra não depender disso.
         imoveisLimit: Number.isFinite(limite) ? limite : null,

@@ -6,11 +6,20 @@
 // área, comodidades, estágio) ficam de fora por enquanto — só
 // operação/tipo/cidade, essa última montada dinamicamente a partir
 // das cidades que aparecem nos imóveis do corretor.
+//
+// Modo preview (?preview=1): usado dentro de um <iframe> em
+// meu-site.html pra mostrar o modelo da página antes mesmo de
+// publicar ou cadastrar imóveis. Não chama Firestore nem
+// perfilPublico — recebe o perfil via postMessage do pai e mostra
+// 3 imóveis de exemplo fixos, só pra ilustrar o layout do grid.
 // ════════════════════════════════════════════════
 import { db } from './firebase.js';
 import { collection, query, where, getDocs, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { tenantIdAtual, carregarPerfilPublico } from './public-tenant.js';
+import { aplicarAccent } from './cores.js';
+
+const MODO_PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
 
 const STR = {
   venda: 'Venta', aluguel: 'Alquiler', vendaAluguel: 'Venta / Alquiler',
@@ -34,6 +43,13 @@ const ICONS = {
   car:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11"/><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="17" r="1.5"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
 };
+
+// Só usados no modo preview — nunca gravados/lidos do Firestore.
+const IMOVEIS_EXEMPLO = [
+  { id: 'exemplo-1', titulo: 'Departamento moderno de 2 dormitorios', operacao: 'venda', tipo: 'apartamento', precoVenda: 95000, quartos: 2, banheiros: 2, areaM2: 68, vagas: 1, cidade: 'Asunción', bairro: 'Villa Morra', capa: null, ativo: true },
+  { id: 'exemplo-2', titulo: 'Casa con jardín y pileta', operacao: 'venda', tipo: 'casa', precoVenda: 180000, quartos: 3, banheiros: 2, areaM2: 210, vagas: 2, cidade: 'Lambaré', bairro: '', capa: null, ativo: true },
+  { id: 'exemplo-3', titulo: 'Oficina lista para estrenar', operacao: 'aluguel', tipo: 'escritorio', precoAluguel: 650, quartos: 0, banheiros: 1, areaM2: 45, vagas: 1, cidade: 'Asunción', bairro: 'Centro', capa: null, ativo: true },
+];
 
 const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -113,6 +129,7 @@ async function carregarImoveis() {
 
 function montarFiltroCidade(lista) {
   const sel = document.getElementById('imv-filtro-cidade');
+  sel.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
   const cidades = [...new Set(lista.map(i => (i.cidade || '').trim()).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'es'));
   cidades.forEach(c => {
@@ -210,7 +227,7 @@ async function abrirDetalhe(id) {
     ${imv.descricao ? `<p class="imv-detail__desc">${esc(imv.descricao)}</p>` : ''}
     ${imv.ref ? `<p class="imv-detail__ref">${STR.ref} ${esc(imv.ref)}</p>` : ''}
     <a class="btn btn--whatsapp btn--md imv-detail__cta" target="_blank" rel="noopener"
-       href="https://wa.me/${perfil.whatsapp}?text=${waMsg}">
+       href="https://wa.me/${perfil?.whatsapp || ''}?text=${waMsg}">
       ${STR.cta}
     </a>`;
 
@@ -222,6 +239,8 @@ async function abrirDetalhe(id) {
 
   detailBackdrop.classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  if (MODO_PREVIEW) return; // sem fotos de verdade pra buscar no Firestore
 
   try {
     const fotos = await carregarFotos(id);
@@ -284,25 +303,34 @@ function mostrarIndisponivel() {
   indisponivelEl.hidden = false;
 }
 
-// ── Init ───────────────────────────────────────────
-async function iniciar() {
-  tenantId = tenantIdAtual();
-  if (!tenantId) { mostrarIndisponivel(); return; }
+// ── Aplica campos do perfil no DOM — usado tanto no fluxo normal
+// (perfilPublico) quanto no preview (postMessage), sempre com o
+// mesmo shape { name, whatsapp, logo, description, keywords, accentColor }.
+function aplicarPerfil(p) {
+  perfil = p;
+  aplicarAccent(p.accentColor);
 
-  perfil = await carregarPerfilPublico(tenantId);
-  if (!perfil) { mostrarIndisponivel(); return; }
+  const nome = p.name || 'Inmuebles';
+  document.title = nome + ' — Inmuebles';
+  document.getElementById('meta-description').setAttribute('content', p.description || `Catálogo de inmuebles de ${nome}.`);
+  document.getElementById('meta-keywords').setAttribute('content', p.keywords || `inmuebles, ${nome}, Paraguay`);
 
-  document.title = perfil.name + ' — Imóveis';
+  const logoEl = document.getElementById('hero-logo');
+  if (p.logo) { logoEl.src = p.logo; logoEl.alt = nome; logoEl.hidden = false; }
+  else { logoEl.hidden = true; }
+
   document.getElementById('imoveis-titulo').textContent = 'Inmuebles disponibles';
-  document.getElementById('imoveis-sub').textContent = `Seleccionados por ${perfil.name}.`;
+  document.getElementById('imoveis-sub').textContent = p.description || `Seleccionados por ${nome}.`;
 
   const msgPadrao = encodeURIComponent('Hola, quiero más información sobre sus propiedades.');
-  const waHref = `https://wa.me/${perfil.whatsapp}?text=${msgPadrao}`;
+  const waHref = p.whatsapp ? `https://wa.me/${p.whatsapp}?text=${msgPadrao}` : '#';
   document.getElementById('hero-whatsapp').href = waHref;
   document.getElementById('footer-whatsapp').href = waHref;
-  document.getElementById('footer-nome').textContent = perfil.name;
-  document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${perfil.name}. Todos los derechos reservados.`;
+  document.getElementById('footer-nome').textContent = nome;
+  document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${nome}. Todos los derechos reservados.`;
+}
 
+function initComum() {
   initFiltros();
   initDetalhe();
   grid.addEventListener('click', e => {
@@ -314,6 +342,34 @@ async function iniciar() {
     const card = e.target.closest('.imv-card');
     if (card) { e.preventDefault(); abrirDetalhe(card.dataset.id); }
   });
+}
+
+// ── Modo preview: sem Firestore, sem perfilPublico. Recebe o
+// perfil (e atualizações ao vivo, conforme o corretor digita) via
+// postMessage do meu-site.html que montou o <iframe>.
+function iniciarPreview() {
+  initComum();
+  cache = IMOVEIS_EXEMPLO;
+  montarFiltroCidade(cache);
+  renderGrid();
+
+  window.addEventListener('message', (e) => {
+    if (e.data?.tipo !== 'pa-preview-perfil') return;
+    aplicarPerfil(e.data.perfil);
+  });
+  window.parent?.postMessage({ tipo: 'pa-preview-pronto' }, '*');
+}
+
+// ── Modo normal: perfilPublico + Firestore de verdade.
+async function iniciarNormal() {
+  tenantId = tenantIdAtual();
+  if (!tenantId) { mostrarIndisponivel(); return; }
+
+  const p = await carregarPerfilPublico(tenantId);
+  if (!p) { mostrarIndisponivel(); return; }
+  aplicarPerfil(p);
+
+  initComum();
 
   try {
     const lista = await carregarImoveis();
@@ -327,4 +383,5 @@ async function iniciar() {
   }
 }
 
-iniciar();
+if (MODO_PREVIEW) iniciarPreview();
+else iniciarNormal();

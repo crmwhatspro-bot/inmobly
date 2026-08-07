@@ -85,8 +85,9 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   triplicado em `painel.js`/`admin-imoveis.js`/`planos.js`. Cada página
   chama isso e recebe `{user, tenantId, broker}` de volta pra sua própria
   lógica de conteúdo. Também popula o rodapé da sidebar (nome, plano, uso
-  de imóveis com barrinha) e o avatar (foto do Google se existir, senão
-  iniciais do nome).
+  de imóveis com barrinha, CTA "Assinar"/"Regularizar"/"Reativar" — some
+  quando `status === 'active'`, texto muda conforme o motivo) e o avatar
+  (foto do Google se existir, senão iniciais do nome).
 - `em-breve.html`/`js/em-breve.js` — placeholder genérico pros itens do
   menu sem UI ainda; `?f=leads|dominio|perfil|configuracoes` decide o
   título/texto mostrado.
@@ -130,12 +131,32 @@ cliente final vê, sem login:
   client-side, já eram públicos.
 - **Resolve o tenant** por `location.hostname` em produção
   (`<slug>.web.app`) com fallback `?t=slug` pra testar antes de publicar.
-- **Versão enxuta**, não o template completo: hero (nome + WhatsApp) +
+- **Versão enxuta**, não o template completo: hero (logo + nome + WhatsApp) +
   filtros básicos (operação/tipo/cidade, cidade montada dinamicamente a
   partir dos imóveis do corretor) + grid + modal de detalhe + rodapé. Sem
   bio, depoimentos, FAQ ou formulário de contato — só WhatsApp direto.
   `site/js/imoveis.js` é a versão adaptada de `template/js/imoveis.js`
   (paths viram `brokers/{tenantId}/imoveis/...`, idioma fixo em `es`).
+- **Identidade visual** — `meu-site.html` deixa o corretor configurar
+  `name`, `logo` (upload comprimido pro mesmo padrão canvas→WebP/JPEG do
+  CMS de imóveis, sem Storage, teto de 180KB), `description` (usada como
+  subtítulo do hero E meta description), `keywords` (meta keywords) e
+  `accentColor` — uma cor de destaque escolhida entre 6 presets
+  curados (não um color-picker livre, pra evitar combinação feia). O
+  site público aplica isso em tempo real via `site/js/cores.js`, que
+  reproduz o algoritmo `misturar()` de `scripts/build.js` (mistura a cor
+  base com preto/branco pra gerar as variações dark/light/ghost/glow) —
+  só que rodando no navegador do visitante em vez de 1x num passo de
+  build, porque a mesma página serve qualquer tenant. Tudo isso é opcional:
+  sem `description`/`keywords`/`logo`/`accentColor` definidos, o site cai
+  num texto/cor padrão razoável (nunca fica quebrado ou vazio).
+- **Preview ao vivo** — `meu-site.html` mostra um `<iframe>` com
+  `site/index.html?preview=1`. Nesse modo o catálogo não chama Firestore
+  nem `perfilPublico`: espera receber o perfil por `postMessage` do
+  formulário (reenviado, com debounce, a cada campo editado — inclusive
+  antes de salvar) e mostra 3 imóveis de exemplo fixos só pra ilustrar o
+  layout do grid, já que um corretor recém-cadastrado ainda não tem
+  imóveis reais pra mostrar.
 - **Limite de sites por projeto**: Firebase Hosting tem uma cota de sites
   por projeto (dezenas, não milhares). Não é problema na validação inicial
   do produto, mas é uma parede que existe — não resolvida agora de
@@ -203,7 +224,8 @@ pula o tour) — e agora é o único doc que existe, não tem mais sync entre "c
 
 ```
 brokers/{tenantId}                // doc id = slug escolhido no signup
-├─ name, email
+├─ name, email                       ← name editável em meu-site.html desde a
+│                                       identidade visual (não só no signup)
 ├─ ownerUid                          ← novo — uid do dono, usado por criarConta.js
 │                                       pra ficar idempotente por retry (ver função)
 ├─ plan: 'trial' | 'starter' | 'pro'
@@ -216,6 +238,11 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 ├─ whatsapp: string                   ← novo — meu-site.html, formato "595..." (sem +)
 ├─ published: boolean                 ← novo — meu-site.html; site/index.html só
 │                                        mostra o catálogo se isso for true
+├─ logo, description, keywords: string      ← novo — meu-site.html, identidade
+│                                              visual do site público, todos opcionais
+├─ accentColor: string                       ← novo — hex, um dos 6 presets de
+│                                              meu-site.html (validado no client E
+│                                              na regra do Firestore, formato ^#hex$)
 ├─ createdAt, updatedAt
 ├─ purchases/{id}                    ← igual ao antigo, sem mudança de schema
 └─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,

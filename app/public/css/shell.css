@@ -170,8 +170,31 @@ body {
 }
 .admin-sidebar__profile-plan {
   font-size: var(--text-xs);
-  color: var(--clr-accent-light);
+  color: var(--clr-text-light-2);
   text-transform: capitalize;
+}
+
+/* CTA discreto — só aparece quando status != active */
+.admin-sidebar__assinar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: var(--sp-1);
+  padding: 2px var(--sp-2);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--clr-accent-light);
+  text-decoration: none;
+  border: 1px solid var(--clr-accent);
+  border-radius: var(--radius-full);
+  background: var(--clr-accent-ghost);
+  transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
+}
+.admin-sidebar__assinar:hover {
+  background: var(--clr-accent);
+  color: white;
+  transform: translateX(1px);
 }
 
 /* Uso (imóveis / armazenamento) */
