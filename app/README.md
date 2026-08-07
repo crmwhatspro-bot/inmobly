@@ -241,11 +241,17 @@ acima).
 5. Cadastrar os secrets: `firebase functions:secrets:set STRIPE_SECRET_KEY` e
    `firebase functions:secrets:set STRIPE_WEBHOOK_SECRET`.
 6. Conceder `roles/firebasehosting.admin` à service account padrão do
-   compute (`{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`) —
-   necessário pra `publicarSite` poder criar Hosting sites e fazer deploy
-   via API. Mesmo padrão dos outros grants já feitos (`cloudbuild.builds.builder`,
-   `run.invoker`, `datastore.user`, `firebaseauth.admin`):
-   `gcloud projects add-iam-policy-binding inmobly-project --member="serviceAccount:{PROJECT_NUMBER}-compute@developer.gserviceaccount.com" --role="roles/firebasehosting.admin"`
+   compute — necessário pra `publicarSite` poder criar Hosting sites e
+   fazer deploy via API. Mesmo padrão dos outros grants já feitos
+   (`cloudbuild.builds.builder`, `run.invoker`, `datastore.user`,
+   `firebaseauth.admin`). Copiar e rodar o bloco inteiro de uma vez — ele
+   mesmo resolve o número do projeto, não precisa substituir nada à mão:
+   ```
+   PROJECT_NUMBER=$(gcloud projects describe inmobly-project --format="value(projectNumber)")
+   gcloud projects add-iam-policy-binding inmobly-project \
+     --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+     --role="roles/firebasehosting.admin"
+   ```
 7. Deploy: `firebase deploy` (hosting + firestore rules/indexes + functions).
 8. Atualizar `BASE_URL` em `functions/checkout.js` se/quando tiver domínio próprio
    (hoje aponta pro `*.web.app` do projeto).
