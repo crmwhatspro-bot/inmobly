@@ -49,8 +49,16 @@ const PROJECT_ID = 'inmobly-project';
 const ASSETS_DIR = path.join(__dirname, 'site-assets');
 const HOSTING_API = 'https://firebasehosting.googleapis.com/v1beta1';
 
-const credential = applicationDefault();
+// Lazy — resolver applicationDefault() aqui embaixo, e não no topo do
+// módulo, é proposital. No topo do módulo, o processo de "discovery"
+// do Firebase CLI (que faz require() de tudo em functions/ só pra
+// listar as functions, antes de deployar de verdade) tenta resolver
+// as credenciais nesse ambiente local e trava até estourar o timeout
+// de 10s ("Cannot determine backend specification") — mesmo sem
+// nenhuma function ter sido chamada de verdade ainda.
+let credential = null;
 async function tokenDeAcesso() {
+  if (!credential) credential = applicationDefault();
   const { access_token } = await credential.getAccessToken();
   return access_token;
 }
