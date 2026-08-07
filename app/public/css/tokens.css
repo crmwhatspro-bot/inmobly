@@ -30,9 +30,13 @@
   /* ── Textos ──────────────────────────────────── */
   --clr-text:            #1C1C1E;
   --clr-text-2:          #4A5568;
-  --clr-text-muted:      #9CA3AF;
+  /* -muted/-light-2 clareados (eram #9CA3AF/#A8B8CC) — o painel
+     inteiro é escuro e precisava de mais contraste; ainda ficam
+     visivelmente mais discretos que --clr-text-light, só não tão
+     apagados quanto antes. */
+  --clr-text-muted:      #B7BFC9;
   --clr-text-light:      #F0EDE6;
-  --clr-text-light-2:    #A8B8CC;
+  --clr-text-light-2:    #C7D3E2;
 
   /* ── Borders ─────────────────────────────────── */
   --clr-border:          #E5E2DB;

@@ -31,13 +31,27 @@ const COUPON_LANCAMENTO = {
 // cupom em qualquer compra). Cada promo já vem com a lista de planos
 // em que faz sentido; se o priceLookupKey pedido não estiver na
 // lista, a promo é ignorada.
-//   imoveis4 — admin-imoveis.js oferece isso quando o trial chega a
-//   4 de 6 imóveis (ver README/PROXIMA-SESSAO.md): 50% off por 3
-//   meses, cupom precisa existir no Stripe Dashboard com esse ID
-//   exato (duration: repeating, duration_in_months: 3).
+//   primeiroImovel — admin-imoveis.js oferece isso no popup de
+//   parabéns ao cadastrar o primeiro imóvel: 50% off por 3 meses,
+//   cupom precisa existir no Stripe Dashboard com esse ID exato
+//   (duration: repeating, duration_in_months: 3). O código também é
+//   mostrado pro corretor copiar e guardar — pra isso funcionar
+//   digitado manualmente depois (não só clicando "Assinar agora" na
+//   hora), precisa existir também um Promotion Code no Stripe com o
+//   mesmo texto "LANCAMENTO3" apontando pra esse coupon (Coupon e
+//   Promotion Code são objetos diferentes no Stripe — o Coupon sozinho
+//   não é digitável no Checkout).
 const PROMOS = {
-  imoveis4: { coupon: 'LANCAMENTO3', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
+  primeiroImovel: { coupon: 'LANCAMENTO3', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
 };
+
+// Existe também o cupom "50OFF" (50% off vitalício, poucos
+// `max_redemptions`) — de propósito NÃO entra em PROMOS/COUPON_LANCAMENTO
+// acima: é distribuído manualmente pela equipe Punto Alto pra prospects
+// selecionados, que colam o código direto no campo "Adicionar código
+// promocional" do Checkout (só funciona graças ao
+// `allow_promotion_codes: true` mais abaixo). Nenhum código deste
+// arquivo aplica ele — ver README, seção "Popup de parabéns...".
 
 const BASE_URL = 'https://inmobly-project.web.app'; // atualizar se/quando tiver domínio próprio
 
@@ -122,7 +136,16 @@ exports.criarCheckoutSession = onCall(
     const cupom = (promoPedida && promoPedida.planos.includes(priceLookupKey))
       ? promoPedida.coupon
       : COUPON_LANCAMENTO[priceLookupKey];
-    if (cupom) params.discounts = [{ coupon: cupom }];
+    if (cupom) {
+      params.discounts = [{ coupon: cupom }];
+    } else {
+      // Stripe não deixa combinar discounts com allow_promotion_codes
+      // na mesma sessão — só liga o campo de código promocional do
+      // Checkout quando NÃO estamos aplicando um cupom automático (ex.:
+      // corretor foi assinar por conta própria depois, com o cupom que
+      // copiou do popup de "primeiro imóvel" — ver PROMOS.primeiroImovel).
+      params.allow_promotion_codes = true;
+    }
 
     try {
       const session = await stripe.checkout.sessions.create(params);

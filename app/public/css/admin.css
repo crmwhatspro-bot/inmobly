@@ -387,7 +387,7 @@ body {
   margin-left: auto;
   text-align: right;
 }
-.imv-sec__body { padding: var(--sp-5); }
+.imv-sec__body { padding: var(--sp-6); }
 .imv-sec__body--side {
   display: flex;
   flex-direction: column;
@@ -407,16 +407,24 @@ body {
   .imv-grid--feats { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ── Inputs: compactos no desktop, confortáveis no mobile ── */
-.imv-form .form-group { gap: var(--sp-1); }
-.imv-form .form-label {
+/* ── Inputs: compactos no desktop, confortáveis no mobile ──
+   Escopado em .admin-dashboard (todo mundo que passa por
+   initShell() cai aqui), não só .imv-form — meu-site.html e
+   dominio.html usam .form-label/.form-input direto, sem envolver os
+   campos num <form class="imv-form">, e caíam nos estilos padrão de
+   components.css (pensados pra fundo claro): label quase ilegível
+   (--clr-text-2, quase 2:1 de contraste no fundo escuro) e input
+   renderizando como caixa branca de tema claro flutuando no meio de
+   uma página escura. Escopar aqui em vez de só .imv-form evita que
+   qualquer página futura repita o mesmo bug. */
+.admin-dashboard .form-label {
   color: var(--clr-text-light-2);
   font-size: var(--text-xs);
   font-weight: 600;
 }
-.imv-form .form-input,
-.imv-form .form-select,
-.imv-form .form-textarea {
+.admin-dashboard .form-input,
+.admin-dashboard .form-select,
+.admin-dashboard .form-textarea {
   background: var(--clr-surface-dark-2);
   border-color: var(--clr-border-dark);
   color: var(--clr-text-light);
@@ -424,18 +432,24 @@ body {
   min-height: 40px;
   padding: var(--sp-2) var(--sp-3);
 }
-.imv-form .form-textarea { min-height: 130px; }
-.imv-form .form-input:focus,
-.imv-form .form-select:focus,
-.imv-form .form-textarea:focus {
+.admin-dashboard .form-input::placeholder,
+.admin-dashboard .form-select::placeholder,
+.admin-dashboard .form-textarea::placeholder {
+  color: var(--clr-text-muted);
+  opacity: 1;
+}
+.admin-dashboard .form-textarea { min-height: 130px; }
+.admin-dashboard .form-input:focus,
+.admin-dashboard .form-select:focus,
+.admin-dashboard .form-textarea:focus {
   border-color: var(--clr-accent);
   box-shadow: 0 0 0 3px var(--clr-accent-ghost);
 }
 @media (max-width: 639.98px) {
   /* fonte 16px evita o zoom automático do iOS; alvo de toque maior */
-  .imv-form .form-input,
-  .imv-form .form-select,
-  .imv-form .form-textarea {
+  .admin-dashboard .form-input,
+  .admin-dashboard .form-select,
+  .admin-dashboard .form-textarea {
     font-size: 16px;
     min-height: 48px;
   }

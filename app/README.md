@@ -89,8 +89,36 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   quando `status === 'active'`, texto muda conforme o motivo) e o avatar
   (foto do Google se existir, senão iniciais do nome).
 - `em-breve.html`/`js/em-breve.js` — placeholder genérico pros itens do
-  menu sem UI ainda; `?f=leads|dominio|perfil|configuracoes` decide o
-  título/texto mostrado.
+  menu sem UI ainda; `?f=perfil|configuracoes` decide o título/texto
+  mostrado (Leads virou Páginas, Domínio ganhou página própria — nenhum
+  dos dois usa mais esse stub).
+- **Bug real corrigido: campos de `meu-site.html`/`dominio.html`
+  renderizavam como formulário de tema claro dentro do painel escuro**
+  — `.form-label`/`.form-input`/`.form-select`/`.form-textarea` de
+  `components.css` são estilos genéricos pensados pra fundo claro
+  (label quase ilegível, ~2:1 de contraste; input com fundo branco).
+  `admin.html`/`paginas.html` escapavam disso por acaso, só porque
+  seus campos ficam dentro de um `<form class="imv-form">` que já
+  tinha o override certo — `meu-site.html`/`dominio.html` não usam essa
+  classe (não têm um `<form>` só cobrindo tudo) e caíam direto no
+  padrão claro. Corrigido escopando o override em `.admin-dashboard`
+  (todo mundo que passa por `initShell()`) em vez de só `.imv-form`, pra
+  nenhuma página futura repetir o mesmo bug.
+- **Contraste geral do painel aumentado** — `--clr-text-muted` e
+  `--clr-text-light-2` (`css/tokens.css`) clareados (eram
+  `#9CA3AF`/`#A8B8CC`, ficaram `#B7BFC9`/`#C7D3E2`, ~7–12:1 de contraste
+  nos fundos escuros usados, contra ~5–9:1 antes). `.btn--accent` e
+  `.btn--whatsapp` (`css/components.css`) trocaram o texto branco por
+  `var(--clr-primary)` (azul-marinho escuro) — texto branco em cima do
+  dourado/verde do WhatsApp dava ~2,8:1 e ~2:1 de contraste (falha grave
+  de acessibilidade), o texto escuro dá ~6,5:1 e ~9:1 nos mesmos fundos.
+  Também: `<input>`/`<select>` do painel ganharam `::placeholder`
+  explícito (antes dependia do cinza padrão do navegador, inconsistente
+  entre browsers) e `.imv-sec__body` (padding interno dos cards) subiu
+  de `--sp-5` (20px) pra `--sp-6` (24px). Escopo dessa revisão: só o
+  painel/CMS (`public/css/*`) — o catálogo público (`site/css/*`) tem
+  cor de destaque configurável por corretor (6 presets) e não foi
+  incluído nessa passada.
 - **Navegação no mobile (≤900px)**: dois níveis, não mais a sidebar
   inteira comprimida numa barra inferior (6 rótulos de duas palavras
   numa fatia de ~60px sempre quebravam linha e ficavam ilegíveis).
@@ -157,19 +185,61 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   função duplicada em `js/admin-imoveis.js` — lista do CMS — e
   `site/js/imoveis.js` — cards/detalhe do site público — sem módulo
   compartilhado entre os dois por enquanto).
-- **Popup de upsell aos 4 de 6 imóveis do trial** — só corretores com
-  `status: 'trialing'`, só uma vez por navegador (`localStorage`, chave
-  `pa-upsell4-{tenantId}`). Oferece assinar o Starter com 50% off por 3
-  meses (cupom `LANCAMENTO3`, ver ⚠️ abaixo) — clica e já abre o
-  checkout do Stripe direto, sem passar por `planos.html`.
+- **Popup de parabéns ao cadastrar o primeiro imóvel** — só corretores
+  com `status: 'trialing'`, só uma vez por navegador (`localStorage`,
+  chave `pa-upsell-primeiro-{tenantId}`). Antes disparava só no 4º dos
+  6 imóveis grátis do trial ("Você já tem 4 dos 6 imóveis grátis"); a
+  intenção mudou pra comemorar o primeiro imóvel em vez de avisar que o
+  limite tá chegando. Mostra o cupom `LANCAMENTO3` (50% off por 3
+  meses) como texto copiável (`navigator.clipboard`, com fallback
+  textual se o clipboard estiver bloqueado) — o corretor pode guardar
+  pra usar depois ou clicar "Assinar agora" e já abrir o checkout do
+  Stripe com o desconto aplicado direto, sem passar por `planos.html`.
+  Chave de `localStorage` nova de propósito (não reaproveita
+  `pa-upsell4-*`) — quem já tinha visto a versão antiga vê essa de
+  novo.
 
-⚠️ **O cupom `LANCAMENTO3` precisa ser criado no Stripe Dashboard antes
-do popup funcionar** — `functions/checkout.js` já sabe aplicá-lo (via
-`promo: 'imoveis4'`, nunca aceita o ID do cupom direto do client), mas
-não cria cupons sozinho. Criar em Dashboard → Product catalog →
-Coupons, com ID exatamente `LANCAMENTO3`, 50% off, duration
-**Repeating**, **3 months**. Sem isso, o clique em "Assinar" no popup
-vai falhar no Stripe com um erro de cupom não encontrado.
+⚠️ **Duas coisas precisam existir no Stripe Dashboard antes desse popup
+funcionar de ponta a ponta** (nenhuma delas testada contra infra real):
+1. O **Coupon** `LANCAMENTO3` — `functions/checkout.js` já sabe aplicá-lo
+   (via `promo: 'primeiroImovel'`, nunca aceita o ID do cupom direto do
+   client), mas não cria cupons sozinho. Criar em Dashboard → Product
+   catalog → Coupons, com ID exatamente `LANCAMENTO3`, 50% off, duration
+   **Repeating**, **3 months**. Sem isso, "Assinar agora" no popup falha
+   no Stripe com erro de cupom não encontrado.
+2. Um **Promotion Code** com o texto `LANCAMENTO3` apontando pra esse
+   Coupon — pro caso do corretor só copiar o código e digitar depois,
+   manualmente, no campo "Adicionar código promocional" do Checkout
+   (`allow_promotion_codes: true`, ligado agora em toda sessão que não
+   está aplicando um cupom automático). Coupon e Promotion Code são
+   objetos diferentes no Stripe: o Coupon sozinho não aparece nem é
+   digitável na tela do Checkout, só é aplicável via API. Sem o
+   Promotion Code, o botão "Assinar agora" continua funcionando, mas
+   "copiar e usar depois" não tem efeito nenhum se o corretor tentar
+   digitar o código manualmente.
+
+- **Cupom `50OFF` — 50% off vitalício, distribuição manual, sem UI no
+  app** — diferente do `LANCAMENTO3` acima: não tem popup, não tem
+  botão "Assinar agora", nenhum código chama ele. É pra equipe Punto
+  Alto repassar pessoalmente (WhatsApp, conversa de venda etc.) pra
+  prospects selecionados, que colam o código no campo "Adicionar
+  código promocional" do Checkout — funciona só com o
+  `allow_promotion_codes: true` já ligado (ver item 2 acima), sem
+  precisar de nenhuma mudança em `functions/checkout.js` além do que já
+  existe. **Não entra no `PROMOS` de `checkout.js` de propósito** — só
+  existe como Coupon + Promotion Code no Stripe Dashboard, nunca é
+  aplicado automaticamente pelo servidor.
+  - Criar em Dashboard → Product catalog → Coupons: ID `50OFF`, 50%
+    off, duration **Forever** (não Repeating — é vitalício, dura
+    enquanto a assinatura existir).
+  - Definir `Max redemptions` com um número baixo direto no Coupon (ex.:
+    20 — ajustar o valor real no Dashboard, não é algo que o código
+    controla ou consulta). Depois de esgotado, o Stripe recusa sozinho
+    qualquer tentativa de novo uso, sem precisar de lógica adicional.
+  - Criar também o **Promotion Code** com o texto exatamente `50OFF`
+    apontando pra esse Coupon — sem ele, o campo do Checkout não
+    reconhece o código (mesma distinção Coupon vs. Promotion Code do
+    item 2 acima).
 
 ### Meu Site / catálogo público
 

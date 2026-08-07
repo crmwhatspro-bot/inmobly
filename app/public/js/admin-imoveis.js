@@ -101,11 +101,16 @@ async function sincronizarUsage() {
   return ativos;
 }
 
-// Popup de upsell ao chegar em 4 dos 6 imóveis grátis do trial — só
-// pra quem ainda está no trial, só uma vez por navegador (localStorage,
-// mesmo padrão do "Novidades visto" em shell.js).
-const UPSELL_LIMIAR = 4;
-function upsellVistoKey() { return `pa-upsell4-${tenantId}`; }
+// Popup de parabéns ao cadastrar o primeiro imóvel — só pra quem
+// ainda está no trial, só uma vez por navegador (localStorage, mesmo
+// padrão do "Novidades visto" em shell.js). Antes disparava só no 4º
+// de 6 imóveis grátis; agora comemora o primeiro, já oferecendo o
+// cupom de 50% direto — chave de localStorage nova de propósito
+// (pa-upsell-primeiro, não mais pa-upsell4), pra disparar de novo pra
+// quem já tinha visto a versão antiga.
+const UPSELL_LIMIAR = 1;
+const CUPOM_PRIMEIRO_IMOVEL = 'LANCAMENTO3';
+function upsellVistoKey() { return `pa-upsell-primeiro-${tenantId}`; }
 
 function verificarUpsell(ativos) {
   if (broker?.status !== 'trialing') return;
@@ -129,12 +134,26 @@ function fecharUpsell() {
 function initUpsell() {
   const modal = document.getElementById('upsell-modal');
   const assinarBtn = document.getElementById('upsell-assinar');
+  const copiarBtn = document.getElementById('upsell-copiar');
   const msg = document.getElementById('upsell-msg');
 
   document.getElementById('upsell-fechar').addEventListener('click', fecharUpsell);
   modal.addEventListener('click', (e) => { if (e.target === modal) fecharUpsell(); });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.classList.contains('open')) fecharUpsell();
+  });
+
+  copiarBtn.addEventListener('click', async () => {
+    const original = copiarBtn.textContent;
+    try {
+      await navigator.clipboard.writeText(CUPOM_PRIMEIRO_IMOVEL);
+      copiarBtn.textContent = 'Copiado!';
+    } catch {
+      // clipboard bloqueado/indisponível — o código já está visível
+      // na tela pro corretor copiar manualmente.
+      copiarBtn.textContent = 'Copie manualmente';
+    }
+    setTimeout(() => { copiarBtn.textContent = original; }, 1800);
   });
 
   assinarBtn.addEventListener('click', async () => {
@@ -144,7 +163,7 @@ function initUpsell() {
     try {
       const functions = getFunctions(auth.app, 'southamerica-east1');
       const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
-      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo: 'imoveis4' });
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo: 'primeiroImovel' });
       location.href = data.url;
     } catch (err) {
       msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;

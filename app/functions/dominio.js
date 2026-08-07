@@ -123,10 +123,13 @@ exports.conectarDominio = onCall(
 
     let domain;
     try {
+      // `site` é obrigatório no corpo, tem que bater com o `parent` da URL —
+      // confirmado contra infra real: sem ele a API rejeita com 400
+      // "Mismatched sites in request" (domain.site vinha vazio).
       domain = await chamarApi(`${HOSTING_API}/sites/${tenantId}/domains`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domainName: dominio }),
+        body: JSON.stringify({ domainName: dominio, site: tenantId }),
       });
     } catch (err) {
       console.error(`[conectarDominio] falha associando "${dominio}" ao site "${tenantId}":`, err);

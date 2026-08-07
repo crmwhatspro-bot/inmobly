@@ -197,7 +197,9 @@
 
 .btn--accent {
   background: var(--clr-accent);
-  color: white;
+  /* texto branco em cima do dourado dava ~2.8:1 de contraste (falha
+     WCAG AA) — primary escuro em cima do mesmo fundo dá ~6.5:1 */
+  color: var(--clr-primary);
   border-color: var(--clr-accent);
 }
 .btn--accent:hover {
@@ -228,7 +230,9 @@
 
 .btn--whatsapp {
   background: var(--clr-whatsapp);
-  color: white;
+  /* texto branco em cima do verde do WhatsApp dava ~2:1 de contraste
+     (falha grave WCAG AA) — primary escuro dá ~9:1 no mesmo fundo */
+  color: var(--clr-primary);
   border-color: var(--clr-whatsapp);
 }
 .btn--whatsapp:hover {
