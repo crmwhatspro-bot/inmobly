@@ -96,6 +96,8 @@ pula o tour) — e agora é o único doc que existe, não tem mais sync entre "c
 ```
 brokers/{tenantId}                // doc id = slug escolhido no signup
 ├─ name, email
+├─ ownerUid                          ← novo — uid do dono, usado por criarConta.js
+│                                       pra ficar idempotente por retry (ver função)
 ├─ plan: 'trial' | 'starter' | 'pro'
 ├─ status: 'trialing' | 'active' | 'past_due' | 'canceled'
 ├─ trialEndsAt, imoveisLimit, domainIncluded
