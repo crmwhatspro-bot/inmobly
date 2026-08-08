@@ -10,11 +10,16 @@ Ver [`../docs/REGRAS-DE-NEGOCIO.md`](../docs/REGRAS-DE-NEGOCIO.md) para planos/p
 (seção 1, sobre custo de infra, **precisa ser recalculada** pro modelo compartilhado —
 ver aviso no topo daquele documento).
 
-⚠️ **Nada aqui foi testado contra infraestrutura real ainda.** `inmobly-project` já
-existe e está em Blaze (feito pelo usuário), mas os produtos no Stripe, os secrets e
-o primeiro deploy ainda não. JS syntax-checked e os módulos de `functions/` foram
-`require()`ados com sucesso (imports resolvem), mas nada rodou contra Firestore/Auth/
-Stripe reais.
+✅ **Já deployado e testado contra infraestrutura real** — `inmobly-project` está em
+Blaze, a jornada (login → tour → app shell → publicar site → domínio → páginas de
+emprendimento) foi validada em produção, com bugs reais encontrados e corrigidos no
+processo (ver histórico de commits). O que ainda falta testar ponta a ponta:
+
+- **Stripe** — produtos/coupons/promotion codes ainda não criados no Dashboard, e
+  nenhum fluxo de checkout (assinatura nova, upgrade, compra avulsa) rodou contra o
+  Stripe real ainda. Ver checklist em "Setup" abaixo.
+- **Domínio próprio** — código deployado, mas nunca testado com um domínio de
+  verdade (ver seção "Domínio próprio").
 
 ## A jornada construída
 
@@ -802,16 +807,13 @@ o checkout é criado, não os produtos vendidos. Webhook endpoint aponta pra
 
 ## O que ainda não existe (de propósito)
 
-Já tem lugar reservado na sidebar do app shell (item visível, mas cai em
-`em-breve.html` — não é link morto, é honesto sobre o status):
+Já tem lugar reservado no dropdown de avatar do app shell (item visível, mas
+cai em `em-breve.html` — não é link morto, é honesto sobre o status):
 
-- **Domínio** — segue igual ao que já estava definido em
-  `docs/REGRAS-DE-NEGOCIO.md`, seção 6: concierge manual por enquanto.
 - **Meu perfil / Configurações** (dropdown do avatar) — edição de dados da
   conta, ainda não construído.
 
-⚠️ **Nada disso foi testado contra infraestrutura real ainda** — só
-`node --check` (sintaxe), verificação de IDs cruzados entre HTML/JS, e
-balanceamento de tags. A lógica de compressão de fotos e batch-write do CMS
-é a mesma do `template/` original (que também nunca rodou nesse app novo),
-só os caminhos do Firestore mudaram.
+⚠️ Domínio próprio (`dominio.html`) já está construído e ligado no menu — ver
+seção própria acima — mas segue sem testar contra um domínio de verdade.
+Checkout/Stripe também segue sem teste ponta a ponta — ver aviso no topo
+deste README e o checklist em "Setup".
