@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════
-   Inmobly App — init do Firebase
+   Sitemob App — init do Firebase
    Um único projeto (inmobly-project) pra toda a jornada de
    signup/login/checkout — diferente do template/ antigo, que
    tinha config templada por broker.

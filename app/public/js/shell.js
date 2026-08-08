@@ -67,7 +67,7 @@ function renderSidebar(active) {
 
   return `
     <aside class="admin-sidebar">
-      <div class="admin-sidebar__logo">Inmobly<span>Painel</span></div>
+      <div class="admin-sidebar__logo">Sitemob<span>Painel</span></div>
       <nav class="admin-nav">${navHTML}</nav>
       <div class="admin-sidebar__foot">
         <div class="admin-sidebar__updates" id="shellUpdates">

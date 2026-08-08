@@ -1,4 +1,4 @@
-# Inmobly App — SaaS self-service multi-tenant
+# Sitemob App — SaaS self-service multi-tenant
 
 Substitui o modelo antigo de **um projeto Firebase isolado por broker**
 (`template/` + `control-plane/`, mantidos como referência, não apagados) por um
@@ -326,13 +326,13 @@ cliente final vê, sem login:
   (`margin-top` negativo) foi removida — com o label no meio, o
   encaixe não fazia mais sentido; virou espaçamento normal.
 - **Rodapé: direitos reservados à Punto Alto, não mais "Criado por
-  Inmobly"** — a linha final do rodapé (`#footer-rights-prefix` +
+  Sitemob"** — a linha final do rodapé (`#footer-rights-prefix` +
   link) agora é fixa em todos os sites de todos os tenants: "Todos los
   derechos reservados a Punto Alto Marketing y Ventas — sponsored by
   startup CRM WhatsPro", com o nome da Punto Alto linkado pra
   puntoalto.com.py. Só o prefixo é traduzido (es/pt/en) — os nomes de
   marca (Punto Alto, CRM WhatsPro) ficam fixos em qualquer idioma, como
-  já era com "Inmobly" antes. **Continua existindo** um `#footer-copy`
+  já era com "Sitemob" antes. **Continua existindo** um `#footer-copy`
   separado, por tenant, com `© {ano} {nome do broker}` — esse não
   mudou, é o copyright do próprio corretor sobre o conteúdo dele.
 - **Bug real corrigido: "indisponível" aparecia sempre, publicado ou
@@ -366,9 +366,9 @@ cliente final vê, sem login:
   ("¿No encontraste lo que buscabas?", sempre visível, é onde o WhatsApp
   mora de verdade — não mais um botão gigante dominando o hero) + seção
   "Sobre" (`about`, só aparece se preenchido) antes do rodapé + rodapé
-  com WhatsApp/e-mail/Instagram + "Creado con orgullo por Inmobly"
-  (linka pro login — visitante curioso de um site de corretor pode
-  virar signup). Referência visual: o mesmo site Nando
+  com WhatsApp/e-mail/Instagram + linha de direitos reservados à Punto
+  Alto (ver nota acima — não é mais "Creado con orgullo por Inmobly"
+  linkando pro login, esse texto foi substituído). Referência visual: o mesmo site Nando
   Barros que `template/` já clonava desde o início do projeto — não é
   mais a versão "enxuta" original, essa foi abandonada depois de ver o
   resultado. Ainda sem depoimentos/FAQ/formulário de contato — não
@@ -663,11 +663,11 @@ public/
   site/                     ← catálogo público, pasta autocontida (ver seção
                               acima) — css/js próprios, não usa os de public/
   css/app.css              ← visual da jornada (login/tour/obrigado) — próprio
-                              do Inmobly, não é o tema por broker
+                              do Sitemob, não é o tema por broker
   css/shell.css            ← sidebar + topbar do app shell, ver seção acima
   css/tokens.css           ← "assado" a partir de template/css/tokens.css: mesmos
                               {{CLR_PRIMARY}}/{{CLR_ACCENT}}/etc. de sempre, só que
-                              resolvidos 1x pra cores fixas do Inmobly (não há
+                              resolvidos 1x pra cores fixas do Sitemob (não há
                               build.js aqui, então não podem ficar como placeholder)
   css/base.css, components.css, admin.css
                             ← copiados verbatim de template/css/ (zero placeholder

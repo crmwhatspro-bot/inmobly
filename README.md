@@ -1,4 +1,4 @@
-# Inmobly
+# Sitemob
 
 > ⚠️ **Pivô de arquitetura em andamento.** O modelo original abaixo (`template/` +
 > `control-plane/`) é **um projeto Firebase isolado por corretor**. Está sendo

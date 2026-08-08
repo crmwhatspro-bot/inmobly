@@ -15,7 +15,7 @@ const info = TEXTOS[params.get('f')] || null;
 if (info) {
   document.getElementById('ebTitulo').textContent = info.titulo;
   document.getElementById('ebDesc').textContent = info.desc;
-  document.title = info.titulo + ' — Inmobly';
+  document.title = info.titulo + ' — Sitemob';
 }
 
 initShell({ active: null, title: info?.titulo || 'Em breve' });

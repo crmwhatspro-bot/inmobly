@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════
-   Inmobly App — Cloud Functions
+   Sitemob App — Cloud Functions
    Ponto de entrada único; a lógica de cada function fica no
    arquivo correspondente.
    ══════════════════════════════════════════════════════ */

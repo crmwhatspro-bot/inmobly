@@ -1,7 +1,7 @@
-# Inmobly — Regras de Negócio
+# Sitemob — Regras de Negócio
 
 Documento vivo. Registra as decisões de modelo de negócio que influenciam o build do
-Inmobly (produto da Punto Alto) — planos, limites, billing e produtos avulsos.
+Sitemob (produto da Punto Alto) — planos, limites, billing e produtos avulsos.
 Qualquer mudança aqui deve ser revisada contra o schema do Firestore e as regras de
 segurança antes de virar código.
 
@@ -93,7 +93,7 @@ planos.
 
 | Produto | Cobrança | Preço | Por quê |
 |---|---|---|---|
-| **Página de Emprendimento** (estilo Nobile Inn) | Única | **USD 200** (preço de lançamento, 50% off) · preço de tabela USD 400 | Projeto de landing page sob medida (copy própria em 3 idiomas, narrativa de investimento, tipologias, galeria) — trabalho real de design/copy, não uma feature que se liga. Preço de lançamento enquanto o Inmobly ainda tem zero assinantes — objetivo é validar demanda do produto, não maximizar ticket. Subir de volta pra USD 400 (ou próximo disso) depois de ter tração, removendo o desconto em vez de recriar o Price no Stripe. |
+| **Página de Emprendimento** (estilo Nobile Inn) | Única | **USD 200** (preço de lançamento, 50% off) · preço de tabela USD 400 | Projeto de landing page sob medida (copy própria em 3 idiomas, narrativa de investimento, tipologias, galeria) — trabalho real de design/copy, não uma feature que se liga. Preço de lançamento enquanto o Sitemob ainda tem zero assinantes — objetivo é validar demanda do produto, não maximizar ticket. Subir de volta pra USD 400 (ou próximo disso) depois de ter tração, removendo o desconto em vez de recriar o Price no Stripe. |
 | **Configuração de domínio próprio** | Única | USD 39 | Trabalho pontual (registros DNS + cadastro no Firebase Hosting); SSL renova sozinho depois, não sobra tarefa recorrente. Cobrar recorrente por algo sem custo recorrente corroeria a confiança do cliente sem motivo. |
 
 > Nota de implementação: no Stripe, o Price da Página de Emprendimento deve ser
@@ -140,8 +140,8 @@ test e live).
 
 | Produto | Tipo | Preço | `lookup_key` |
 |---|---|---|---|
-| Inmobly Starter | Recorrente, mensal | USD 79,00 | `inmobly_starter_monthly` |
-| Inmobly Pro | Recorrente, mensal | USD 129,00 | `inmobly_pro_monthly` |
+| Sitemob Starter | Recorrente, mensal | USD 79,00 | `inmobly_starter_monthly` |
+| Sitemob Pro | Recorrente, mensal | USD 129,00 | `inmobly_pro_monthly` |
 | Página de Emprendimento | Única | USD 400,00 (valor de tabela) | `inmobly_emprendimento_page` |
 | Configuração de Domínio Próprio | Única | USD 39,00 | `inmobly_domain_setup` |
 
