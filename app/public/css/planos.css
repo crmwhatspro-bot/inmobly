@@ -135,25 +135,11 @@
 
 .indicacoes-card {
   max-width: 640px;
-  margin: var(--sp-10) auto 0;
+  margin: 0 auto;
   background: var(--clr-surface-dark);
   border: 1px solid var(--clr-border-dark);
   border-radius: var(--radius-2xl);
   padding: var(--sp-8);
-}
-
-.indicacoes-card__head h2 {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: white;
-  margin-bottom: var(--sp-2);
-}
-.indicacoes-card__head p {
-  color: var(--clr-text-light-2);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  margin-bottom: var(--sp-6);
 }
 
 .indicacoes-link {

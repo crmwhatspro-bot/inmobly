@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Indique e ganhe — Sitemob</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/planos.css">
+</head>
+<body>
+
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+    <main class="admin-main">
+
+      <div class="planos-wrap">
+        <div class="planos-head">
+          <h1>Indique e ganhe</h1>
+          <p>Compartilhe seu link. Quando quem você indicou assina um plano pago, você ganha um cupom de 10% off — sem prazo pra usar, até 5 de uma vez.</p>
+        </div>
+
+        <section class="indicacoes-card">
+          <div class="indicacoes-link">
+            <input type="text" id="indicacaoLink" readonly aria-label="Seu link de indicação">
+            <button type="button" class="btn btn--outline-light btn--sm" id="indicacaoCopiarLink">Copiar link</button>
+          </div>
+
+          <p class="indicacoes-status" id="indicacoesStatus">—</p>
+
+          <div class="indicacoes-codigos" id="indicacoesCodigos" hidden></div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/indicacoes.js"></script>
+</body>
+</html>
