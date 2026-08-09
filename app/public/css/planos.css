@@ -183,6 +183,9 @@
   border-radius: var(--radius-md);
   padding: var(--sp-2) var(--sp-4);
 }
+#indicacaoAplicarBtn { margin-top: var(--sp-4); }
+#indicacoesAplicarMsg { margin-top: var(--sp-3); font-size: var(--text-sm); }
+
 .indicacoes-codigo span {
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm);

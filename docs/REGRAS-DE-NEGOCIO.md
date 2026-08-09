@@ -163,7 +163,7 @@ um cupom.
 
 - **Link de indicação**: `https://painel.sitemob.app/criar-conta.html?ref=<slug-de-quem-indicou>`
   — reaproveita o slug já existente do broker, sem gerar um código novo separado.
-  Mostrado em `planos.html`.
+  Página própria no painel: `indicacoes.html` (item "Indique e ganhe" na sidebar).
 - **Gatilho da recompensa**: a primeira vez que o broker indicado (`referredBy`) tem
   a assinatura marcada `active` no `stripeWebhook` (`processarSubscription` em
   `functions/webhook.js`) — nunca em renovação mensal, nem em produto avulso comprado
@@ -174,10 +174,29 @@ um cupom.
   (`expires_at` nunca setado); cada código vale 1 uso. Um código novo por indicação
   (em vez de ir aumentando o limite de um código só) porque a API do Stripe não
   permite alterar `max_redemptions` depois que o Promotion Code já foi criado.
-- **Resgate**: o próprio campo de código promocional do Stripe Checkout
-  (`allow_promotion_codes`, já ligado por padrão em `checkout.js` quando não há cupom
-  automático) — o indicador digita o código que ganhou em qualquer checkout futuro
-  (assinar, trocar de plano, reassinar). Nenhuma mudança no fluxo de pagamento em si.
+- **Resgate**: duas formas, ambas manuais (nunca automático a partir do webhook — ver
+  "Por que não empilhar" abaixo).
+  1. O campo de código promocional do próprio Stripe Checkout (`allow_promotion_codes`,
+     já ligado por padrão em `checkout.js` quando não há cupom automático) — o
+     indicador digita o código em qualquer checkout futuro (assinar, trocar de plano,
+     reassinar).
+  2. Botão "Aplicar cupom na próxima fatura" em `indicacoes.html`, que chama
+     `aplicarCupomIndicacao` (`functions/indicacoes.js`) — aplica o cupom direto na
+     assinatura ATIVA do indicador via API do Stripe
+     (`subscriptions.update(..., discounts: [...])`), sem precisar de um novo
+     Checkout. Ação sob demanda (o corretor clica), nunca automática — evita o risco
+     de concorrência que aplicar a cada indicação convertida teria. Como o coupon é
+     `duration: once`, desconta a PRÓXIMA fatura a ser gerada, não retroage sobre uma
+     fatura do ciclo atual que já foi paga (por isso o texto do botão fala em "próxima
+     fatura", não "mensalidade atual"). Recusa se a assinatura já tem outro desconto
+     ativo, pra não ter que lidar com o caso de mesclar dois discounts.
+- **Por que não empilhar automaticamente até 50% numa fatura só**: avaliado e
+  descartado por ora. Coupon é imutável no Stripe (só `name` é editável depois de
+  criado, `percent_off` não), então "ir aumentando um cupom só" exigiria apagar e
+  recriar a cada indicação. E aplicar automaticamente a cada evento do webhook
+  (em vez de sob clique do corretor) teria risco real de corrida entre duas
+  indicações convertendo perto uma da outra. Ver discussão completa no histórico do
+  projeto — pode ser revisitado se a demanda justificar a complexidade.
 - **Reembolso/chargeback do indicado**: perda aceitável — o cupom já concedido ao
   indicador não é revogado. Decisão consciente de manter simples, sem lógica de
   estorno de recompensa.

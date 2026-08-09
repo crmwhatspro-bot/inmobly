@@ -12,3 +12,6 @@ exports.conectarDominio      = require('./dominio').conectarDominio;
 exports.verificarDominio     = require('./dominio').verificarDominio;
 exports.removerDominio       = require('./dominio').removerDominio;
 exports.servirSite           = require('./servirSite').servirSite;
+exports.logVisita            = require('./analytics').logVisita;
+exports.logEvento            = require('./analytics').logEvento;
+exports.aplicarCupomIndicacao = require('./indicacoes').aplicarCupomIndicacao;
