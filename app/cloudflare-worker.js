@@ -17,10 +17,28 @@
    original guardado à parte (é o que functions/servirSite.js lê pra
    descobrir de quem é o site).
 
-   Rotas que precisam apontar pra este Worker (Workers Routes, na
-   mesma zona sitemob.app):
-     sitemob.app/*
-     *.sitemob.app/*
+   Rota que aponta pra este Worker (Workers Routes, na mesma zona
+   sitemob.app) — UMA só, e precisa ser exatamente esta:
+     */*
+
+   `*/*` (e não `sitemob.app/*` + `*.sitemob.app/*`) porque esses dois
+   padrões cobrem só hostnames DA zona, e um domínio próprio de corretor
+   não é um deles — `*/*` é o padrão documentado pra pegar TODO tráfego
+   que entra na zona, custom hostnames incluídos:
+   developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/start/advanced-settings/worker-as-origin/
+
+   Efeito colateral conhecido do `*/*`: ele ignora `custom_origin_server`
+   por hostname. Não usamos esse recurso — todo custom hostname cai no
+   mesmo fallback origin.
+
+   ── 522 logo depois de conectar um domínio (comportamento normal) ──
+   Existe uma janela entre o CNAME do corretor entrar no ar e a
+   Cloudflare ativar o Custom Hostname. Dentro dela o TLS já responde
+   (certificado emitido) mas o mapeamento ainda não existe, então a
+   requisição vai na origem real do fallback origin — o A 192.0.2.1,
+   inalcançável de propósito — e volta 522. Observado ao vivo em
+   catalogo.puntoalto.com.py: 522 às 14:55, 200 às 15:01, sem nenhuma
+   mudança de config no meio. Não é bug de rota; é só esperar.
 
    DNS necessário na zona (qualquer IP serve de conteúdo — o Worker
    intercepta antes de qualquer origem real ser consultada, contanto
