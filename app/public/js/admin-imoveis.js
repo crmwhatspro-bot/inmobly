@@ -15,7 +15,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 import { limiteEfetivo } from './tenant.js';
-import { initShell, atualizarUso } from './shell.js';
+import { initShell, atualizarUso, pageSignal } from './shell.js';
 
 const MAX_FOTOS      = 16;
 const MAX_DATAURL    = 950_000; // ~712KB binário — folga no limite de 1MiB do doc
@@ -105,11 +105,19 @@ async function sincronizarUsage() {
 // ainda está no trial, só uma vez por navegador (localStorage, mesmo
 // padrão do "Novidades visto" em shell.js). Antes disparava só no 4º
 // de 6 imóveis grátis; agora comemora o primeiro, já oferecendo o
-// cupom de 50% direto — chave de localStorage nova de propósito
+// cupom vitalício direto — chave de localStorage nova de propósito
 // (pa-upsell-primeiro, não mais pa-upsell4), pra disparar de novo pra
 // quem já tinha visto a versão antiga.
+//
+// O mesmo cupom (50OFF, vitalício) também aparece no popup de limite
+// do trial atingido (ver abrirLimiteModal, disparado no lugar do
+// antigo alert() de "Novo Imóvel" quando os 6 grátis já foram usados).
+// Combinado com o cliente: distribuição livre pelos primeiros
+// assinantes, com plano de restringir a promoções mais curtas (6, depois
+// 3 meses) assim que o volume de assinantes crescer — max_redemptions
+// controlado manualmente no Stripe Dashboard, não pelo código.
 const UPSELL_LIMIAR = 1;
-const CUPOM_PRIMEIRO_IMOVEL = 'LANCAMENTO3';
+const CUPOM_VITALICIO = '50OFF';
 function upsellVistoKey() { return `pa-upsell-primeiro-${tenantId}`; }
 
 function verificarUpsell(ativos) {
@@ -125,28 +133,32 @@ function abrirUpsell() {
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-function fecharUpsell() {
-  const modal = document.getElementById('upsell-modal');
-  modal.classList.remove('open');
-  document.body.style.overflow = '';
-}
 
-function initUpsell() {
-  const modal = document.getElementById('upsell-modal');
-  const assinarBtn = document.getElementById('upsell-assinar');
-  const copiarBtn = document.getElementById('upsell-copiar');
-  const msg = document.getElementById('upsell-msg');
+// Liga copiar/assinar/fechar de um dos dois modais de cupom (primeiro
+// imóvel e limite do trial) — mesma mecânica, ids de elementos
+// diferentes, priceLookupKey/promo pra criarCheckoutSession também
+// passados por parâmetro pra cada modal poder linkar sua própria promo
+// em checkout.js.
+function initCupomModal({ modalId, fecharId, copiarId, assinarId, msgId, promo }) {
+  const modal = document.getElementById(modalId);
+  const assinarBtn = document.getElementById(assinarId);
+  const copiarBtn = document.getElementById(copiarId);
+  const msg = document.getElementById(msgId);
+  const fechar = () => {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  };
 
-  document.getElementById('upsell-fechar').addEventListener('click', fecharUpsell);
-  modal.addEventListener('click', (e) => { if (e.target === modal) fecharUpsell(); });
+  document.getElementById(fecharId).addEventListener('click', fechar);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fechar(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('open')) fecharUpsell();
-  });
+    if (e.key === 'Escape' && modal.classList.contains('open')) fechar();
+  }, { signal: pageSignal() });
 
   copiarBtn.addEventListener('click', async () => {
     const original = copiarBtn.textContent;
     try {
-      await navigator.clipboard.writeText(CUPOM_PRIMEIRO_IMOVEL);
+      await navigator.clipboard.writeText(CUPOM_VITALICIO);
       copiarBtn.textContent = 'Copiado!';
     } catch {
       // clipboard bloqueado/indisponível — o código já está visível
@@ -163,7 +175,7 @@ function initUpsell() {
     try {
       const functions = getFunctions(auth.app, 'southamerica-east1');
       const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
-      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo: 'primeiroImovel' });
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo });
       location.href = data.url;
     } catch (err) {
       msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;
@@ -173,6 +185,23 @@ function initUpsell() {
       assinarBtn.textContent = original;
     }
   });
+}
+
+function initUpsell() {
+  initCupomModal({
+    modalId: 'upsell-modal', fecharId: 'upsell-fechar', copiarId: 'upsell-copiar',
+    assinarId: 'upsell-assinar', msgId: 'upsell-msg', promo: 'primeiroImovel',
+  });
+  initCupomModal({
+    modalId: 'limite-modal', fecharId: 'limite-fechar', copiarId: 'limite-copiar',
+    assinarId: 'limite-assinar', msgId: 'limite-msg', promo: 'limiteImoveis',
+  });
+}
+
+function abrirLimiteModal() {
+  const modal = document.getElementById('limite-modal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 // ════════════════════════════════════════════════
@@ -368,7 +397,7 @@ listaEl.addEventListener('click', async (e) => {
 $('imv-novo-btn').addEventListener('click', () => {
   const { limite, ativos } = separarPorLimite();
   if (Number.isFinite(limite) && ativos.length >= limite) {
-    alert(`Limite do plano atingido (${ativos.length} de ${limite} imóveis). Para publicar mais, é preciso fazer upgrade ou regularizar a assinatura.`);
+    abrirLimiteModal();
     return;
   }
   abrirEditor(null);

@@ -2,9 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MX2GH99M');</script>
+<!-- End Google Tag Manager -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sitemob — Site e catálogo de imóveis pro corretor, sem programador</title>
 <meta name="description" content="Sitemob é o SaaS pra corretores e imobiliárias: site próprio, catálogo de imóveis e páginas de empreendimento, 100% autoatendimento. Comece grátis por 14 dias, sem cartão.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23E2892A'/%3E%3Ctext x='32' y='33' font-family='Arial, Helvetica, sans-serif' font-weight='800' font-size='25' fill='%23111820' text-anchor='middle' dominant-baseline='central'%3ESM%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,6 +68,22 @@
     text-transform: uppercase; color: var(--accent-light); margin-bottom: .9rem;
   }
 
+  /* ── Language switch ─────────────────────── */
+  .lang-switch {
+    display: flex; align-items: center; gap: 2px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px;
+  }
+  .lang-switch button {
+    background: none; border: none; color: var(--muted);
+    font-size: .74rem; font-weight: 700; letter-spacing: .02em;
+    padding: .38rem .62rem; border-radius: 999px; cursor: pointer;
+    font-family: inherit; transition: background .15s ease, color .15s ease;
+  }
+  .lang-switch button:hover { color: var(--text); }
+  .lang-switch button.is-active { background: var(--accent); color: #1a1200; }
+  .nav-mobile__lang { margin-bottom: 1rem; }
+
   /* ── Nav ─────────────────────────────────── */
   .nav {
     position: sticky; top: 0; z-index: 50;
@@ -70,8 +94,8 @@
     max-width: 1120px; margin: 0 auto; padding: .9rem 1.5rem;
     display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
   }
-  .logo { display: flex; align-items: center; gap: .5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
-  .logo__dot { color: var(--accent); }
+  .logo { display: flex; align-items: baseline; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
+  .logo__dot { color: var(--accent); font-size: 1.6em; line-height: 1; margin-left: -3px; }
   .nav__links { display: flex; align-items: center; gap: 1.75rem; font-size: .92rem; color: var(--text-2); }
   .nav__links a:hover { color: var(--text); }
   .nav__actions { display: flex; align-items: center; gap: .6rem; }
@@ -80,10 +104,17 @@
   }
   .nav__burger span { width: 20px; height: 2px; background: var(--text); border-radius: 2px; }
   .nav-mobile { display: none; }
+  .nav__cta-short { display: none; }
 
   @media (max-width: 860px) {
-    .nav__links, .nav__actions .btn--ghost { display: none; }
-    .nav__burger { display: flex; }
+    .nav__links, .nav__actions .btn--ghost, .nav__actions .lang-switch { display: none; }
+    .nav__inner { padding: .8rem 1rem; }
+    .nav__inner .logo { font-size: 1rem; }
+    .nav__actions { gap: .4rem; }
+    .nav__burger { display: flex; padding: .3rem; }
+    .nav__cta { padding: .5rem .75rem; font-size: .78rem; white-space: nowrap; flex-shrink: 0; }
+    .nav__cta-full { display: none; }
+    .nav__cta-short { display: inline; }
     .nav-mobile.is-open {
       display: block; border-bottom: 1px solid var(--line); background: var(--bg-darker);
     }
@@ -257,6 +288,7 @@
   .footer__links span { color: var(--line); }
   .footer__links a:hover { color: var(--text); }
   .footer__copy { width: 100%; font-size: .8rem; color: var(--muted); margin-top: 1.5rem; text-align: center; }
+  .footer__meta { width: 100%; font-size: .72rem; color: var(--muted); opacity: .6; margin-top: .4rem; text-align: center; }
 
   @media (max-width: 900px) {
     .hero__inner { grid-template-columns: 1fr; }
@@ -275,19 +307,30 @@
 </style>
 </head>
 <body>
-
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MX2GH99M"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <!-- ─── NAV ─────────────────────────────────── -->
 <header class="nav">
   <div class="nav__inner">
     <a href="#top" class="logo"><span>Sitemob</span><span class="logo__dot">.</span></a>
     <nav class="nav__links">
-      <a href="#produto">Produto</a>
-      <a href="#como-funciona">Como funciona</a>
-      <a href="#precos">Preços</a>
+      <a href="#produto" data-i18n="navProduto">Produto</a>
+      <a href="#como-funciona" data-i18n="navComo">Como funciona</a>
+      <a href="#precos" data-i18n="navPrecos">Preços</a>
     </nav>
     <div class="nav__actions">
-      <a class="btn btn--ghost" href="https://painel.sitemob.app/login.html">Entrar</a>
-      <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
+      <div class="lang-switch" data-lang-switch>
+        <button type="button" data-lang="pt" title="Português">PT</button>
+        <button type="button" data-lang="es" title="Español">ES</button>
+        <button type="button" data-lang="en" title="English">EN</button>
+      </div>
+      <a class="btn btn--ghost" href="https://painel.sitemob.app/login.html" data-i18n="navEntrar">Entrar</a>
+      <a class="btn btn--primary nav__cta" href="https://painel.sitemob.app/criar-conta.html">
+        <span class="nav__cta-full" data-i18n="navCriarConta">Criar conta grátis →</span>
+        <span class="nav__cta-short" data-i18n="navCriarContaCurto">Teste grátis</span>
+      </a>
       <button class="nav__burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -295,10 +338,15 @@
   </div>
   <div class="nav-mobile" id="navMobile">
     <nav class="nav-mobile__links">
-      <a href="#produto">Produto</a>
-      <a href="#como-funciona">Como funciona</a>
-      <a href="#precos">Preços</a>
-      <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
+      <div class="lang-switch nav-mobile__lang" data-lang-switch>
+        <button type="button" data-lang="pt" title="Português">PT</button>
+        <button type="button" data-lang="es" title="Español">ES</button>
+        <button type="button" data-lang="en" title="English">EN</button>
+      </div>
+      <a href="#produto" data-i18n="navProduto">Produto</a>
+      <a href="#como-funciona" data-i18n="navComo">Como funciona</a>
+      <a href="#precos" data-i18n="navPrecos">Preços</a>
+      <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html" data-i18n="navCriarConta">Criar conta grátis →</a>
     </nav>
   </div>
 </header>
@@ -310,17 +358,17 @@
   <div class="hero__bg" aria-hidden="true"></div>
   <div class="container hero__inner">
     <div>
-      <span class="pill"><span class="pill__dot"></span> Sitemob · Software para corretores de imóveis · 14 dias grátis</span>
-      <h1 class="hero__title">Seu site imobiliário, <em>no ar em minutos.</em></h1>
-      <p class="hero__sub">
-        Monte o catálogo dos seus imóveis e a página do seu empreendimento você mesmo, direto do celular.
-        Sem programador, sem código, sem esperar ninguém.
+      <span class="pill"><span class="pill__dot"></span> <span data-i18n="heroPill">Sitemob · Software para corretores de imóveis · 14 dias grátis</span></span>
+      <h1 class="hero__title" data-i18n-html="heroTitle">Seu site imobiliário <em>no ar em 15 minutos.</em></h1>
+      <p class="hero__sub" data-i18n="heroSub">
+        Suba as fotos dos seus imóveis, coloque o nome e os contatos da sua imobiliária e publique.
+        Seu site vai ao ar com a sua marca — em seuescritorio.sitemob.app, ou no domínio que você já tem.
       </p>
       <div class="hero__ctas">
-        <a class="btn btn--primary btn--lg" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
-        <a href="#como-funciona" class="btn btn--ghost btn--lg">Ver como funciona</a>
+        <a class="btn btn--primary btn--lg" href="https://painel.sitemob.app/criar-conta.html" data-i18n="navCriarConta">Criar conta grátis →</a>
+        <a href="#como-funciona" class="btn btn--ghost btn--lg" data-i18n="heroCtaSecundario">Ver como funciona</a>
       </div>
-      <p class="hero__trust">14 dias grátis · Sem cartão de crédito · Cancele quando quiser</p>
+      <p class="hero__trust" data-i18n="heroTrust">14 dias grátis · Sem cartão de crédito · Cancele quando quiser</p>
     </div>
 
     <div class="mock" data-reveal aria-hidden="true">
@@ -330,18 +378,18 @@
       </div>
       <div class="mock__body">
         <div class="mock__head">
-          <h4>Edifício Las Lomas · 3 dormitórios</h4>
+          <h4 data-i18n="mockHead">Edifício Las Lomas · 3 dormitórios</h4>
           <span class="mock__zone">Villa Morra · 95m²</span>
         </div>
         <div class="mock__price">
           <strong>USD 145.000</strong>
-          <small>3 unidades disponíveis</small>
+          <small data-i18n="mockUnits">3 unidades disponíveis</small>
         </div>
         <div class="mock__gallery">
           <div class="mock__slot"></div><div class="mock__slot"></div>
           <div class="mock__slot"></div><div class="mock__slot"></div>
         </div>
-        <div class="mock__cta">Agendar visita pelo WhatsApp →</div>
+        <div class="mock__cta" data-i18n="mockCta">Agendar visita pelo WhatsApp →</div>
       </div>
     </div>
   </div>
@@ -350,10 +398,10 @@
 <!-- ─── STATS ───────────────────────────────── -->
 <section class="stats">
   <div class="stats__inner">
-    <div class="stat" data-reveal><strong>14 dias</strong><span>De teste grátis, sem cartão</span></div>
-    <div class="stat" data-reveal><strong>5 min</strong><span>Pra criar sua conta e seu site</span></div>
-    <div class="stat" data-reveal><strong>100%</strong><span>Autoatendimento: você publica e edita</span></div>
-    <div class="stat" data-reveal><strong>0</strong><span>Programadores ou código necessários</span></div>
+    <div class="stat" data-reveal><strong data-i18n="stat1n">14 dias</strong><span data-i18n="stat1t">De teste grátis, sem cartão</span></div>
+    <div class="stat" data-reveal><strong data-i18n="stat2n">5 min</strong><span data-i18n="stat2t">Pra criar sua conta e seu site</span></div>
+    <div class="stat" data-reveal><strong data-i18n="stat3n">100%</strong><span data-i18n="stat3t">Autoatendimento: você publica e edita</span></div>
+    <div class="stat" data-reveal><strong data-i18n="stat4n">0</strong><span data-i18n="stat4t">Programadores ou código necessários</span></div>
   </div>
 </section>
 
@@ -361,30 +409,30 @@
 <section class="section section--dark" id="dores">
   <div class="container">
     <div class="section__head">
-      <span class="eyebrow">O problema real</span>
-      <h2 data-reveal>Seu catálogo merece <em>algo melhor</em> que isso.</h2>
-      <p data-reveal>Não falta imóvel bom. Falta um jeito de mostrar ele sem depender de mais ninguém.</p>
+      <span class="eyebrow" data-i18n="doresEyebrow">Sem burocracia. Sem sistema complicado.</span>
+      <h2 data-reveal data-i18n-html="doresTitle">Você não precisa de programador pra colocar seu catálogo <em>no ar hoje.</em></h2>
+      <p data-reveal data-i18n="doresSub">Esquece papelada, orçamento e sistema difícil de mexer. Com o Sitemob você mesmo publica seu site e atualiza seu catálogo, sem depender de mais ninguém.</p>
     </div>
     <div class="grid grid--2">
       <article class="card" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
-        <h3>Você não tem site próprio, ou ele depende de um programador pra qualquer mudança.</h3>
-        <p>Cada atualização vira mensagem, espera e um novo orçamento.</p>
+        <h3 data-i18n="dores1h">Seu site fica pronto e é seu — você edita tudo, na hora, sem programador.</h3>
+        <p data-i18n="dores1p">Você muda o que quiser, quando quiser, sem mandar mensagem pra ninguém.</p>
       </article>
       <article class="card" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg></div>
-        <h3>Seu catálogo vive numa planilha ou no status do WhatsApp.</h3>
-        <p>O imóvel que já vendeu continua anunciado, e o novo demora semanas pra aparecer.</p>
+        <h3 data-i18n="dores2h">Seu catálogo fica num só lugar, sempre atualizado — no seu site.</h3>
+        <p data-i18n="dores2p">Vendeu, você tira do ar. Chegou imóvel novo, você publica na hora — direto do celular.</p>
       </article>
       <article class="card" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-        <h3>Mudar um preço leva dias, não minutos.</h3>
-        <p>Depender de outra pessoa pra algo que você deveria conseguir fazer sozinho, agora mesmo.</p>
+        <h3 data-i18n="dores3h">Mudar um preço leva segundos — você mesmo faz, direto do painel.</h3>
+        <p data-i18n="dores3p">Sem esperar resposta de ninguém: você edita e a mudança já está no ar.</p>
       </article>
       <article class="card" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 21l-4.35-4.35"/><circle cx="11" cy="11" r="8"/></svg></div>
-        <h3>O comprador não encontra a informação do empreendimento que te interessa.</h3>
-        <p>Ele vai pro concorrente, que tem uma página clara com o que ele procura.</p>
+        <h3 data-i18n="dores4h">Cada empreendimento ganha uma página própria, com tudo que o comprador procura.</h3>
+        <p data-i18n="dores4p">Fotos, valores e tour 3D num só lugar — pra ele fechar com você, não com o concorrente.</p>
       </article>
     </div>
   </div>
@@ -394,32 +442,32 @@
 <section class="section" id="produto">
   <div class="container">
     <div class="section__head">
-      <span class="eyebrow">O que o Sitemob inclui</span>
-      <h2 data-reveal>Duas ferramentas. <em>Um só painel.</em></h2>
-      <p data-reveal>Sem programador, sem ticket de suporte eterno. Você mesmo monta a página que vende seu empreendimento, e o catálogo que nunca fica desatualizado.</p>
+      <span class="eyebrow" data-i18n="produtoEyebrow">O que o Sitemob inclui</span>
+      <h2 data-reveal data-i18n-html="produtoTitle">Duas ferramentas. <em>Um só painel.</em></h2>
+      <p data-reveal data-i18n="produtoSub">Sem programador, sem ticket de suporte eterno. Você mesmo monta a página que vende seu empreendimento, e o catálogo que nunca fica desatualizado.</p>
     </div>
     <div class="pillars">
       <article class="card pillar" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
-        <h3>Site + catálogo de imóveis</h3>
-        <p>Seu site fica pronto e no ar — logo, cor, textos e contato do seu jeito. Você cadastra os imóveis com fotos, preço e comodidades, e o catálogo aparece na hora.</p>
+        <h3 data-i18n="pilar1h">Site + catálogo de imóveis</h3>
+        <p data-i18n="pilar1p">Seu site fica pronto e no ar — logo, cor, textos e contato do seu jeito. Você cadastra os imóveis com fotos, preço e comodidades, e o catálogo aparece na hora.</p>
         <ul class="pillar__list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Site multilíngue — espanhol, português e inglês</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Logo, cor e textos editáveis, sem sair do painel</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Botão direto pro WhatsApp, sem formulário nenhum</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pilar1l1">Site multilíngue — espanhol, português e inglês</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pilar1l2">Logo, cor e textos editáveis, sem sair do painel</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pilar1l3">Botão direto pro WhatsApp, sem formulário nenhum</span></li>
         </ul>
-        <span class="pillar__tag">Um site por corretor, sem depender de ninguém</span>
+        <span class="pillar__tag" data-i18n="pilar1tag">Um site por corretor, sem depender de ninguém</span>
       </article>
       <article class="card pillar" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <h3>Páginas de Empreendimento</h3>
-        <p>Uma página de vendas dedicada pra cada lançamento — fotos, valores, tour 3D, comodidades e prazo de entrega, tudo editável por você quando quiser.</p>
+        <h3 data-i18n="pilar2h">Páginas de Empreendimento</h3>
+        <p data-i18n="pilar2p">Uma página de vendas dedicada pra cada lançamento — fotos, valores, tour 3D, comodidades e prazo de entrega, tudo editável por você quando quiser.</p>
         <ul class="pillar__list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Galeria de fotos e tour 3D — você mesmo carrega</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Preço e unidades disponíveis, editáveis em segundos</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Link direto pro WhatsApp, sem formulário eterno</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pilar2l1">Galeria de fotos e tour 3D — você mesmo carrega</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pilar2l2">Preço e unidades disponíveis, editáveis em segundos</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span data-i18n="pilar2l3">Link direto pro WhatsApp, sem formulário eterno</span></li>
         </ul>
-        <span class="pillar__tag">Uma página por empreendimento, sob demanda</span>
+        <span class="pillar__tag" data-i18n="pilar2tag">Uma página por empreendimento, sob demanda</span>
       </article>
     </div>
   </div>
@@ -429,35 +477,35 @@
 <section class="section section--dark" id="como-funciona">
   <div class="container">
     <div class="section__head">
-      <span class="eyebrow">Como funciona · Mobile first</span>
-      <h2 data-reveal>Você tira a foto no celular. <em>O catálogo se atualiza sozinho.</em></h2>
-      <p data-reveal>Fotografa com o celular, sobe no Sitemob, e em segundos já está no seu site. Sem programador, sem ticket, sem esperar ninguém.</p>
+      <span class="eyebrow" data-i18n="comoEyebrow">Como funciona · Mobile first</span>
+      <h2 data-reveal data-i18n-html="comoTitle">Você tira a foto no celular. <em>O catálogo se atualiza sozinho.</em></h2>
+      <p data-reveal data-i18n="comoSub">Fotografa com o celular, sobe no Sitemob, e em segundos já está no seu site. Sem programador, sem ticket, sem esperar ninguém.</p>
     </div>
     <div class="features">
       <article class="feature" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
-        <strong>Fotos otimizadas na hora</strong>
-        <p>Compressão automática antes do upload — cada foto carrega rápido, sem você precisar editar nada antes.</p>
+        <strong data-i18n="feat1h">Fotos otimizadas na hora</strong>
+        <p data-i18n="feat1p">Compressão automática antes do upload — cada foto carrega rápido, sem você precisar editar nada antes.</p>
       </article>
       <article class="feature" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9s1.3-6.5 3.8-9z"/></svg></div>
-        <strong>Multilíngue de verdade</strong>
-        <p>Seu site sai pronto em espanhol, português e inglês — o comprador escolhe o idioma dele.</p>
+        <strong data-i18n="feat2h">Multilíngue de verdade</strong>
+        <p data-i18n="feat2p">Seu site sai pronto em espanhol, português e inglês — o comprador escolhe o idioma dele.</p>
       </article>
       <article class="feature" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-        <strong>Domínio no seu nome</strong>
-        <p>Publique em seuescritorio.sitemob.app de graça, ou conecte seu próprio domínio.</p>
+        <strong data-i18n="feat3h">Domínio no seu nome</strong>
+        <p data-i18n="feat3p">Publique em seuescritorio.sitemob.app de graça, ou conecte seu próprio domínio.</p>
       </article>
       <article class="feature" data-reveal>
         <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/></svg></div>
-        <strong>Google Tag Manager integrado</strong>
-        <p>Cole seu ID de GTM e meça suas campanhas sem precisar de programador.</p>
+        <strong data-i18n="feat4h">Google Tag Manager integrado</strong>
+        <p data-i18n="feat4p">Cole seu ID de GTM e meça suas campanhas sem precisar de programador.</p>
       </article>
     </div>
     <p class="included" data-reveal>
       <span class="included__check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>
-      Incluído no plano · hospedagem, CDN e otimização de fotos <strong>sem custo adicional</strong>.
+      <span data-i18n-html="includedHtml">Incluído no plano · hospedagem, CDN e otimização de fotos <strong>sem custo adicional</strong>.</span>
     </p>
   </div>
 </section>
@@ -466,47 +514,47 @@
 <section class="section" id="precos">
   <div class="container">
     <div class="section__head">
-      <span class="eyebrow">Planos</span>
-      <h2 data-reveal>Comece grátis. Pague só quando estiver convencido.</h2>
-      <p data-reveal>14 dias de teste, sem cartão de crédito — até 6 imóveis pra você conhecer o painel. Depois, escolha o plano do tamanho do seu catálogo.</p>
+      <span class="eyebrow" data-i18n="precosEyebrow">Planos</span>
+      <h2 data-reveal data-i18n="precosTitle">Comece grátis. Pague só quando estiver convencido.</h2>
+      <p data-reveal data-i18n="precosSub">14 dias de teste, sem cartão de crédito — até 6 imóveis pra você conhecer o painel. Depois, escolha o plano do tamanho do seu catálogo.</p>
     </div>
 
     <div class="plans">
       <article class="plan" data-reveal>
         <h3>Starter</h3>
-        <div class="plan__price"><strong>USD 79</strong><small>/mês</small></div>
+        <div class="plan__price"><strong>USD 79</strong><small data-i18n="perMes">/mês</small></div>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Até 40 imóveis</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio *.sitemob.app incluído</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="starterL1">Até 40 imóveis</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="starterL2">Site + catálogo CMS</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="starterL3">Domínio *.sitemob.app incluído</span></li>
         </ul>
-        <a class="btn btn--ghost" href="https://painel.sitemob.app/criar-conta.html">Começar com o Starter</a>
+        <a class="btn btn--ghost" href="https://painel.sitemob.app/criar-conta.html" data-i18n="starterCta">Começar com o Starter</a>
       </article>
       <article class="plan plan--featured" data-reveal>
-        <span class="plan__badge">★ Mais popular</span>
+        <span class="plan__badge" data-i18n="badge">★ Mais popular</span>
         <h3>Pro</h3>
-        <div class="plan__price"><strong>USD 129</strong><small>/mês</small></div>
+        <div class="plan__price"><strong>USD 129</strong><small data-i18n="perMes">/mês</small></div>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Imóveis ilimitados</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio próprio incluído</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="proL1">Imóveis ilimitados</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="proL2">Site + catálogo CMS</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="proL3">Domínio próprio incluído</span></li>
         </ul>
-        <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html">Começar com o Pro</a>
+        <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html" data-i18n="proCta">Começar com o Pro</a>
       </article>
     </div>
 
     <div class="addons" data-reveal>
       <div class="addon">
         <div>
-          <h4>Página de Empreendimento sob medida</h4>
-          <p>Landing page própria por lançamento, comprada quando você precisar</p>
+          <h4 data-i18n="addon1h">Página de Empreendimento sob medida</h4>
+          <p data-i18n="addon1p">Landing page própria por lançamento, comprada quando você precisar</p>
         </div>
         <strong>USD 200</strong>
       </div>
       <div class="addon">
         <div>
-          <h4>Configuração de domínio próprio</h4>
-          <p>Pro plano Starter — Pro já inclui</p>
+          <h4 data-i18n="addon2h">Configuração de domínio próprio</h4>
+          <p data-i18n="addon2p">Pro plano Starter — Pro já inclui</p>
         </div>
         <strong>USD 39</strong>
       </div>
@@ -518,13 +566,13 @@
 <section class="section cta-final" id="contato">
   <div class="container">
     <div class="cta-final__box" data-reveal>
-      <h2>Seu site imobiliário, <em>no ar desde hoje.</em></h2>
-      <p>Crie sua conta grátis, cadastre seu primeiro imóvel e compartilhe no WhatsApp em minutos. Sem cartão, sem compromisso.</p>
+      <h2 data-i18n-html="ctaFinalTitle">Seu site imobiliário, <em>no ar desde hoje.</em></h2>
+      <p data-i18n="ctaFinalSub">Crie sua conta grátis, cadastre seu primeiro imóvel e compartilhe no WhatsApp em minutos. Sem cartão, sem compromisso.</p>
       <div class="cta-final__ctas">
-        <a class="btn btn--primary btn--lg" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
-        <a class="btn btn--ghost btn--lg" href="https://painel.sitemob.app/login.html">Já tenho conta</a>
+        <a class="btn btn--primary btn--lg" href="https://painel.sitemob.app/criar-conta.html" data-i18n="navCriarConta">Criar conta grátis →</a>
+        <a class="btn btn--ghost btn--lg" href="https://painel.sitemob.app/login.html" data-i18n="ctaFinalSecondary">Já tenho conta</a>
       </div>
-      <small>14 dias grátis · Sem cartão de crédito · Cancele quando quiser</small>
+      <small data-i18n="heroTrust">14 dias grátis · Sem cartão de crédito · Cancele quando quiser</small>
     </div>
   </div>
 </section>
@@ -536,13 +584,115 @@
   <div class="footer__inner">
     <div class="logo"><span>Sitemob</span><span class="logo__dot">.</span></div>
     <div class="footer__links">
-      <a href="https://painel.sitemob.app/login.html">Entrar</a>
+      <a href="https://painel.sitemob.app/login.html" data-i18n="navEntrar">Entrar</a>
       <span>·</span>
-      <a href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis</a>
+      <a href="https://painel.sitemob.app/criar-conta.html" data-i18n="footerCriarConta">Criar conta grátis</a>
     </div>
-    <p class="footer__copy">© 2026 Sitemob. Site e catálogo pra corretores de imóveis.</p>
+    <p class="footer__copy" data-i18n="footerCopy">© 2026 Sitemob. Site e catálogo pra corretores de imóveis.</p>
+    <p class="footer__meta" data-i18n="footerMeta">Sitemob é um aplicativo da Punto Alto — sponsored by CRM Whats Pro.</p>
   </div>
 </footer>
+
+<!-- ─── Tracking de visita (topo de funil) ─────────────────────
+     Duas coisas, nessa ordem:
+       1. manda a visita pra functions/analytics.js (logVisita), que é
+          a única origem do número de visitas no painel interno — não
+          existe GA/GTM nesta página;
+       2. carimba ?vid=/&sid= (+ utm_*) em todo link que sai pra
+          painel.sitemob.app, que é o que permite dizer depois "essa
+          conta veio dessa visita".
+
+     O passo 2 tem que ser em JS: sitemob.app e painel.sitemob.app são
+     subdomínios diferentes, localStorage não atravessa, e o id só
+     existe em runtime — não dá pra deixar hardcoded no href.
+
+     Roda em <script> normal (não module/defer) no fim do body: o DOM
+     dos CTAs já existe aqui, e o fetch é keepalive pra não competir
+     com o LCP nem morrer se a pessoa clicar antes da resposta voltar.
+     ───────────────────────────────────────────────────────── -->
+<script>
+(function () {
+  var ENDPOINT = 'https://southamerica-east1-inmobly-project.cloudfunctions.net/logVisita';
+  var VID_KEY = 'sitemob-vid';   // visitante — localStorage, persiste entre sessões
+  var SID_KEY = 'sitemob-sid';   // sessão    — sessionStorage, morre ao fechar a aba
+  var DESTINO_APP = 'painel.sitemob.app';
+
+  // Storage pode lançar (modo privado, cookies bloqueados). Nesse caso
+  // a visita ainda é contada, só que como visitante novo toda vez —
+  // melhor um número levemente inflado do que a página quebrar.
+  function ler(store, chave) { try { return store.getItem(chave); } catch (e) { return null; } }
+  function gravar(store, chave, valor) { try { store.setItem(chave, valor); } catch (e) {} }
+
+  // Hex de 32 chars — mesmo formato que functions/analytics.js valida
+  // em ID_REGEX. Sem hífen de propósito (o regex é [a-z0-9] puro).
+  function novoId() {
+    var c = window.crypto;
+    if (c && c.getRandomValues) {
+      var b = new Uint8Array(16);
+      c.getRandomValues(b);
+      return Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    }
+    return (Date.now().toString(36) + Math.random().toString(36).slice(2, 12)).replace(/[^a-z0-9]/g, '');
+  }
+
+  function idDe(store, chave) {
+    var atual = ler(store, chave);
+    if (atual) return { id: atual, novo: false };
+    var id = novoId();
+    gravar(store, chave, id);
+    return { id: id, novo: true };
+  }
+
+  var visitante = idDe(window.localStorage, VID_KEY);
+  var sessao    = idDe(window.sessionStorage, SID_KEY);
+  var params    = new URLSearchParams(location.search);
+
+  var utm = {
+    utmSource:   params.get('utm_source'),
+    utmMedium:   params.get('utm_medium'),
+    utmCampaign: params.get('utm_campaign'),
+    utmTerm:     params.get('utm_term'),
+    utmContent:  params.get('utm_content'),
+  };
+
+  // ── 1. Beacon ───────────────────────────────────────────
+  try {
+    fetch(ENDPOINT, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        visitorId: visitante.id,
+        sessionId: sessao.id,
+        novoVisitante: visitante.novo,
+        novaSessao: sessao.novo,
+        path: location.pathname,
+        referrer: document.referrer || null,
+        lang: navigator.language || null,
+        utmSource: utm.utmSource, utmMedium: utm.utmMedium,
+        utmCampaign: utm.utmCampaign, utmTerm: utm.utmTerm, utmContent: utm.utmContent,
+      }),
+    }).catch(function () {}); // métrica não pode derrubar a landing
+  } catch (e) {}
+
+  // ── 2. Carimbo nos CTAs ─────────────────────────────────
+  // Sem sobrescrever nada: se o link já veio com ?vid (não vem hoje,
+  // mas um link de campanha futuro pode), o que está lá manda.
+  var links = document.querySelectorAll('a[href*="' + DESTINO_APP + '"]');
+  Array.prototype.forEach.call(links, function (a) {
+    var url;
+    try { url = new URL(a.href); } catch (e) { return; }
+    if (!url.searchParams.has('vid')) url.searchParams.set('vid', visitante.id);
+    if (!url.searchParams.has('sid')) url.searchParams.set('sid', sessao.id);
+    Object.keys(utm).forEach(function (k) {
+      // utmSource → utm_source: o painel lê no formato canônico da URL
+      var nome = k.replace(/([A-Z])/g, function (m) { return '_' + m.toLowerCase(); });
+      if (utm[k] && !url.searchParams.has(nome)) url.searchParams.set(nome, utm[k]);
+    });
+    a.href = url.toString();
+  });
+})();
+</script>
 
 <script>
   var burger = document.getElementById('navBurger');
@@ -565,6 +715,268 @@
   } else {
     document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('is-visible'); });
   }
+
+  // ── Idioma ──────────────────────────────────────────────
+  // 3 idiomas: pt (português do Brasil), es (espanhol latino-americano,
+  // voseo — mesmo registro já usado no catálogo público, ver
+  // functions/site-assets/js/imoveis.js#IDIOMAS.es) e en (inglês).
+  // Preferência salva em localStorage; sem escolha prévia, detecta
+  // pelo navigator.language; sem bater com nenhum dos 3, cai pro
+  // espanhol (mercado principal — Paraguai).
+  var LANG_TAG = { pt: 'pt-BR', es: 'es-419', en: 'en' };
+  var I18N = {
+    pt: {
+      metaTitle: 'Sitemob — Site e catálogo de imóveis pro corretor, sem programador',
+      metaDesc: 'Sitemob é o SaaS pra corretores e imobiliárias: site próprio, catálogo de imóveis e páginas de empreendimento, 100% autoatendimento. Comece grátis por 14 dias, sem cartão.',
+      navProduto: 'Produto', navComo: 'Como funciona', navPrecos: 'Preços',
+      navEntrar: 'Entrar', navCriarConta: 'Criar conta grátis →', navCriarContaCurto: 'Teste grátis',
+      heroPill: 'Sitemob · Software para corretores de imóveis · 14 dias grátis',
+      heroTitle: 'Seu site imobiliário <em>no ar em 15 minutos.</em>',
+      heroSub: 'Suba as fotos dos seus imóveis, coloque o nome e os contatos da sua imobiliária e publique. Seu site vai ao ar com a sua marca — em seuescritorio.sitemob.app, ou no domínio que você já tem.',
+      heroCtaSecundario: 'Ver como funciona',
+      heroTrust: '14 dias grátis · Sem cartão de crédito · Cancele quando quiser',
+      mockHead: 'Edifício Las Lomas · 3 dormitórios', mockUnits: '3 unidades disponíveis',
+      mockCta: 'Agendar visita pelo WhatsApp →',
+      stat1n: '14 dias', stat1t: 'De teste grátis, sem cartão',
+      stat2n: '5 min', stat2t: 'Pra criar sua conta e seu site',
+      stat3n: '100%', stat3t: 'Autoatendimento: você publica e edita',
+      stat4n: '0', stat4t: 'Programadores ou código necessários',
+      doresEyebrow: 'Sem burocracia. Sem sistema complicado.',
+      doresTitle: 'Você não precisa de programador pra colocar seu catálogo <em>no ar hoje.</em>',
+      doresSub: 'Esquece papelada, orçamento e sistema difícil de mexer. Com o Sitemob você mesmo publica seu site e atualiza seu catálogo, sem depender de mais ninguém.',
+      dores1h: 'Seu site fica pronto e é seu — você edita tudo, na hora, sem programador.',
+      dores1p: 'Você muda o que quiser, quando quiser, sem mandar mensagem pra ninguém.',
+      dores2h: 'Seu catálogo fica num só lugar, sempre atualizado — no seu site.',
+      dores2p: 'Vendeu, você tira do ar. Chegou imóvel novo, você publica na hora — direto do celular.',
+      dores3h: 'Mudar um preço leva segundos — você mesmo faz, direto do painel.',
+      dores3p: 'Sem esperar resposta de ninguém: você edita e a mudança já está no ar.',
+      dores4h: 'Cada empreendimento ganha uma página própria, com tudo que o comprador procura.',
+      dores4p: 'Fotos, valores e tour 3D num só lugar — pra ele fechar com você, não com o concorrente.',
+      produtoEyebrow: 'O que o Sitemob inclui',
+      produtoTitle: 'Duas ferramentas. <em>Um só painel.</em>',
+      produtoSub: 'Sem programador, sem ticket de suporte eterno. Você mesmo monta a página que vende seu empreendimento, e o catálogo que nunca fica desatualizado.',
+      pilar1h: 'Site + catálogo de imóveis',
+      pilar1p: 'Seu site fica pronto e no ar — logo, cor, textos e contato do seu jeito. Você cadastra os imóveis com fotos, preço e comodidades, e o catálogo aparece na hora.',
+      pilar1l1: 'Site multilíngue — espanhol, português e inglês',
+      pilar1l2: 'Logo, cor e textos editáveis, sem sair do painel',
+      pilar1l3: 'Botão direto pro WhatsApp, sem formulário nenhum',
+      pilar1tag: 'Um site por corretor, sem depender de ninguém',
+      pilar2h: 'Páginas de Empreendimento',
+      pilar2p: 'Uma página de vendas dedicada pra cada lançamento — fotos, valores, tour 3D, comodidades e prazo de entrega, tudo editável por você quando quiser.',
+      pilar2l1: 'Galeria de fotos e tour 3D — você mesmo carrega',
+      pilar2l2: 'Preço e unidades disponíveis, editáveis em segundos',
+      pilar2l3: 'Link direto pro WhatsApp, sem formulário eterno',
+      pilar2tag: 'Uma página por empreendimento, sob demanda',
+      comoEyebrow: 'Como funciona · Mobile first',
+      comoTitle: 'Você tira a foto no celular. <em>O catálogo se atualiza sozinho.</em>',
+      comoSub: 'Fotografa com o celular, sobe no Sitemob, e em segundos já está no seu site. Sem programador, sem ticket, sem esperar ninguém.',
+      feat1h: 'Fotos otimizadas na hora',
+      feat1p: 'Compressão automática antes do upload — cada foto carrega rápido, sem você precisar editar nada antes.',
+      feat2h: 'Multilíngue de verdade',
+      feat2p: 'Seu site sai pronto em espanhol, português e inglês — o comprador escolhe o idioma dele.',
+      feat3h: 'Domínio no seu nome',
+      feat3p: 'Publique em seuescritorio.sitemob.app de graça, ou conecte seu próprio domínio.',
+      feat4h: 'Google Tag Manager integrado',
+      feat4p: 'Cole seu ID de GTM e meça suas campanhas sem precisar de programador.',
+      includedHtml: 'Incluído no plano · hospedagem, CDN e otimização de fotos <strong>sem custo adicional</strong>.',
+      precosEyebrow: 'Planos',
+      precosTitle: 'Comece grátis. Pague só quando estiver convencido.',
+      precosSub: '14 dias de teste, sem cartão de crédito — até 6 imóveis pra você conhecer o painel. Depois, escolha o plano do tamanho do seu catálogo.',
+      perMes: '/mês',
+      starterL1: 'Até 40 imóveis', starterL2: 'Site + catálogo CMS', starterL3: 'Domínio *.sitemob.app incluído',
+      starterCta: 'Começar com o Starter',
+      badge: '★ Mais popular',
+      proL1: 'Imóveis ilimitados', proL2: 'Site + catálogo CMS', proL3: 'Domínio próprio incluído',
+      proCta: 'Começar com o Pro',
+      addon1h: 'Página de Empreendimento sob medida', addon1p: 'Landing page própria por lançamento, comprada quando você precisar',
+      addon2h: 'Configuração de domínio próprio', addon2p: 'Pro plano Starter — Pro já inclui',
+      ctaFinalTitle: 'Seu site imobiliário, <em>no ar desde hoje.</em>',
+      ctaFinalSub: 'Crie sua conta grátis, cadastre seu primeiro imóvel e compartilhe no WhatsApp em minutos. Sem cartão, sem compromisso.',
+      ctaFinalSecondary: 'Já tenho conta',
+      footerCriarConta: 'Criar conta grátis',
+      footerCopy: '© 2026 Sitemob. Site e catálogo pra corretores de imóveis.',
+      footerMeta: 'Sitemob é um aplicativo da Punto Alto — sponsored by CRM Whats Pro.',
+    },
+    es: {
+      metaTitle: 'Sitemob — Sitio y catálogo de inmuebles para el corredor, sin programador',
+      metaDesc: 'Sitemob es el SaaS para corredores e inmobiliarias: sitio propio, catálogo de inmuebles y páginas de emprendimiento, 100% autogestionable. Empezá gratis por 14 días, sin tarjeta.',
+      navProduto: 'Producto', navComo: 'Cómo funciona', navPrecos: 'Precios',
+      navEntrar: 'Entrar', navCriarConta: 'Creá tu cuenta gratis →', navCriarContaCurto: 'Probá gratis',
+      heroPill: 'Sitemob · Software para corredores de inmuebles · 14 días gratis',
+      heroTitle: 'Tu sitio inmobiliario, <em>en línea en 15 minutos.</em>',
+      heroSub: 'Subí las fotos de tus inmuebles, cargá el nombre y los contactos de tu inmobiliaria, y publicá. Tu sitio queda en línea con tu marca — en tuoficina.sitemob.app, o en el dominio que ya tenés.',
+      heroCtaSecundario: 'Ver cómo funciona',
+      heroTrust: '14 días gratis · Sin tarjeta de crédito · Cancelá cuando quieras',
+      mockHead: 'Edificio Las Lomas · 3 dormitorios', mockUnits: '3 unidades disponibles',
+      mockCta: 'Agendar visita por WhatsApp →',
+      stat1n: '14 días', stat1t: 'De prueba gratis, sin tarjeta',
+      stat2n: '5 min', stat2t: 'Para crear tu cuenta y tu sitio',
+      stat3n: '100%', stat3t: 'Autogestionable: vos publicás y editás',
+      stat4n: '0', stat4t: 'Programadores o código necesarios',
+      doresEyebrow: 'Sin burocracia. Sin sistemas complicados.',
+      doresTitle: 'No necesitás programador para poner tu catálogo <em>en línea hoy.</em>',
+      doresSub: 'Olvidate del papeleo, los presupuestos y los sistemas difíciles de usar. Con Sitemob vos mismo publicás tu sitio y actualizás tu catálogo, sin depender de nadie más.',
+      dores1h: 'Tu sitio queda listo y es tuyo — editás todo, al instante, sin programador.',
+      dores1p: 'Cambiás lo que quieras, cuando quieras, sin mandarle un mensaje a nadie.',
+      dores2h: 'Tu catálogo vive en un solo lugar, siempre actualizado — en tu sitio.',
+      dores2p: '¿Se vendió? Lo sacás. ¿Llegó un inmueble nuevo? Lo publicás al instante, desde el celular.',
+      dores3h: 'Cambiar un precio lleva segundos — lo hacés vos mismo, desde el panel.',
+      dores3p: 'Sin esperar respuesta de nadie: editás y el cambio ya está en línea.',
+      dores4h: 'Cada emprendimiento tiene su propia página, con todo lo que el comprador busca.',
+      dores4p: 'Fotos, valores y tour 3D en un solo lugar — para que cierre con vos, no con la competencia.',
+      produtoEyebrow: 'Qué incluye Sitemob',
+      produtoTitle: 'Dos herramientas. <em>Un solo panel.</em>',
+      produtoSub: 'Sin programador, sin ticket de soporte eterno. Vos mismo armás la página que vende tu emprendimiento, y el catálogo que nunca queda desactualizado.',
+      pilar1h: 'Sitio + catálogo de inmuebles',
+      pilar1p: 'Tu sitio queda listo y en línea — logo, color, textos y contacto a tu manera. Cargás los inmuebles con fotos, precio y comodidades, y el catálogo aparece al instante.',
+      pilar1l1: 'Sitio multilingüe — español, portugués e inglés',
+      pilar1l2: 'Logo, color y textos editables, sin salir del panel',
+      pilar1l3: 'Botón directo a WhatsApp, sin ningún formulario',
+      pilar1tag: 'Un sitio por corredor, sin depender de nadie',
+      pilar2h: 'Páginas de Emprendimiento',
+      pilar2p: 'Una página de ventas dedicada para cada lanzamiento — fotos, valores, tour 3D, comodidades y fecha de entrega, todo editable por vos cuando quieras.',
+      pilar2l1: 'Galería de fotos y tour 3D — los cargás vos mismo',
+      pilar2l2: 'Precio y unidades disponibles, editables en segundos',
+      pilar2l3: 'Enlace directo a WhatsApp, sin formulario eterno',
+      pilar2tag: 'Una página por emprendimiento, a demanda',
+      comoEyebrow: 'Cómo funciona · Mobile first',
+      comoTitle: 'Sacás la foto con el celular. <em>El catálogo se actualiza solo.</em>',
+      comoSub: 'Fotografiá con el celular, subilo a Sitemob, y en segundos ya está en tu sitio. Sin programador, sin ticket, sin esperar a nadie.',
+      feat1h: 'Fotos optimizadas al instante',
+      feat1p: 'Compresión automática antes de subir — cada foto carga rápido, sin que tengas que editar nada antes.',
+      feat2h: 'Multilingüe de verdad',
+      feat2p: 'Tu sitio sale listo en español, portugués e inglés — el comprador elige su idioma.',
+      feat3h: 'Dominio con tu nombre',
+      feat3p: 'Publicá en tuoficina.sitemob.app gratis, o conectá tu propio dominio.',
+      feat4h: 'Google Tag Manager integrado',
+      feat4p: 'Pegá tu ID de GTM y medí tus campañas sin necesitar un programador.',
+      includedHtml: 'Incluido en el plan · hosting, CDN y optimización de fotos <strong>sin costo adicional</strong>.',
+      precosEyebrow: 'Planes',
+      precosTitle: 'Empezá gratis. Pagá solo cuando estés convencido.',
+      precosSub: '14 días de prueba, sin tarjeta de crédito — hasta 6 inmuebles para que conozcas el panel. Después, elegí el plan del tamaño de tu catálogo.',
+      perMes: '/mes',
+      starterL1: 'Hasta 40 inmuebles', starterL2: 'Sitio + catálogo CMS', starterL3: 'Dominio *.sitemob.app incluido',
+      starterCta: 'Empezar con el Starter',
+      badge: '★ El más elegido',
+      proL1: 'Inmuebles ilimitados', proL2: 'Sitio + catálogo CMS', proL3: 'Dominio propio incluido',
+      proCta: 'Empezar con el Pro',
+      addon1h: 'Página de Emprendimiento a medida', addon1p: 'Landing page propia por lanzamiento, comprada cuando la necesites',
+      addon2h: 'Configuración de dominio propio', addon2p: 'Para el plan Starter — el Pro ya lo incluye',
+      ctaFinalTitle: 'Tu sitio inmobiliario, <em>en línea desde hoy.</em>',
+      ctaFinalSub: 'Creá tu cuenta gratis, cargá tu primer inmueble y compartilo por WhatsApp en minutos. Sin tarjeta, sin compromiso.',
+      ctaFinalSecondary: 'Ya tengo cuenta',
+      footerCriarConta: 'Creá tu cuenta gratis',
+      footerCopy: '© 2026 Sitemob. Sitio y catálogo para corredores de inmuebles.',
+      footerMeta: 'Sitemob es una aplicación de Punto Alto — sponsored by CRM Whats Pro.',
+    },
+    en: {
+      metaTitle: 'Sitemob — Website and property catalog for real estate agents, no developer needed',
+      metaDesc: 'Sitemob is the SaaS for real estate agents and agencies: your own website, property catalog and development landing pages, 100% self-service. Start free for 14 days, no card required.',
+      navProduto: 'Product', navComo: 'How it works', navPrecos: 'Pricing',
+      navEntrar: 'Log in', navCriarConta: 'Start free →', navCriarContaCurto: 'Start free',
+      heroPill: 'Sitemob · Software for real estate agents · 14 days free',
+      heroTitle: 'Your real estate website, <em>live in 15 minutes.</em>',
+      heroSub: "Upload your property photos, add your agency's name and contact info, and publish. Your site goes live under your brand — at yourbrokerage.sitemob.app, or your own domain.",
+      heroCtaSecundario: 'See how it works',
+      heroTrust: '14 days free · No credit card · Cancel anytime',
+      mockHead: 'Las Lomas Building · 3 bedrooms', mockUnits: '3 units available',
+      mockCta: 'Book a visit on WhatsApp →',
+      stat1n: '14 days', stat1t: 'Free trial, no card required',
+      stat2n: '5 min', stat2t: 'To create your account and site',
+      stat3n: '100%', stat3t: 'Self-service: you publish and edit',
+      stat4n: '0', stat4t: 'Developers or code required',
+      doresEyebrow: 'No red tape. No complicated systems.',
+      doresTitle: "You don't need a developer to get your catalog <em>live today.</em>",
+      doresSub: 'Forget paperwork, quotes and clunky systems. With Sitemob you publish your own site and update your catalog yourself, with no one else in the way.',
+      dores1h: "Your website is ready and it's yours — edit everything instantly, no developer needed.",
+      dores1p: 'Change whatever you want, whenever you want, without messaging anyone.',
+      dores2h: 'Your catalog lives in one place, always up to date — right on your site.',
+      dores2p: 'Sold it? Take it down. New listing? Publish it instantly, straight from your phone.',
+      dores3h: 'Changing a price takes seconds — you do it yourself, right from the dashboard.',
+      dores3p: 'No waiting on anyone: you edit it and the change is live instantly.',
+      dores4h: 'Every development gets its own page, with everything buyers are looking for.',
+      dores4p: "Photos, pricing and 3D tour in one place — so they close with you, not the competition.",
+      produtoEyebrow: 'What Sitemob includes',
+      produtoTitle: 'Two tools. <em>One dashboard.</em>',
+      produtoSub: "No developer, no endless support tickets. You build the page that sells your development, and a catalog that's never out of date.",
+      pilar1h: 'Website + property catalog',
+      pilar1p: 'Your website is ready and live — logo, color, copy and contact info your way. Add properties with photos, price and features, and the catalog updates instantly.',
+      pilar1l1: 'Multilingual site — Spanish, Portuguese and English',
+      pilar1l2: 'Logo, color and copy editable without leaving the dashboard',
+      pilar1l3: 'Direct WhatsApp button, no forms at all',
+      pilar1tag: 'One site per agent, no one else needed',
+      pilar2h: 'Development Pages',
+      pilar2p: 'A dedicated sales page for each launch — photos, prices, 3D tour, amenities and delivery date, all editable by you whenever you want.',
+      pilar2l1: 'Photo gallery and 3D tour — you upload them yourself',
+      pilar2l2: 'Price and available units, editable in seconds',
+      pilar2l3: 'Direct WhatsApp link, no endless forms',
+      pilar2tag: 'One page per development, on demand',
+      comoEyebrow: 'How it works · Mobile first',
+      comoTitle: 'You snap a photo on your phone. <em>The catalog updates itself.</em>',
+      comoSub: "Take a photo with your phone, upload it to Sitemob, and it's live on your site in seconds. No developer, no tickets, no waiting on anyone.",
+      feat1h: 'Photos optimized instantly',
+      feat1p: 'Automatic compression before upload — every photo loads fast, with nothing for you to edit beforehand.',
+      feat2h: 'Truly multilingual',
+      feat2p: 'Your site ships ready in Spanish, Portuguese and English — the buyer picks their language.',
+      feat3h: 'A domain with your name',
+      feat3p: 'Publish at yourbrokerage.sitemob.app for free, or connect your own domain.',
+      feat4h: 'Google Tag Manager built in',
+      feat4p: 'Paste your GTM ID and measure your campaigns without needing a developer.',
+      includedHtml: 'Included in every plan · hosting, CDN and photo optimization <strong>at no extra cost</strong>.',
+      precosEyebrow: 'Plans',
+      precosTitle: "Start free. Pay only once you're convinced.",
+      precosSub: '14-day trial, no credit card — up to 6 properties to get to know the dashboard. Then pick the plan sized for your catalog.',
+      perMes: '/month',
+      starterL1: 'Up to 40 properties', starterL2: 'Website + CMS catalog', starterL3: '*.sitemob.app domain included',
+      starterCta: 'Start with Starter',
+      badge: '★ Most popular',
+      proL1: 'Unlimited properties', proL2: 'Website + CMS catalog', proL3: 'Custom domain included',
+      proCta: 'Start with Pro',
+      addon1h: 'Custom Development Page', addon1p: 'Your own landing page per launch, purchased whenever you need it',
+      addon2h: 'Custom domain setup', addon2p: 'For the Starter plan — Pro already includes it',
+      ctaFinalTitle: 'Your real estate website, <em>live as of today.</em>',
+      ctaFinalSub: 'Create your free account, add your first property and share it on WhatsApp in minutes. No card, no commitment.',
+      ctaFinalSecondary: 'I already have an account',
+      footerCriarConta: 'Start free',
+      footerCopy: '© 2026 Sitemob. Website and catalog for real estate agents.',
+      footerMeta: 'Sitemob is an app by Punto Alto — sponsored by CRM Whats Pro.',
+    },
+  };
+
+  function idiomaPadrao() {
+    var salvo = localStorage.getItem('sitemob-lang');
+    if (salvo && I18N[salvo]) return salvo;
+    var nav = (navigator.language || 'es').toLowerCase();
+    if (nav.indexOf('pt') === 0) return 'pt';
+    if (nav.indexOf('en') === 0) return 'en';
+    return 'es';
+  }
+
+  function aplicarIdioma(lang) {
+    var dic = I18N[lang] || I18N.es;
+    document.documentElement.lang = LANG_TAG[lang] || 'es-419';
+    document.title = dic.metaTitle;
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', dic.metaDesc);
+
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (dic[key] !== undefined) el.textContent = dic[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-html');
+      if (dic[key] !== undefined) el.innerHTML = dic[key];
+    });
+    document.querySelectorAll('[data-lang-switch] button').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-lang') === lang);
+    });
+    localStorage.setItem('sitemob-lang', lang);
+  }
+
+  document.querySelectorAll('[data-lang-switch] button').forEach(function (btn) {
+    btn.addEventListener('click', function () { aplicarIdioma(btn.getAttribute('data-lang')); });
+  });
+  aplicarIdioma(idiomaPadrao());
 </script>
 
 </body>

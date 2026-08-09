@@ -2,6 +2,27 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<!-- Sinal de analytics — vem ANTES do GTM de propósito: o page_view sai
+     antes do Firebase Auth resolver, então quem já se identificou numa
+     visita anterior é classificado por esta chave, gravada por
+     marcarSinalAnalytics() em js/shell.js. Ver docs/ANALYTICS-JORNADA.md. -->
+<script>
+(function () {
+  window.dataLayer = window.dataLayer || [];
+  try {
+    var sinal = JSON.parse(localStorage.getItem('sitemob_ga') || '{}');
+    if (sinal.traffic_type) window.dataLayer.push({ traffic_type: sinal.traffic_type });
+    if (sinal.user_id) window.dataLayer.push({ user_id: sinal.user_id });
+  } catch (e) { /* localStorage bloqueado — segue sem classificar */ }
+})();
+</script>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MX2GH99M');</script>
+<!-- End Google Tag Manager -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Meu Site — Sitemob</title>
 <meta name="robots" content="noindex, nofollow">
@@ -138,10 +159,29 @@
   .ms-preview-device.active { background: white; color: var(--clr-bg-darker); }
 
   .ms-preview-frame-wrap {
+    position: relative;
     width: 100%; height: 78vh;
     display: flex; align-items: stretch; justify-content: center;
     background: #e5e9ee;
     overflow: auto;
+  }
+
+  .ms-preview-erro {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--sp-3);
+    padding: var(--sp-6);
+    text-align: center;
+    background: #e5e9ee;
+  }
+  /* display:flex acima ganha do [hidden] da folha do navegador — sem
+     esta linha o aviso ficaria visível o tempo todo. */
+  .ms-preview-erro[hidden] { display: none; }
+  .ms-preview-erro__titulo { margin: 0; font-weight: 700; color: var(--clr-bg-darker); }
+  .ms-preview-erro__sub {
+    margin: 0; max-width: 380px;
+    font-size: var(--text-sm); line-height: 1.5;
+    color: var(--clr-text-2);
   }
   .ms-preview-frame {
     height: 100%;
@@ -153,7 +193,10 @@
 </style>
 </head>
 <body>
-
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MX2GH99M"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <div class="admin-dashboard visible">
   <div id="shell-sidebar-mount"></div>
   <div class="admin-content">
@@ -371,6 +414,11 @@
   </div>
 </div>
 
+<!-- Fora de <main> de propósito (backdrop de modal cobrindo a tela
+     inteira) — mas precisa de um wrapper com id fixo pra o router SPA
+     de shell.js (ver navigateTo()) saber trocar isso junto com o
+     conteúdo de <main> ao navegar sem reload. -->
+<div id="page-extra">
 <div class="modal-backdrop ms-preview-modal" id="msPreviewModal" role="dialog" aria-modal="true" aria-label="Vista previa do site">
   <div class="modal">
     <div class="ms-preview-toolbar" role="group" aria-label="Tamanho da vista previa">
@@ -389,8 +437,19 @@
     </button>
     <div class="ms-preview-frame-wrap">
       <iframe class="ms-preview-frame" id="msPreviewFrame" title="Vista previa do seu site"></iframe>
+
+      <!-- Cobre o iframe quando ele não dá sinal de vida em 8s (ver
+           PREVIEW_TIMEOUT_MS em js/meu-site.js). Fica por cima em vez
+           de substituir o iframe pra não jogar fora um carregamento
+           que ainda pode chegar atrasado. -->
+      <div class="ms-preview-erro" id="msPreviewErro" hidden role="alert">
+        <p class="ms-preview-erro__titulo">Não foi possível carregar a pré-visualização</p>
+        <p class="ms-preview-erro__sub">Costuma ser conexão instável ou uma rede que bloqueia recursos externos. <strong>Seu site publicado não é afetado por isso.</strong></p>
+        <button type="button" class="btn btn--accent btn--md" id="msPreviewTentarBtn">Tentar de novo</button>
+      </div>
     </div>
   </div>
+</div>
 </div>
 
 <script type="module" src="js/meu-site.js"></script>

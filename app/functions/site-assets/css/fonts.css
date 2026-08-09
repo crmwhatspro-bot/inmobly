@@ -1,0 +1,135 @@
+/* ════════════════════════════════════════════════
+   fonts.css — as duas famílias do site, servidas por nós.
+
+   Antes vinha tudo de fonts.googleapis.com: um <link> de CSS que
+   BLOQUEAVA a renderização (~780ms) e que só então revelava os .woff2
+   num terceiro domínio (fonts.gstatic.com) — cadeia de 2 níveis, 4
+   handshakes TLS contados no PageSpeed, ~1.6s até a fonte pintar. Agora
+   os arquivos saem do mesmo servidor do resto do site (mesma conexão já
+   aberta, mesmo cache do edge da Cloudflare) e o HTML dá preload direto
+   nos dois que a primeira tela usa.
+
+   Estes @font-face são cópia fiel do que o Google serve hoje pra
+   Chrome moderno (css2?family=Plus+Jakarta+Sans:wght@600;700;800
+   &family=DM+Sans:wght@400;500&display=swap), com três diferenças:
+     · as URLs apontam pra ../fonts/ em vez de fonts.gstatic.com;
+     · os subsets cyrillic-ext e vietnamese ficaram de fora (o site é
+       es/pt/en — o `unicode-range` faz o navegador nem pedir esses
+       arquivos, então mantê-los só engordaria o repositório; texto
+       nesses alfabetos cai pra system-ui);
+     · nada mais. Os pesos seguem declarados um a um como o Google
+       declara.
+
+   Vários pesos apontam pro MESMO .woff2 de propósito — não é engano de
+   copiar/colar: os dois arquivos são fontes variáveis, um único binário
+   cobre a faixa inteira de peso. É por isso que 5 pesos cabem em 4
+   arquivos, e por isso o navegador baixa cada um só uma vez.
+
+   ⚠️  Caminho ../fonts/ é relativo E precisa continuar sendo, porque
+   este arquivo é consumido de dois jeitos:
+     · site publicado — servirSite.js EMBUTE este CSS num <style> no
+       HTML, então o relativo resolve contra o documento (/ ou
+       /emprendimiento.html) e cai em /fonts/…;
+     · preview do meu-site.html — carregado como <link> a partir de
+       /site/css/, resolve em /site/fonts/….
+   Um caminho absoluto (/fonts/…) funcionaria só no primeiro caso e
+   quebraria as fontes do preview.
+
+   Licença: Plus Jakarta Sans e DM Sans são SIL Open Font License 1.1,
+   que permite redistribuir/hospedar. Texto integral em
+   fonts/plus-jakarta-sans-OFL.txt e fonts/dm-sans-OFL.txt.
+   ════════════════════════════════════════════════ */
+
+/* ── DM Sans (--font-body) ──────────────────────── */
+/* latin-ext */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/dm-sans-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/dm-sans-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/dm-sans-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/dm-sans-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ── Plus Jakarta Sans (--font-display) ─────────── */
+/* latin-ext */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/plus-jakarta-sans-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/plus-jakarta-sans-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/plus-jakarta-sans-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/plus-jakarta-sans-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(../fonts/plus-jakarta-sans-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(../fonts/plus-jakarta-sans-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

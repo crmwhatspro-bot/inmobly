@@ -56,6 +56,19 @@ a { color: var(--accent); }
 }
 .field__error { font-size: 0.78rem; color: var(--err); margin-top: 0.3rem; min-height: 1.1em; }
 
+/* ── Estado de carregamento dentro do card ────────────────── */
+.card__loading { text-align: center; padding: 1.25rem 0 0.75rem; }
+.card__loading p { color: var(--muted); font-size: 0.88rem; margin: 1.1rem 0 0; }
+.spinner {
+  width: 34px; height: 34px; margin: 0 auto; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--accent);
+  animation: spinner-gira 700ms linear infinite;
+}
+@keyframes spinner-gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
+
 .msg { font-size: 0.85rem; margin-top: 1rem; text-align: center; }
 .msg--err { color: var(--err); }
 .msg--ok { color: var(--ok); }

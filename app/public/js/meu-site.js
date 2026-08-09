@@ -15,7 +15,7 @@
 import { db, auth } from './firebase.js';
 import { doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
-import { initShell } from './shell.js';
+import { initShell, pageSignal } from './shell.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -61,6 +61,8 @@ const abrirPreviewBtn  = $('msAbrirPreviewBtn');
 const previewModal     = $('msPreviewModal');
 const previewFrame     = $('msPreviewFrame');
 const fecharPreviewBtn = $('msPreviewFecharBtn');
+const previewErroEl    = $('msPreviewErro');
+const previewTentarBtn = $('msPreviewTentarBtn');
 
 const LOGO_PLACEHOLDER_HTML = logoPreviewEl.innerHTML;
 
@@ -83,6 +85,7 @@ let corSelecionada = ACCENT_PADRAO;
 let logoAtualDataUrl = null;
 let previewCarregado = false;
 let previewPronto = false;
+let previewTimeout = null;
 
 function mostrarMsg(el, texto, tipo) {
   el.textContent = texto;
@@ -122,18 +125,41 @@ const enviarPreviewDebounced = debounce(enviarPreview, 200);
 
 window.addEventListener('message', (e) => {
   if (e.data?.tipo !== 'pa-preview-pronto') return;
+  clearTimeout(previewTimeout);
+  previewErroEl.hidden = true;
   previewPronto = true;
   enviarPreview();
-});
+}, { signal: pageSignal() });
+
+// O iframe já tem um fallback próprio de 6s pra quando o handshake se
+// perde (ver site/js/imoveis.js#iniciarPreview) — mas ele mora DENTRO
+// do módulo que precisa carregar. Se o import do SDK do Firestore não
+// resolver (gstatic.com fora do ar, rede que bloqueia recurso externo,
+// offline), o módulo inteiro nunca roda: nem o conteúdo aparece, nem o
+// fallback dele é armado, e o corretor fica olhando um spinner eterno
+// achando que o site dele quebrou. Esta guarda é do lado de cá, onde o
+// código com certeza está rodando.
+const PREVIEW_TIMEOUT_MS = 8000;
+
+function carregarPreviewFrame() {
+  previewPronto = false;
+  previewCarregado = true;
+  previewErroEl.hidden = true;
+
+  // ?t= deixa o preview buscar os imóveis reais do tenant direto do
+  // Firestore (já são públicos) — só cai pros de exemplo se não
+  // tiver nenhum ainda. Ver site/js/imoveis.js#iniciarPreview.
+  // ?r= muda a URL a cada tentativa: reatribuir um src idêntico nem
+  // sempre força recarga, e um "tentar de novo" que não tenta nada é
+  // pior que não ter o botão.
+  previewFrame.src = `site/index.html?preview=1&t=${encodeURIComponent(tenantId)}&r=${Date.now()}`;
+
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(() => { previewErroEl.hidden = false; }, PREVIEW_TIMEOUT_MS);
+}
 
 function abrirPreview() {
-  if (!previewCarregado) {
-    // ?t= deixa o preview buscar os imóveis reais do tenant direto do
-    // Firestore (já são públicos) — só cai pros de exemplo se não
-    // tiver nenhum ainda. Ver site/js/imoveis.js#iniciarPreview.
-    previewFrame.src = `site/index.html?preview=1&t=${encodeURIComponent(tenantId)}`;
-    previewCarregado = true;
-  }
+  if (!previewCarregado) carregarPreviewFrame();
   previewModal.hidden = false;
   requestAnimationFrame(() => previewModal.classList.add('open'));
   document.body.style.overflow = 'hidden';
@@ -153,10 +179,11 @@ document.querySelectorAll('.ms-preview-device').forEach(btn => {
 
 abrirPreviewBtn.addEventListener('click', abrirPreview);
 fecharPreviewBtn.addEventListener('click', fecharPreview);
+previewTentarBtn.addEventListener('click', carregarPreviewFrame);
 previewModal.addEventListener('click', (e) => { if (e.target === previewModal) fecharPreview(); });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && previewModal.classList.contains('open')) fecharPreview();
-});
+}, { signal: pageSignal() });
 
 // ── Logo: mesma técnica de compressão de admin-imoveis.js (canvas
 // → WebP/JPEG, sem Storage), só que menor — é um logo, não foto de

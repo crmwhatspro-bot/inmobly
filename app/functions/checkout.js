@@ -45,9 +45,15 @@ const COUPON_LANCAMENTO = {
 //   mesmo texto "50OFF" apontando pra esse coupon (Coupon e Promotion
 //   Code são objetos diferentes no Stripe — o Coupon sozinho não é
 //   digitável no Checkout).
+//   trialExpirado — paywall que tranca o painel quando os 14 dias
+//   acabam (shell.js#montarPaywall). Mesmo cupom das outras duas: quem
+//   deixou o trial vencer é exatamente o público que a promo existe pra
+//   converter, e cobrar mais caro de quem hesitou seria o incentivo ao
+//   contrário.
 const PROMOS = {
   primeiroImovel: { coupon: '50OFF', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
   limiteImoveis:  { coupon: '50OFF', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
+  trialExpirado:  { coupon: '50OFF', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
 };
 
 const BASE_URL = 'https://painel.sitemob.app';

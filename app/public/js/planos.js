@@ -7,6 +7,7 @@
 import { auth } from './firebase.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 import { initShell } from './shell.js';
+import { trialExpirado, diasRestantesTrial } from './tenant.js';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('statusAtual');
@@ -16,10 +17,16 @@ const functions = getFunctions(auth.app, 'southamerica-east1');
 const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
 
 initShell({ active: 'plano', title: 'Plano' }).then(({ broker }) => {
-  if (broker.status === 'trialing') {
-    const fim = broker.trialEndsAt?.toDate ? broker.trialEndsAt.toDate() : new Date(broker.trialEndsAt);
-    const dias = Math.max(0, Math.ceil((fim - Date.now()) / (1000 * 60 * 60 * 24)));
-    statusEl.textContent = `Seu trial termina em ${dias} dia(s) — assine antes pra não perder o catálogo publicado.`;
+  // Planos é a única página que o paywall de trial vencido deixa
+  // passar (ver PAGINA_LIVRE_NO_PAYWALL em shell.js) — então é aqui que
+  // o estado "venceu" precisa aparecer por escrito.
+  if (trialExpirado(broker)) {
+    statusEl.textContent = 'Seu teste grátis terminou. Seu catálogo continua no ar, mas o painel fica bloqueado até você assinar — use o cupom 50OFF para 50% de desconto vitalício.';
+  } else if (broker.status === 'trialing') {
+    const dias = diasRestantesTrial(broker);
+    statusEl.textContent = dias === 1
+      ? 'Último dia do seu teste grátis — assine para não perder o acesso ao painel.'
+      : `Seu teste grátis termina em ${dias} dias — assine antes para não perder o acesso ao painel.`;
   } else if (broker.status === 'active') {
     statusEl.textContent = `Plano atual: ${broker.plan}. Assinar um plano diferente troca automaticamente.`;
   } else {

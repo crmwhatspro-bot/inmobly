@@ -21,6 +21,7 @@ import { collection, query, where, getDocs, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { tenantIdAtual, carregarPerfilPublico } from './public-tenant.js';
 import { aplicarAccent } from './cores.js';
+import { iniciarEventosContato } from './eventos.js';
 
 const MODO_PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
 
@@ -56,6 +57,16 @@ const IDIOMAS = {
     keywordsDefault: (n) => `inmuebles, ${n}, Paraguay`,
     sobreDe: (n) => `Sobre ${n}`,
     derechos: 'Todos los derechos reservados.',
+    comodidades: 'Comodidades',
+    limparComodidades: 'Limpiar',
+    maisComodidades: (n) => `+${n} más`,
+    com: {
+      piscina: 'Piscina', churrasqueira: 'Parrilla', academia: 'Gimnasio',
+      mobiliado: 'Amoblado', ar: 'Aire acondicionado', varanda: 'Balcón',
+      seguranca: 'Seguridad 24h', elevador: 'Ascensor', pets: 'Pet friendly',
+      lavanderia: 'Lavandería', salao: 'Salón de fiestas', coworking: 'Coworking',
+      jardim: 'Jardín', gerador: 'Generador', playground: 'Playground',
+    },
   },
   pt: {
     portfolio: 'Portfólio', sobre: 'Sobre', todos: 'Todos',
@@ -83,6 +94,16 @@ const IDIOMAS = {
     keywordsDefault: (n) => `imóveis, ${n}, Paraguai`,
     sobreDe: (n) => `Sobre ${n}`,
     derechos: 'Todos os direitos reservados.',
+    comodidades: 'Comodidades',
+    limparComodidades: 'Limpar',
+    maisComodidades: (n) => `+${n} mais`,
+    com: {
+      piscina: 'Piscina', churrasqueira: 'Churrasqueira', academia: 'Academia',
+      mobiliado: 'Mobiliado', ar: 'Ar-condicionado', varanda: 'Varanda',
+      seguranca: 'Segurança 24h', elevador: 'Elevador', pets: 'Aceita pets',
+      lavanderia: 'Lavanderia', salao: 'Salão de festas', coworking: 'Coworking',
+      jardim: 'Jardim', gerador: 'Gerador', playground: 'Playground',
+    },
   },
   en: {
     portfolio: 'Portfolio', sobre: 'About', todos: 'All',
@@ -110,9 +131,29 @@ const IDIOMAS = {
     keywordsDefault: (n) => `real estate, ${n}, Paraguay`,
     sobreDe: (n) => `About ${n}`,
     derechos: 'All rights reserved.',
+    comodidades: 'Amenities',
+    limparComodidades: 'Clear',
+    maisComodidades: (n) => `+${n} more`,
+    com: {
+      piscina: 'Pool', churrasqueira: 'BBQ area', academia: 'Gym',
+      mobiliado: 'Furnished', ar: 'Air conditioning', varanda: 'Balcony',
+      seguranca: '24h security', elevador: 'Elevator', pets: 'Pet friendly',
+      lavanderia: 'Laundry', salao: 'Party room', coworking: 'Coworking',
+      jardim: 'Garden', gerador: 'Power generator', playground: 'Playground',
+    },
   },
 };
+
+// Ordem de exibição das comodidades — a mesma dos chips
+// #imv-comodidades em admin.html (manter as duas em sincronia; um
+// valor novo lá que não exista aqui cai no fallback de label crua).
+const COMODIDADES = ['piscina', 'churrasqueira', 'academia', 'mobiliado', 'ar',
+  'varanda', 'seguranca', 'elevador', 'pets', 'lavanderia', 'salao',
+  'coworking', 'jardim', 'gerador', 'playground'];
+
 let STR = IDIOMAS.es;
+
+const comLabel = (c) => STR.com?.[c] || c;
 
 // Aplica o idioma nos textos estáticos do HTML (os que não são
 // gerados via cardHTML/etc, que já leem STR na hora de renderizar) —
@@ -140,6 +181,7 @@ function aplicarIdioma(idiomaPedido) {
   document.getElementById('sobre-label').textContent = STR.sobre;
   document.getElementById('footer-desc').textContent = STR.footerDesc;
   document.getElementById('footer-rights-prefix').textContent = STR.footerRightsPrefix;
+  atualizarComodidadesUI();
 }
 
 const ICONS = {
@@ -149,14 +191,15 @@ const ICONS = {
   area: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/></svg>',
   car:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11"/><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="17" r="1.5"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
 };
 
 // Só usados no modo preview quando o tenant ainda não tem nenhum
 // imóvel cadastrado de verdade — nunca gravados/lidos do Firestore.
 const IMOVEIS_EXEMPLO = [
-  { id: 'exemplo-1', titulo: 'Departamento moderno de 2 dormitorios', operacao: 'venda', tipo: 'apartamento', precoVenda: 95000, quartos: 2, banheiros: 2, areaM2: 68, vagas: 1, cidade: 'Asunción', bairro: 'Villa Morra', capa: null, ativo: true },
-  { id: 'exemplo-2', titulo: 'Casa con jardín y pileta', operacao: 'venda', tipo: 'casa', precoVenda: 180000, quartos: 3, banheiros: 2, areaM2: 210, vagas: 2, cidade: 'Lambaré', bairro: '', capa: null, ativo: true },
-  { id: 'exemplo-3', titulo: 'Oficina lista para estrenar', operacao: 'aluguel', tipo: 'escritorio', precoAluguel: 650, quartos: 0, banheiros: 1, areaM2: 45, vagas: 1, cidade: 'Asunción', bairro: 'Centro', capa: null, ativo: true },
+  { id: 'exemplo-1', titulo: 'Departamento moderno de 2 dormitorios', operacao: 'venda', tipo: 'apartamento', precoVenda: 95000, quartos: 2, banheiros: 2, areaM2: 68, vagas: 1, cidade: 'Asunción', bairro: 'Villa Morra', capa: null, ativo: true, comodidades: ['piscina', 'academia', 'seguranca', 'elevador'] },
+  { id: 'exemplo-2', titulo: 'Casa con jardín y pileta', operacao: 'venda', tipo: 'casa', precoVenda: 180000, quartos: 3, banheiros: 2, areaM2: 210, vagas: 2, cidade: 'Lambaré', bairro: '', capa: null, ativo: true, comodidades: ['piscina', 'churrasqueira', 'jardim', 'pets'] },
+  { id: 'exemplo-3', titulo: 'Oficina lista para estrenar', operacao: 'aluguel', tipo: 'escritorio', precoAluguel: 650, quartos: 0, banheiros: 1, areaM2: 45, vagas: 1, cidade: 'Asunción', bairro: 'Centro', capa: null, ativo: true, comodidades: ['ar', 'coworking', 'seguranca'] },
 ];
 
 // Idem — só pro preview, só quando o campo real está vazio, pra não
@@ -209,14 +252,62 @@ function featsHTML(imv) {
   return itens.length ? `<ul class="imv-feats">${itens.join('')}</ul>` : '';
 }
 
+// Comodidades marcadas no imóvel, sempre na ordem canônica de
+// COMODIDADES (o admin grava na ordem em que os checkboxes aparecem no
+// DOM, mas isso é detalhe dele) — valores desconhecidos, de uma versão
+// mais nova do admin, vão pro fim em vez de sumirem da tela.
+function comodidadesDe(imv) {
+  const salvas = Array.isArray(imv.comodidades) ? imv.comodidades : [];
+  return [
+    ...COMODIDADES.filter(c => salvas.includes(c)),
+    ...salvas.filter(c => !COMODIDADES.includes(c)),
+  ];
+}
+
+// No card só cabem algumas — o resto vira "+N", e a lista completa
+// aparece no modal de detalhe.
+const COMS_NO_CARD = 3;
+
+function comsCardHTML(imv) {
+  const coms = comodidadesDe(imv);
+  if (!coms.length) return '';
+  const itens = coms.slice(0, COMS_NO_CARD)
+    .map(c => `<li>${esc(comLabel(c))}</li>`).join('');
+  const resto = coms.length - COMS_NO_CARD;
+  const mais = resto > 0
+    ? `<li class="imv-card__coms-mais">${esc(STR.maisComodidades(resto))}</li>` : '';
+  return `<ul class="imv-card__coms">${itens}${mais}</ul>`;
+}
+
+function comsDetalheHTML(imv) {
+  const coms = comodidadesDe(imv);
+  if (!coms.length) return '';
+  return `
+    <h4 class="imv-detail__coms-titulo">${esc(STR.comodidades)}</h4>
+    <div class="imv-detail__coms">${coms
+      .map(c => `<span>${ICONS.check}${esc(comLabel(c))}</span>`).join('')}</div>`;
+}
+
 function localHTML(imv) {
   const loc = [imv.bairro, imv.cidade].filter(Boolean).join(', ');
   return loc ? `<p class="imv-card__loc">${ICONS.pin}${esc(loc)}</p>` : '';
 }
 
-function cardHTML(imv) {
+// `i` vem do .map() em renderGrid — os primeiros cards são os que
+// aparecem acima da dobra, e a capa de um deles é justamente o elemento
+// de LCP da página. Marcá-los como lazy (todos eram) empurrava a imagem
+// mais importante da tela pra depois do layout; eager + fetchpriority
+// alta faz o navegador tratá-la como o que ela é. Do 4º em diante lazy
+// segue valendo — aí sim é imagem que ninguém vê sem rolar.
+const CARDS_ACIMA_DA_DOBRA = 3;
+
+function cardHTML(imv, i = 0) {
+  const prioritaria = i < CARDS_ACIMA_DA_DOBRA;
+  const carregamento = prioritaria
+    ? 'loading="eager" fetchpriority="high"'
+    : 'loading="lazy"';
   const img = imv.capa
-    ? `<img src="${imv.capa}" alt="${esc(imv.titulo)}" loading="lazy" width="600" height="450">`
+    ? `<img src="${imv.capa}" alt="${esc(imv.titulo)}" ${carregamento} width="600" height="450">`
     : `<div class="imv-noimg">${ICONS.home}</div>`;
   return `
     <article class="imv-card" data-id="${imv.id}" tabindex="0" role="button" aria-label="${esc(imv.titulo)}">
@@ -226,6 +317,7 @@ function cardHTML(imv) {
         <h3 class="imv-card__title">${esc(imv.titulo)}</h3>
         ${localHTML(imv)}
         ${featsHTML(imv)}
+        ${comsCardHTML(imv)}
       </div>
     </article>`;
 }
@@ -239,7 +331,9 @@ const grid = document.getElementById('imv-grid');
 const conteudoEl = document.getElementById('site-conteudo');
 const indisponivelEl = document.getElementById('site-indisponivel');
 const carregandoEl = document.getElementById('site-carregando');
-const filtros = { operacao: 'todos', tipo: 'todos', cidade: 'todas' };
+// comodidades é um Set porque o filtro é múltiplo e cumulativo (E, não
+// OU): marcar "piscina" e "academia" mostra só quem tem as duas.
+const filtros = { operacao: 'todos', tipo: 'todos', cidade: 'todas', comodidades: new Set() };
 
 function colImoveis()        { return collection(db, 'brokers', tenantId, 'imoveis'); }
 function colFotos(id)        { return collection(db, 'brokers', tenantId, 'imoveis', id, 'fotos'); }
@@ -268,11 +362,73 @@ function montarFiltroCidade(lista) {
   });
 }
 
+// Chips de comodidade da barra de filtros — montados a partir das
+// comodidades que os imóveis do corretor realmente têm, igual ao filtro
+// de cidade. Um catálogo sem nenhuma comodidade marcada não ganha a
+// linha (e um filtro que nunca acha nada é pior do que filtro nenhum).
+function montarFiltroComodidades(lista) {
+  const wrap = document.getElementById('imv-filtro-coms-wrap');
+  const row = document.getElementById('imv-filtro-comodidades');
+  if (!wrap || !row) return;
+
+  const presentes = new Set();
+  lista.forEach(i => comodidadesDe(i).forEach(c => presentes.add(c)));
+
+  // seleção que não existe mais no catálogo atual sai junto, senão o
+  // grid ficaria vazio por causa de um chip que nem está mais na tela
+  filtros.comodidades.forEach(c => { if (!presentes.has(c)) filtros.comodidades.delete(c); });
+
+  if (!presentes.size) {
+    row.innerHTML = '';
+    wrap.hidden = true;
+    return;
+  }
+
+  const ordenadas = [
+    ...COMODIDADES.filter(c => presentes.has(c)),
+    ...[...presentes].filter(c => !COMODIDADES.includes(c)).sort(),
+  ];
+  row.innerHTML = ordenadas.map(c => {
+    const ativa = filtros.comodidades.has(c);
+    return `<button type="button" data-com="${esc(c)}" aria-pressed="${ativa}"
+      class="${ativa ? 'active' : ''}">${esc(comLabel(c))}</button>`;
+  }).join('');
+  wrap.hidden = false;
+  atualizarComodidadesUI();
+}
+
+// Textos que dependem do idioma + visibilidade do "limpar" (que só faz
+// sentido com algum chip marcado).
+function atualizarComodidadesUI() {
+  const label = document.getElementById('imv-coms-label');
+  if (label) label.textContent = STR.comodidades;
+  const limpar = document.getElementById('imv-coms-limpar');
+  if (limpar) {
+    limpar.textContent = STR.limparComodidades;
+    limpar.hidden = !filtros.comodidades.size;
+  }
+}
+
+// Usado pelo "limpar" da barra e pelo atalho do estado vazio.
+function limparComodidades() {
+  filtros.comodidades.clear();
+  document.querySelectorAll('#imv-filtro-comodidades button[data-com]').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  atualizarComodidadesUI();
+  renderGrid();
+}
+
 function aplicarFiltros(lista) {
   return lista.filter(i => {
     if (filtros.operacao !== 'todos' && i.operacao !== filtros.operacao && i.operacao !== 'venda-aluguel') return false;
     if (filtros.tipo !== 'todos' && i.tipo !== filtros.tipo) return false;
     if (filtros.cidade !== 'todas' && normalizar(i.cidade) !== filtros.cidade) return false;
+    if (filtros.comodidades.size) {
+      const coms = comodidadesDe(i);
+      for (const c of filtros.comodidades) if (!coms.includes(c)) return false;
+    }
     return true;
   });
 }
@@ -281,7 +437,12 @@ function renderGrid() {
   if (!grid || !cache) return;
   const lista = aplicarFiltros(cache);
   if (!lista.length) {
-    grid.innerHTML = `<div class="imv-empty">${ICONS.home}<p>${STR.vazio}</p></div>`;
+    // com comodidades marcadas dá pra cair no vazio sem entender por
+    // quê — o atalho de limpar evita que o visitante desista aqui
+    const atalho = filtros.comodidades.size
+      ? `<button type="button" class="imv-empty__clear" id="imv-empty-limpar">${esc(STR.limparComodidades)}</button>`
+      : '';
+    grid.innerHTML = `<div class="imv-empty">${ICONS.home}<p>${STR.vazio}</p>${atalho}</div>`;
     return;
   }
   grid.innerHTML = lista.map(cardHTML).join('');
@@ -303,6 +464,21 @@ function initFiltros() {
   }));
   tipo?.addEventListener('change', () => { filtros.tipo = tipo.value; renderGrid(); });
   cidade?.addEventListener('change', () => { filtros.cidade = cidade.value; renderGrid(); });
+
+  // delegado: os chips só existem depois de montarFiltroComodidades()
+  const coms = document.getElementById('imv-filtro-comodidades');
+  coms?.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-com]');
+    if (!btn) return;
+    const v = btn.dataset.com;
+    if (filtros.comodidades.has(v)) filtros.comodidades.delete(v);
+    else filtros.comodidades.add(v);
+    btn.classList.toggle('active', filtros.comodidades.has(v));
+    btn.setAttribute('aria-pressed', String(filtros.comodidades.has(v)));
+    atualizarComodidadesUI();
+    renderGrid();
+  });
+  document.getElementById('imv-coms-limpar')?.addEventListener('click', limparComodidades);
 }
 
 // ── Modal de detalhe ──────────────────────────────
@@ -352,9 +528,11 @@ async function abrirDetalhe(id) {
     ${loc ? `<p class="imv-card__loc">${ICONS.pin}${esc(loc)}${tipoLabel ? ' · ' + tipoLabel : ''}</p>` : ''}
     ${precoHTML(imv, true)}
     ${featsHTML(imv)}
+    ${comsDetalheHTML(imv)}
     ${imv.descricao ? `<p class="imv-detail__desc">${esc(imv.descricao)}</p>` : ''}
     ${imv.ref ? `<p class="imv-detail__ref">${STR.ref} ${esc(imv.ref)}</p>` : ''}
     <a class="btn btn--whatsapp btn--md imv-detail__cta" target="_blank" rel="noopener"
+       data-ev-imovel="${esc(imv.id)}"
        href="https://wa.me/${perfil?.whatsapp || ''}?text=${waMsg}">
       ${STR.cta}
     </a>`;
@@ -548,13 +726,17 @@ function aplicarPerfil(p) {
   if (p.instagramUrl) { instaEl.href = p.instagramUrl; instaEl.hidden = false; }
   else { instaEl.hidden = true; }
 
-  if (cache) renderGrid(); // idioma pode ter mudado depois da 1ª renderização (preview)
+  // idioma pode ter mudado depois da 1ª renderização (preview) — os
+  // chips de comodidade também são texto traduzido, então remontam
+  // junto (montarFiltroComodidades preserva o que já estava marcado)
+  if (cache) { montarFiltroComodidades(cache); renderGrid(); }
 }
 
 function initComum() {
   initFiltros();
   initDetalhe();
   grid.addEventListener('click', e => {
+    if (e.target.closest('#imv-empty-limpar')) { limparComodidades(); return; }
     const card = e.target.closest('.imv-card');
     if (card) abrirDetalhe(card.dataset.id);
   });
@@ -600,6 +782,7 @@ async function iniciarPreview() {
   }
   cache = reais.length ? reais : IMOVEIS_EXEMPLO;
   montarFiltroCidade(cache);
+  montarFiltroComodidades(cache);
   renderGrid();
 }
 
@@ -618,6 +801,7 @@ async function iniciarNormal() {
   try {
     const lista = await carregarImoveis();
     montarFiltroCidade(lista);
+    montarFiltroComodidades(lista);
     renderGrid();
     const id = location.hash.slice(1);
     if (id && lista.some(i => i.id === id)) abrirDetalhe(id);
@@ -626,6 +810,11 @@ async function iniciarNormal() {
     renderErro();
   }
 }
+
+// Antes do início: o listener é delegado no document, então já cobre
+// os CTAs que ainda vão ser renderizados. iniciarEventosContato()
+// não faz nada em modo preview (ver eventos.js).
+iniciarEventosContato();
 
 if (MODO_PREVIEW) iniciarPreview();
 else iniciarNormal();

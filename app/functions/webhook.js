@@ -27,7 +27,7 @@
 
 const { onRequest } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
-const { FieldValue } = require('firebase-admin/firestore');
+const { FieldValue, FieldPath } = require('firebase-admin/firestore');
 const Stripe = require('stripe');
 const { db } = require('./admin');
 
@@ -131,11 +131,23 @@ async function recompensarIndicador({ referrerSlug, indicadoSlug, stripe }) {
     metadata: { referrerSlug, indicadoSlug },
   });
 
-  await referrerRef.set({
-    'referral.codes':       FieldValue.arrayUnion(codigo),
-    'referral.convertidas': FieldValue.increment(1),
-    updatedAt: new Date(),
-  }, { merge: true });
+  // update() com FieldPath, e não set({'referral.codes': ...}): no
+  // Admin SDK só update() interpreta o ponto como CAMINHO. Em set(), a
+  // chave vira um campo de nome literal "referral.codes" no topo do
+  // doc, e o `referral.codes` que este mesmo arquivo lê logo acima
+  // (`referrerSnap.data().referral?.codes`) ficaria sempre vazio — o
+  // indicador nunca chegaria ao teto e ganharia código infinito, cada
+  // um chamado INDICA-<slug>-1. Mesma armadilha do
+  // usage.paginasCompradas, ver processarCompraAvulsa.
+  //
+  // criarConta.js já cria o doc com `referral: { codes: [], convertidas: 0 }`,
+  // então o caminho existe; e o update() só roda depois do get() acima
+  // ter confirmado que o doc existe.
+  await referrerRef.update(
+    new FieldPath('referral', 'codes'), FieldValue.arrayUnion(codigo),
+    new FieldPath('referral', 'convertidas'), FieldValue.increment(1),
+    'updatedAt', new Date(),
+  );
   console.log(`[stripeWebhook] "${referrerSlug}" ganhou o código ${codigo} pela indicação de "${indicadoSlug}"`);
 }
 
@@ -234,10 +246,16 @@ async function processarCompraAvulsa(session) {
   // usage.paginasCompradas, que paginas.html usa pra liberar "+ Nova
   // página" — sem exigir conteúdo/slug no momento da compra.
   if (!jaExistia && produto === 'emprendimento_page') {
-    await db.doc('brokers/' + slug).set({
-      'usage.paginasCompradas': FieldValue.increment(1),
-      updatedAt: new Date(),
-    }, { merge: true });
+    // update() com FieldPath, e não set({'usage.paginasCompradas': ...}):
+    // no Admin SDK só update() interpreta o ponto como CAMINHO. Em
+    // set(), a chave vira um campo de nome literal "usage.paginasCompradas"
+    // no topo do doc, e o `usage.paginasCompradas` que paginas.js lê
+    // (`broker?.usage?.paginasCompradas`) fica undefined pra sempre —
+    // ou seja, a página comprada nunca era creditada.
+    await db.doc('brokers/' + slug).update(
+      new FieldPath('usage', 'paginasCompradas'), FieldValue.increment(1),
+      'updatedAt', new Date(),
+    );
     console.log(`[stripeWebhook] "${slug}" +1 página comprada`);
   }
 }

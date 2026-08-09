@@ -4,9 +4,17 @@ service cloud.firestore {
 
     // E-mails da equipe Punto Alto com acesso total (mesma allowlist
     // do antigo control-plane/firestore.rules — copiar aqui também).
+    //
+    // ⚠️  Essa lista existe DUPLICADA em public/js/equipe.js — a de lá
+    // só decide se o painel interno (interno-metricas.html) mostra ou
+    // esconde a UI; a de cá é a que realmente protege os dados. Ao
+    // adicionar alguém, mudar NOS DOIS: só no client, a pessoa vê a
+    // tela e toda query falha em permission-denied; só aqui, ela é
+    // barrada na porta mesmo tendo acesso de verdade.
     function isTeam() {
       return request.auth != null && request.auth.token.email in [
-        'crmwhatspro@gmail.com'
+        'crmwhatspro@gmail.com',
+        'diogomarquespy@gmail.com'
         // adicionar outros e-mails da equipe Punto Alto aqui
       ];
     }
@@ -16,6 +24,34 @@ service cloud.firestore {
     // broker", um único usuário só enxerga o próprio tenant.
     function isTenantAdmin(tenantId) {
       return request.auth != null && request.auth.token.tenantId == tenantId;
+    }
+
+    // Trial vencido = painel somente-leitura. A UI já bloqueia
+    // (shell.js#montarPaywall), mas o painel escreve imóveis/fotos/
+    // páginas DIRETO no Firestore pelo SDK do navegador — sem esta
+    // regra o bloqueio seria decorativo, bastava abrir o console.
+    //
+    // `status` nunca vira 'expired' (só o stripeWebhook escreve status,
+    // e ele só conhece assinatura), então a expiração é derivada da
+    // data. Doc sem trialEndsAt nunca expira, de propósito: o default
+    // do .get() é request.time, e request.time < request.time é falso.
+    //
+    // .get() com default nos DOIS campos porque acessar campo ausente
+    // direto faz a regra inteira falhar (mesmo motivo já documentado no
+    // bloco de update abaixo) — docs antigos podem não ter nenhum deles.
+    //
+    // ⚠️  Mesma regra em functions/trial.js e public/js/tenant.js —
+    // mudar nos três (ver comentário em functions/trial.js).
+    function trialVencido(dados) {
+      return dados.get('status', '') == 'trialing'
+             && dados.get('trialEndsAt', request.time) < request.time;
+    }
+
+    // Só pras subcoleções, que não têm o doc do broker em mãos. Custa
+    // um read por avaliação — aceitável no caminho de ESCRITA, que é
+    // raro; leitura do catálogo (o tráfego de verdade) não passa aqui.
+    function trialVencidoDoTenant(tenantId) {
+      return trialVencido(get(/databases/$(database)/documents/brokers/$(tenantId)).data);
     }
 
     match /brokers/{tenantId} {
@@ -39,14 +75,27 @@ service cloud.firestore {
       //   gtmId                 — meu-site.html (seção Google Tag Manager),
       //                         container do GTM do próprio corretor injetado
       //                         no site público — ver site/js/imoveis.js
+      //   lastActiveAt          — sinal de vida carimbado por shell.js a cada
+      //                         abertura do painel (no máximo 1x a cada 12h),
+      //                         lido só pelo painel interno de KPIs. NÃO é o
+      //                         mesmo que updatedAt: aquele significa "o
+      //                         corretor editou algo", este "o corretor
+      //                         apareceu". Escrito sozinho, nunca junto de
+      //                         uma edição de verdade
       allow update: if isTeam()
                     || (
                       isTenantAdmin(tenantId) &&
+                      // Trial vencido só pode carimbar lastActiveAt (o
+                      // sinal de vida do shell.js) — é justamente quem
+                      // volta ao painel depois de vencer que interessa
+                      // medir. Qualquer outra edição fica trancada.
+                      (!trialVencido(resource.data)
+                       || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastActiveAt'])) &&
                       request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(['usage', 'onboardingCompleted', 'whatsapp', 'published',
                                   'name', 'logo', 'accentColor', 'headline', 'subheadline',
                                   'about', 'keywords', 'contactEmail', 'instagramUrl',
-                                  'language', 'gtmId', 'updatedAt']) &&
+                                  'language', 'gtmId', 'lastActiveAt', 'updatedAt']) &&
                       request.resource.data.usage.imoveisCount is int &&
                       request.resource.data.usage.imoveisCount >= 0 &&
                       request.resource.data.onboardingCompleted is bool &&
@@ -65,6 +114,10 @@ service cloud.firestore {
                       request.resource.data.get('contactEmail', '') is string &&
                       request.resource.data.get('instagramUrl', '') is string &&
                       request.resource.data.get('language', 'es') in ['es', 'pt', 'en'] &&
+                      // serverTimestamp() chega aqui já como request.time —
+                      // o default do .get() usa o mesmo tipo pra regra não
+                      // reprovar quem ainda não tem o campo no doc.
+                      request.resource.data.get('lastActiveAt', request.time) is timestamp &&
                       // cor sempre um hex válido — nunca vazio, sempre tem um
                       // padrão escolhido no client (ver ACCENT_PADRAO em meu-site.js)
                       request.resource.data.get('accentColor', '#C8922A').matches('^#[0-9a-fA-F]{6}$') &&
@@ -82,15 +135,28 @@ service cloud.firestore {
         allow write: if isTeam();
       }
 
+      // Histórico de transição de assinatura — escrito só pelo
+      // stripeWebhook (Admin SDK, ignora estas regras) a cada mudança
+      // REAL de status. Existe porque o doc do broker só guarda o
+      // status ATUAL: sem isso não dá pra dizer "quantos cancelaram em
+      // março", só "quantos estão cancelados agora". Ninguém escreve
+      // aqui pelo client, nem a equipe — é log, não estado editável.
+      match /statusHistory/{eventoId} {
+        allow read: if isTeam() || isTenantAdmin(tenantId);
+        allow write: if false;
+      }
+
       // Catálogo — leitura pública (visitante do site não tem conta),
       // escrita só do admin daquele tenant.
+      // Leitura segue pública mesmo com o trial vencido — é o que
+      // mantém o catálogo do corretor no ar depois do bloqueio.
       match /imoveis/{imovelId} {
         allow read: if true;
-        allow write: if isTenantAdmin(tenantId);
+        allow write: if isTenantAdmin(tenantId) && !trialVencidoDoTenant(tenantId);
 
         match /fotos/{fotoId} {
           allow read: if true;
-          allow write: if isTenantAdmin(tenantId);
+          allow write: if isTenantAdmin(tenantId) && !trialVencidoDoTenant(tenantId);
         }
       }
 
@@ -100,7 +166,7 @@ service cloud.firestore {
       // cada uma vire uma página institucional acessível por link direto.
       match /paginas/{paginaId} {
         allow read: if true;
-        allow write: if isTenantAdmin(tenantId);
+        allow write: if isTenantAdmin(tenantId) && !trialVencidoDoTenant(tenantId);
       }
 
       match /leads/{leadId} {
@@ -112,6 +178,38 @@ service cloud.firestore {
         allow create: if request.resource.data.keys().hasAll(['name', 'email', 'createdAt']);
         allow read, update, delete: if isTeam() || isTenantAdmin(tenantId);
       }
+    }
+
+    // Visitas da landing (topo de funil) — fora de brokers/* de
+    // propósito: não é dado de tenant nenhum, é dado do Sitemob.
+    //
+    // write NEGADO pra todo mundo: quem grava é functions/analytics.js
+    // (logVisita, Admin SDK — rules não valem pra ele). Se a collection
+    // aceitasse create anônimo, qualquer um com a config do Firebase
+    // (que é pública, está em public/js/firebase.js) escreveria docs
+    // arbitrários direto no nosso funil. O endpoint valida e corta o
+    // que entra; a collection não é superfície aberta.
+    //
+    // read só isTeam() — nunca do client do corretor, nunca público.
+    match /analytics_visits/{visitaId} {
+      allow read: if isTeam();
+      allow write: if false;
+    }
+
+    // Eventos do catálogo público de cada corretor — hoje só clique de
+    // contato (WhatsApp/e-mail/Instagram), mas genérica pra tipo novo
+    // não precisar de collection nova. Mesmo desenho de
+    // analytics_visits: quem grava é functions/analytics.js (logEvento,
+    // Admin SDK), nunca o client.
+    //
+    // read só isTeam(): o corretor NÃO lê isto direto. O número que ele
+    // vê no painel vem dos contadores desnormalizados no próprio doc
+    // dele (usage.contatosCliques / usage.contatosPorMes), que o
+    // logEvento incrementa — assim ele não precisa de acesso à
+    // collection inteira, onde estariam os eventos de todo mundo.
+    match /analytics_events/{eventoId} {
+      allow read: if isTeam();
+      allow write: if false;
     }
 
   }

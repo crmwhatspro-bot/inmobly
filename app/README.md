@@ -190,61 +190,61 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   função duplicada em `js/admin-imoveis.js` — lista do CMS — e
   `site/js/imoveis.js` — cards/detalhe do site público — sem módulo
   compartilhado entre os dois por enquanto).
-- **Popup de parabéns ao cadastrar o primeiro imóvel** — só corretores
-  com `status: 'trialing'`, só uma vez por navegador (`localStorage`,
-  chave `pa-upsell-primeiro-{tenantId}`). Antes disparava só no 4º dos
-  6 imóveis grátis do trial ("Você já tem 4 dos 6 imóveis grátis"); a
-  intenção mudou pra comemorar o primeiro imóvel em vez de avisar que o
-  limite tá chegando. Mostra o cupom `LANCAMENTO3` (50% off por 3
-  meses) como texto copiável (`navigator.clipboard`, com fallback
-  textual se o clipboard estiver bloqueado) — o corretor pode guardar
-  pra usar depois ou clicar "Assinar agora" e já abrir o checkout do
-  Stripe com o desconto aplicado direto, sem passar por `planos.html`.
-  Chave de `localStorage` nova de propósito (não reaproveita
-  `pa-upsell4-*`) — quem já tinha visto a versão antiga vê essa de
-  novo.
+- **Popups de cupom vitalício (`50OFF`)** — dois gatilhos, mesmo cupom,
+  mesma mecânica de UI (`initCupomModal` em `admin-imoveis.js`), só
+  corretores com `status: 'trialing'`:
+  - **Primeiro imóvel** — dispara ao cadastrar o 1º imóvel, só uma vez
+    por navegador (`localStorage`, chave `pa-upsell-primeiro-{tenantId}`).
+    Antes disparava só no 4º dos 6 imóveis grátis do trial ("Você já tem
+    4 dos 6 imóveis grátis"); a intenção mudou pra comemorar o primeiro
+    imóvel em vez de avisar que o limite tá chegando. Reforça o
+    onboarding com um link pra `meu-site.html`, incentivando o corretor
+    a editar as informações do site e publicar agora pra ver esse
+    primeiro imóvel no ar. Chave de `localStorage` nova de propósito
+    (não reaproveita `pa-upsell4-*`) — quem já tinha visto a versão
+    antiga vê essa de novo.
+  - **Limite do trial atingido** — dispara toda vez que o corretor tenta
+    cadastrar um 7º imóvel já com os 6 grátis usados (clique em "Novo
+    Imóvel" bloqueado por `separarPorLimite()`); antes era um `alert()`
+    simples, virou o mesmo modal de cupom, sem gate de `localStorage`
+    (mostra de novo a cada tentativa, é uma ação bloqueada, não uma
+    comemoração pontual).
 
-⚠️ **Duas coisas precisam existir no Stripe Dashboard antes desse popup
-funcionar de ponta a ponta** (nenhuma delas testada contra infra real):
-1. O **Coupon** `LANCAMENTO3` — `functions/checkout.js` já sabe aplicá-lo
-   (via `promo: 'primeiroImovel'`, nunca aceita o ID do cupom direto do
-   client), mas não cria cupons sozinho. Criar em Dashboard → Product
-   catalog → Coupons, com ID exatamente `LANCAMENTO3`, 50% off, duration
-   **Repeating**, **3 months**. Sem isso, "Assinar agora" no popup falha
-   no Stripe com erro de cupom não encontrado.
-2. Um **Promotion Code** com o texto `LANCAMENTO3` apontando pra esse
-   Coupon — pro caso do corretor só copiar o código e digitar depois,
-   manualmente, no campo "Adicionar código promocional" do Checkout
-   (`allow_promotion_codes: true`, ligado agora em toda sessão que não
-   está aplicando um cupom automático). Coupon e Promotion Code são
-   objetos diferentes no Stripe: o Coupon sozinho não aparece nem é
-   digitável na tela do Checkout, só é aplicável via API. Sem o
-   Promotion Code, o botão "Assinar agora" continua funcionando, mas
-   "copiar e usar depois" não tem efeito nenhum se o corretor tentar
-   digitar o código manualmente.
+  Os dois modais mostram o cupom `50OFF` (50% off **vitalício**, não
+  mais o antigo `LANCAMENTO3` de 3 meses) como texto copiável
+  (`navigator.clipboard`, com fallback textual se o clipboard estiver
+  bloqueado) — o corretor pode guardar pra usar depois ou clicar
+  "Assinar agora" e já abrir o checkout do Stripe com o desconto
+  aplicado direto, sem passar por `planos.html`.
 
-- **Cupom `50OFF` — 50% off vitalício, distribuição manual, sem UI no
-  app** — diferente do `LANCAMENTO3` acima: não tem popup, não tem
-  botão "Assinar agora", nenhum código chama ele. É pra equipe Punto
-  Alto repassar pessoalmente (WhatsApp, conversa de venda etc.) pra
-  prospects selecionados, que colam o código no campo "Adicionar
-  código promocional" do Checkout — funciona só com o
-  `allow_promotion_codes: true` já ligado (ver item 2 acima), sem
-  precisar de nenhuma mudança em `functions/checkout.js` além do que já
-  existe. **Não entra no `PROMOS` de `checkout.js` de propósito** — só
-  existe como Coupon + Promotion Code no Stripe Dashboard, nunca é
-  aplicado automaticamente pelo servidor.
-  - Criar em Dashboard → Product catalog → Coupons: ID `50OFF`, 50%
-    off, duration **Forever** (não Repeating — é vitalício, dura
-    enquanto a assinatura existir).
-  - Definir `Max redemptions` com um número baixo direto no Coupon (ex.:
-    20 — ajustar o valor real no Dashboard, não é algo que o código
-    controla ou consulta). Depois de esgotado, o Stripe recusa sozinho
-    qualquer tentativa de novo uso, sem precisar de lógica adicional.
-  - Criar também o **Promotion Code** com o texto exatamente `50OFF`
-    apontando pra esse Coupon — sem ele, o campo do Checkout não
-    reconhece o código (mesma distinção Coupon vs. Promotion Code do
-    item 2 acima).
+- **Cupom `50OFF` — 50% off vitalício** — criado no Stripe Dashboard
+  (Product catalog → Coupons, ID `50OFF`, 50% off, duration **Forever**)
+  com `Max redemptions` baixo, ajustado direto no Dashboard (não é algo
+  que o código controla ou consulta). Combinado com o cliente: por
+  enquanto fica aberto pros primeiros assinantes que virem os popups
+  acima; depois de ~20-30 resgates, a ideia é restringir promoções
+  futuras a durações mais curtas (6 meses, depois 3) trocando o coupon
+  em `functions/checkout.js` (`PROMOS.primeiroImovel` /
+  `PROMOS.limiteImoveis`) — o `50OFF` em si pode continuar existindo pra
+  distribuição manual (WhatsApp, conversa de venda) via Promotion Code,
+  já que `allow_promotion_codes: true` fica ligado em toda sessão que
+  não está aplicando um cupom automático.
+  - `functions/checkout.js` já sabe aplicá-lo (via `promo:
+    'primeiroImovel'` ou `promo: 'limiteImoveis'`, nunca aceita o ID do
+    cupom direto do client), mas não cria cupons sozinho — precisa
+    existir no Dashboard antes, senão "Assinar agora" falha no Stripe
+    com erro de cupom não encontrado.
+  - Precisa também existir um **Promotion Code** com o texto exatamente
+    `50OFF` apontando pra esse Coupon — pro caso do corretor só copiar o
+    código e digitar depois, manualmente, no campo "Adicionar código
+    promocional" do Checkout. Coupon e Promotion Code são objetos
+    diferentes no Stripe: o Coupon sozinho não aparece nem é digitável
+    na tela do Checkout, só é aplicável via API. Sem o Promotion Code, o
+    botão "Assinar agora" continua funcionando, mas "copiar e usar
+    depois" não tem efeito nenhum se o corretor tentar digitar o código
+    manualmente.
+
+  ⚠️ Nenhum desses fluxos foi testado contra infra real.
 
 ### Meu Site / catálogo público
 
@@ -650,6 +650,274 @@ por empreendimento, US$ 400 de tabela / US$ 200 de lançamento (cupom
     Página de Empreendimento é um produto pago à parte, independente
     do plano de assinatura ou de o corretor ter publicado o catálogo.
 
+### Painel interno de KPIs (`interno-metricas.html`)
+
+Painel **da equipe Punto Alto**, não do corretor: visitas do site →
+contas criadas → assinaturas fechadas, mais receita e uso de produto.
+Não confundir com `painel.html` (dashboard de cada tenant) nem com
+`admin.html` (o CMS "Meus Imóveis" de cada tenant).
+
+Três peças novas, porque nada disso existia:
+
+**1. Tracking de visita.** A landing (`functions/landing/index.html`)
+não tinha GA, GTM nem beacon nenhum — zero dado de topo de funil (o
+`gtmId` do schema é do corretor, injetado no catálogo público dele,
+nada a ver com isso). Agora um bloco no fim do `<body>` gera um
+`visitorId` (localStorage, persiste) e um `sessionId` (sessionStorage,
+morre com a aba) e chama `logVisita` (`functions/analytics.js`) com
+`keepalive` no load, gravando um doc em `analytics_visits/`.
+
+Firestore próprio em vez de GA4/GTM de propósito: pra cruzar visita
+com dado de negócio ("essa visita virou conta? virou assinante?"), o
+GA4 exigiria export pro BigQuery e um join fora do app. Aqui a mesma
+página lê `analytics_visits` e `brokers` lado a lado.
+
+Escrita na collection é **negada pra todo mundo** nas rules — quem
+grava é a function (Admin SDK). Se `create` fosse aberto, qualquer um
+com a config do Firebase (que é pública, está em `js/firebase.js`)
+escreveria no nosso funil. A superfície exposta é o endpoint, que
+valida formato de id, corta tamanho de string e descarta user-agent de
+bot antes de gravar.
+
+**2. Correlação visita → conta.** `sitemob.app` (landing) e
+`painel.sitemob.app` (signup) são subdomínios diferentes:
+localStorage não atravessa. O tracker carimba `?vid=&sid=` (+ os
+`utm_*` da URL atual) em todo `<a>` que aponta pro painel — em JS, não
+no `href` hardcoded, porque o id só existe em runtime.
+
+Do outro lado, `js/atribuicao.js` guarda esse parâmetro em
+localStorage assim que ele aparece, **first-touch**. Tem que ser
+persistido e não lido direto da URL no submit: quem não está logado
+cai em `criar-conta.html`, é mandado pra `login.html` (que perde o
+query param), volta do popup do Google e só então cria a conta.
+`capturarAtribuicao()` roda no top-level de `criar-conta.js` e
+`login.js` — antes de qualquer redirect, senão o dado some no salto.
+
+`criarConta` grava no doc: `acquisitionVisitorId`,
+`acquisitionSessionId`, `acquisitionUtmSource/Medium/Campaign`. O utm
+fica espelhado no broker (não só em `analytics_visits`) pra dar pra
+quebrar contas por canal sem refazer o join toda vez.
+
+**3. Transições de assinatura.** `brokers` só guardava o status
+ATUAL, então não dava pra dizer "quantos assinaram em julho", só
+"quantos estão ativos agora". O `stripeWebhook` passou a carimbar
+`activatedAt` (primeira conversão a pagante — só a primeira; uma
+reativação não sobrescreve), `canceledAt` e `statusChangedAt`, e a
+gravar uma linha em `brokers/{id}/statusHistory/` a cada mudança
+**real** de status. O "real" importa: `subscription.updated` chega em
+qualquer mexida na assinatura, quase sempre com o mesmo status — sem
+comparar com o valor anterior, `statusChangedAt` viraria "última vez
+que o Stripe mandou um evento".
+
+Isso só vale daqui pra frente: quem já era `active` antes não tem
+`activatedAt` e não entra em "assinaturas fechadas no período" (o
+painel mostra esse número à parte). Churn mensal e LTV continuam
+**não calculáveis** até haver histórico acumulado — o desenho está
+pronto, a conta não.
+
+**A página em si** (`interno-metricas.html` + `js/interno-metricas.js`
++ `css/interno.css`) é autocontida: não usa `initShell()`, porque
+aquele shell é o chrome do painel por-corretor e o auth-gate dele
+exige o custom claim `tenantId` — quem entra aqui normalmente não tem
+tenant nenhum e seria expulso pra `criar-conta.html`. Gate próprio:
+Google Sign-In + e-mail na allowlist de `js/equipe.js`.
+
+Essa allowlist é uma **cópia** da de `isTeam()` em `firestore.rules`, e
+não tem como ser um arquivo só (uma é módulo ES, a outra é a linguagem
+de regras do Firestore, que não importa nada de fora — mesmo caso de
+`limiteEfetivo()`, duplicado entre `tenant.js` e `perfilPublico.js`).
+A das rules é a que protege de verdade; a do client só decide mostrar
+o painel ou a tela de "acesso restrito". **Ao adicionar alguém, mudar
+nas duas** — só no client, a pessoa vê a tela e toda query falha em
+`permission-denied`; só nas rules, é barrada na porta tendo acesso.
+
+**Estrutura de app, não de relatório.** Sidebar fixa à esquerda,
+topbar com título/período/menu de perfil, e uma view por assunto —
+trocadas por hash (`#/trials`), sem recarregar nem refazer as queries
+(o modelo calculado fica em memória; só mudar o período refaz o
+fetch). Views:
+
+- **Visão geral** — resumo do negócio + movimento do período +
+  **"Movimento por dia"** (uma linha por KPI do funil, ver abaixo) +
+  **"Precisa de atenção"**, uma fila de
+  trabalho: inadimplentes, testes acabando em ≤3 dias, pagantes que não
+  abrem o painel há mais de 30 dias, testes expirados nos últimos 14
+  dias. Uma conta pode aparecer em mais de uma linha — são ações
+  diferentes, não duplicata.
+- **Aquisição** — visitas, sessões, visitantes únicos, funil com as
+  taxas entre etapas e tabela de canais (utm_source → host do referrer
+  → direto), com a conversão de cada canal.
+- **Contas grátis** — os trials: entrada (`createdAt`), saída
+  (`trialEndsAt`, ou `activatedAt` pra quem converteu), situação
+  (`faltam Nd` / `expirado` / `converteu`), imóveis, site no ar,
+  último acesso, origem. Filtros: em teste / expirados sem converter /
+  converteram / todos.
+- **Assinantes** — MRR, ticket médio, distribuição por plano, e o
+  movimento do período (novas × cancelamentos × MRR líquido). A tabela
+  linka direto pro cliente no dashboard do Stripe, que é de onde sai
+  fatura e histórico de pagamento — nada disso é replicado aqui.
+- **Contatos** — cliques nos botões de contato dos catálogos, por tipo,
+  por dia e por corretor (ver "Contatos gerados" abaixo).
+- **Todas as contas** — a base inteira, uma linha por tenant.
+- **Produto** — imóveis por conta, sites publicados, onboarding,
+  contas sem nenhum imóvel, e **retenção** (contas vivas em 7/30 dias).
+- **Dados da conta** — fora da sidebar, chega pelo menu de perfil no
+  canto superior direito: dados do login de equipe atual e a lista de
+  quem tem acesso. Só "Dados da conta" e "Sair" no menu; não há
+  "Configurações" porque não haveria o que configurar.
+
+**O seletor de período** é um botão só na topbar, com os presets em
+linhas dentro de um painel — não um segmentado de `7d/30d/90d`, porque
+ali a largura da topbar crescia junto com a quantidade de presets.
+Preset novo é uma linha no registro `PERIODOS` do JS e nada de layout;
+a lista do menu é renderizada a partir dele. Semana começa no **domingo**
+(que é o que `getDay()` já numera como 0). A escolha fica no
+`localStorage` — quem trabalha sempre em "este mês" não reseleciona a
+cada sessão; se o storage falhar ou vier corrompido, cai no padrão de
+30 dias sem quebrar nada.
+
+Por baixo, o painel deixou de pensar em "quantos dias atrás" e passou a
+pensar em **faixa** — `{ inicio, fim }`, cada lado podendo ser `null` =
+sem limite daquele lado. Quase todo preset é aberto no fim ("até
+agora") e só carrega `inicio`; "mês passado" e "personalizado" são os
+únicos fechados, e foram eles que exigiram a mudança. As duas pontas
+filtram o mesmo campo (`ts`) que já é o do `orderBy`, então continua
+sendo índice de campo único e o `firestore.indexes.json` não muda.
+Datas invertidas no personalizado são trocadas em silêncio — a intenção
+é óbvia e recusar só faria a pessoa adivinhar o erro.
+
+Cuidado que fica mais visível com faixas longas: o teto de
+`MAX_VISITAS` (10.000) corta pelo `orderBy ts desc + limit`, ou seja,
+some o **começo** da faixa — os primeiros dias do gráfico aparecem
+baixos sem terem sido baixos. Por isso o aviso de truncamento é
+destacado (`.status--aviso`) em vez de ser mais uma frase no fim da
+linha de status. Quando 10k virar pouco de verdade, o caminho é o
+agregado diário (`metrics_daily`), não um teto maior.
+
+**Como adicionar uma view**: uma `<section class="view"
+data-view="...">` no HTML e uma entrada no registro `VIEWS` do JS
+(label, ícone, `render`, opcionalmente `badge` e `usaPeriodo`).
+Sidebar, roteamento, título da topbar e visibilidade do seletor de
+período saem disso sozinhos. Os helpers de componente (`cardsHTML`,
+`tabelaHTML`, `funilHTML`, `barraDistHTML`, `tagHTML`, `graficoLinhas`)
+cobrem o visual sem CSS novo — foi por isso que o CSS ficou organizado
+em blocos genéricos (`.card`, `.tabela`, `.barra-dist`, `.gl`) em vez
+de classes por tela.
+
+**Os gráficos de tempo** (`graficoLinhas`) são todos o mesmo
+componente: recebem a série diária densa de `serieDiaria()` — um ponto
+por dia, com zero nos dias vazios, senão o eixo mente — e uma lista de
+**painéis**, cada um com o próprio eixo Y, todos dividindo o mesmo eixo
+X e o mesmo cursor. Um painel por ordem de grandeza: visitas vivem na
+casa dos milhares, contatos nas dezenas e assinaturas em 0–2, e
+qualquer par desses no mesmo eixo achata o menor contra o chão. A saída
+que parece óbvia — dois eixos Y, um de cada lado — é pior: a razão
+entre as escalas é arbitrária, então o ponto onde as linhas se cruzam
+passa a contar uma história que o dado não tem. (Era esse o defeito das
+barras que existiam antes, que escalavam cada série pelo próprio
+máximo.) Com painéis separados a comparação continua sendo de FORMA —
+os picos batem no mesmo dia? — sem fingir comparação de volume.
+
+Cada KPI tem uma cor fixa no painel inteiro (`SERIES`, no JS): a linha
+violeta de "contatos gerados" da Visão geral é a mesma do gráfico da
+view de Contatos. Cor segue a métrica, nunca a posição no gráfico. Os
+hexes saem de uma paleta categórica validada contra o fundo `#111820`
+(separação em daltonismo e contraste), e o painel de conversão pula
+alguns slots de propósito — magenta ao lado de verde-água é
+praticamente a mesma cor em deuteranopia. Trocar essas cores pede
+revalidar, não só olhar. Hover e setas do teclado mostram o mesmo
+tooltip, e o `<details>` "Ver os números" abre a tabela com todos os
+valores — o tooltip nunca é o único caminho pro dado.
+
+Sobre "contas vivas": o painel sabia quantas contas existem, não
+quantas estão sendo usadas — e `status` só vira `canceled` quando a
+pessoa já desistiu, tarde demais pra reagir. `shell.js` carimba
+`lastActiveAt` no doc do tenant a cada abertura do painel, no máximo
+1× a cada 12h (a métrica é em dias; sem essa trava seria uma escrita
+por page load, por usuário — e `initShell()` roda de novo a cada
+navegação do router SPA, daí a trava extra em memória). É campo
+separado de `updatedAt` de propósito: aquele significa "o corretor
+editou alguma coisa", e carimbá-lo a cada visita apagaria essa
+informação.
+
+O percentual no card usa como denominador só quem **tem** o carimbo,
+não a base toda: quem nunca abriu o painel depois de o campo existir
+apareceria como abandono sem nunca ter tido chance de contar.
+`lastActiveAt` também precisou entrar no `hasOnly([...])` da regra de
+update do tenant — sem isso, toda escrita do corretor passaria a ser
+rejeitada.
+
+Tudo é query direta no Firestore do navegador (`isTeam()` já libera
+`list`/`query` em `brokers/*`), sem Cloud Function de agregação —
+suficiente pro volume atual. **Ponto de revisão**: quando `brokers`
+passar de ~500-1000 docs, ler a collection inteira no client deixa de
+escalar; aí vale um `onSchedule` diário gravando um snapshot agregado
+em `metrics_daily/{data}` e o painel passa a ler só esse doc. A leitura
+de `analytics_visits` já tem teto (`MAX_VISITAS`, 10k — que é o máximo
+que o Firestore aceita em `limit()`, pedir mais faz a query falhar) e avisa na tela
+quando trunca.
+
+### Contatos gerados (`logEvento` + `analytics_events`)
+
+Antes disso, o produto media só **esforço** (imóveis cadastrados, site
+publicado) e nunca **resultado**. Todo contato do catálogo público sai
+por link externo — `wa.me`, `mailto:`, Instagram — e desaparecia: não
+existe formulário na página, e `leads`/`leads_imovel` nas rules são
+resquício do template antigo, ninguém escreve neles. Ou seja, nem o
+corretor nem a equipe sabia se o Sitemob tinha gerado um negócio.
+
+`site-assets/js/eventos.js` registra o clique e chama `logEvento`
+(`functions/analytics.js`), que grava em `analytics_events/` e
+incrementa contadores no doc do broker.
+
+**É clique, não contato confirmado.** Abrir o WhatsApp não é enviar
+mensagem — parte das pessoas desiste ali. Por isso o contador se chama
+`contatosCliques` e não `contatos`, e o painel interno mostra "pessoas"
+(deduplicado por visitante + tenant + dia) ao lado dos cliques: se
+algum desses números virar copy de marketing, tem que ser o de pessoas,
+e ainda assim ele é um teto. O número honesto de verdade viria de um
+formulário — que num mercado WhatsApp-first é atrito que derrubaria a
+conversão, então a escolha aqui foi consciente.
+
+Decisões que valem registrar:
+
+- **Listener delegado no `document`, em fase de captura**, em vez de
+  wiring botão a botão: os CTAs são vários (nav, hero, rodapé, botão de
+  cada imóvel no modal, página de empreendimento) e alguns nascem dentro
+  de `innerHTML` depois. Captura garante o registro antes de qualquer
+  `stopPropagation` e antes de a navegação levar a aba embora;
+  `keepalive` no fetch cobre o resto.
+- **Nada é contado em modo preview** (`?preview=1`, o iframe de
+  `meu-site.html`) — senão o corretor inflaria o próprio número testando
+  o site.
+- **Origem validada contra o tenant**: o catálogo roda em
+  `<tenant>.sitemob.app` *ou* no domínio próprio do corretor, então não
+  dá pra fixar uma lista de origens como em `logVisita`. `logEvento`
+  compara o `Origin` com o subdomínio do tenant ou com o `customDomain`
+  cadastrado. Isso barra inflação acidental e cross-site pelo navegador;
+  **não** barra um script com `Origin` forjado — pra isso a resposta
+  seria App Check ou rate limit, não uma checagem melhor de header.
+- **Contador desnormalizado no doc do broker**
+  (`usage.contatosCliques`, `usage.contatosPorMes.{YYYY-MM}`,
+  `usage.contatoUltimoEm`) pra o dashboard do corretor mostrar o número
+  sem query nenhuma — e sem precisar dar a ele acesso de leitura a
+  `analytics_events`, que tem evento de todos os tenants.
+- **Coleção genérica** (`{ tenantId, tipo, visitorId, imovelId,
+  paginaId, origem, ts }`) e não uma "whatsapp_clicks": tipo novo
+  (compartilhar, ver imóvel) entra sem pipeline novo.
+
+⚠️ **Armadilha do Admin SDK, aprendida aqui:** `set({'a.b': valor})`
+**não** cria `a.b` aninhado — cria um campo de nome literal `"a.b"` no
+topo do doc. Só `update()` interpreta ponto como caminho (ver o
+comentário "We don't split on dots" em
+`@google-cloud/firestore/build/src/document.js`). Era exatamente esse o
+bug em `webhook.js`: `set({'usage.paginasCompradas': increment(1)})`
+nunca creditava a Página de Empreendimento comprada, porque
+`paginas.js` lê `broker?.usage?.paginasCompradas`. Corrigido pra
+`update()` com `FieldPath` explícito — que também é o único jeito de
+endereçar um segmento como `2026-08`, que não é identificador válido
+num caminho escrito como string.
+
 ## Estrutura
 
 ```
@@ -687,9 +955,19 @@ public/
                               template/js/admin-imoveis.js: mesma compressão de
                               fotos (canvas → WebP/JPEG, máx 900px, sem Storage),
                               caminhos trocados pra brokers/{tenantId}/imoveis/...
+  js/atribuicao.js          ← guarda o ?vid=/utm_* que a landing carimba nos CTAs
+                              (first-touch em localStorage — sobrevive ao desvio
+                              por login.html), lido por criarConta no signup
+  interno-metricas.html     ← painel de KPIs DA EQUIPE (não do corretor), com
+  js/interno-metricas.js       js/equipe.js (allowlist client-side) e css/interno.css
+  js/equipe.js                 próprios — ver seção "Painel interno" acima
+  css/interno.css
   js/<pagina>.js            ← um arquivo por página, mesmo padrão do template/ antigo
 functions/
   admin.js                 ← app default do Firebase Admin, inicializado 1x
+  analytics.js              ← logVisita: beacon de topo de funil chamado pela
+                               landing, única fonte de "quantas visitas o site
+                               teve" — ver seção "Painel interno" acima
   criarConta.js             ← signup: cria brokers/{slug} + seta custom claim
   checkout.js                ← criarCheckoutSession (onCall — bem mais simples
                                 que a versão cross-project do control-plane/)
@@ -723,7 +1001,14 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 ├─ status: 'trialing' | 'active' | 'past_due' | 'canceled'
 ├─ trialEndsAt, imoveisLimit, domainIncluded
 ├─ stripeCustomerId, stripeSubscriptionId
-├─ usage: { imoveisCount, imoveisUpdatedAt, paginasCompradas }
+├─ usage: { imoveisCount, imoveisUpdatedAt, paginasCompradas,
+│           contatosCliques, contatosPorMes: { 'YYYY-MM': n },
+│           contatoUltimoEm }
+│                                       ← contatos* são novos: cliques
+│                                        nos botões de contato do
+│                                        catálogo, incrementados só por
+│                                        logEvento (Admin SDK). Ver
+│                                        seção "Contatos gerados"
 │                                       ← paginasCompradas é novo — crédito de
 │                                        Páginas de Empreendimento pagas, só o
 │                                        stripeWebhook incrementa (Admin SDK)
@@ -751,8 +1036,35 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 │                                              Manager), formato "GTM-XXXXXXX" ou
 │                                              vazio, injetado no site público
 │                                              (site/js/imoveis.js), nunca no preview
+├─ acquisitionVisitorId, acquisitionSessionId: string | null
+│                                             ← novo — de qual visita da landing
+│                                              veio esse cadastro (?vid= carimbado
+│                                              nos CTAs). Casa com
+│                                              analytics_visits.visitorId
+├─ acquisitionUtmSource, acquisitionUtmMedium, acquisitionUtmCampaign
+│                                             ← novo — canal de aquisição espelhado
+│                                              do utm_* da URL, gravado 1x no signup
+├─ lastActiveAt: timestamp                    ← novo — "o corretor apareceu",
+│                                              carimbado por shell.js a cada
+│                                              abertura do painel (no máx. 1x a
+│                                              cada 12h). NÃO confundir com
+│                                              updatedAt, que é "o corretor
+│                                              editou algo" — por isso são campos
+│                                              separados e escritos separados
+├─ activatedAt, canceledAt, statusChangedAt   ← novo — carimbos de transição de
+│                                              assinatura, gravados só pelo
+│                                              stripeWebhook e só quando o status
+│                                              MUDA de verdade. activatedAt é a
+│                                              PRIMEIRA conversão a pagante (uma
+│                                              reativação não sobrescreve)
 ├─ createdAt, updatedAt
 ├─ purchases/{id}                    ← igual ao antigo, sem mudança de schema
+├─ statusHistory/{id}                ← NOVO — { de, para, at }, append-only, uma
+│                                        linha por mudança real de status da
+│                                        assinatura. Só o stripeWebhook escreve
+│                                        (rules negam write pra todo mundo). É o
+│                                        que torna churn calculável depois —
+│                                        ninguém lê ainda
 ├─ imoveis/{id}                      ← NOVO: era top-level no projeto do broker,
 │   └─ fotos/{id}                       agora aninhado sob o tenant (mesma forma)
 └─ paginas/{id}                      ← NOVO — Páginas de Empreendimento, ver
@@ -762,6 +1074,45 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
                                          tourUrl, descricao, comodidades[],
                                          capa (dataURL, sem subcoleção de fotos),
                                          publicada: boolean
+```
+
+Fora de `brokers/*`, porque não é dado de tenant nenhum — é dado do
+Sitemob (ver seção "Painel interno de KPIs"):
+
+```
+analytics_visits/{id}                // um doc por pageview da landing
+├─ visitorId                         ← localStorage, persiste entre sessões;
+│                                      é o que casa com brokers.acquisitionVisitorId
+├─ sessionId                         ← sessionStorage, morre com a aba
+├─ ts                                ← hora do servidor (a function grava)
+├─ path, referrer, referrerHost      ← referrerHost já vem sem "www.", é por ele
+│                                      que a tabela de canais agrupa
+├─ utmSource, utmMedium, utmCampaign, utmTerm, utmContent
+├─ lang, dispositivo                 ← dispositivo: 'mobile' | 'desktop', do UA.
+│                                      Nem UA inteiro nem IP são guardados —
+│                                      nada aqui precisa identificar uma pessoa
+└─ novoVisitante, novaSessao: bool   ← "primeiro pageview desse id"; o painel hoje
+                                       conta por Set, mas com volume alto esses
+                                       flags viram a base de um agregado barato
+```
+
+```
+analytics_events/{id}                // um doc por clique de contato no
+                                     // catálogo de um corretor
+├─ tenantId                          ← de quem é o catálogo (validado contra o
+│                                      Origin da requisição, ver logEvento)
+├─ tipo: 'whatsapp' | 'email' | 'instagram' | 'telefone'
+├─ visitorId                         ← por SITE (cada catálogo tem seu próprio
+│                                      storage de origem) — não tem relação com
+│                                      o visitorId da landing e não dá pra ligar
+│                                      os dois. Serve só pra separar "10 cliques"
+│                                      de "10 pessoas" dentro do mesmo site
+├─ ts, dispositivo
+├─ imovelId | null                   ← preenchido pelo botão do modal de detalhe
+├─ paginaId | null                   ← Página de Empreendimento (produto pago
+│                                      à parte — dá pra medir o retorno dela)
+└─ origem                            ← id do CTA (nav/cta/footer/emp-whatsapp)
+                                       ou 'detalhe'
 ```
 
 O CRUD de `imoveis` (criar/editar/desativar/excluir + fotos) já está migrado —

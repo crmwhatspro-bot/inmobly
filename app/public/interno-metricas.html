@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin interno — Sitemob</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/interno.css">
+</head>
+<body>
+
+<!-- Estados de acesso: só um dos quatro (3 gates + app) fica visível
+     por vez, decidido em js/interno-metricas.js (login → allowlist). -->
+<div class="gate" id="gateCarregando">
+  <div class="gate__box"><p class="gate__msg">Verificando acesso…</p></div>
+</div>
+
+<div class="gate" id="gateLogin" hidden>
+  <div class="gate__box">
+    <div class="marca">Sitemob<span>admin</span></div>
+    <h1 class="gate__titulo">Painel interno</h1>
+    <p class="gate__sub">Restrito à equipe Punto Alto.</p>
+    <button type="button" class="btn btn--accent" id="btnEntrar">Entrar com Google</button>
+    <p class="gate__erro" id="gateLoginErro"></p>
+  </div>
+</div>
+
+<div class="gate" id="gateNegado" hidden>
+  <div class="gate__box">
+    <div class="marca">Sitemob<span>admin</span></div>
+    <h1 class="gate__titulo">Acesso restrito</h1>
+    <p class="gate__sub">A conta <strong id="gateNegadoEmail">—</strong> não faz parte da equipe.</p>
+    <button type="button" class="btn btn--ghost" id="btnSair">Entrar com outra conta</button>
+  </div>
+</div>
+
+<div class="app" id="app" hidden>
+
+  <!-- Sidebar: os botões são gerados por js/interno-metricas.js a
+       partir do registro VIEWS — adicionar view nova é mexer só lá. -->
+  <aside class="sidebar">
+    <div class="sidebar__marca marca">Sitemob<span>admin</span></div>
+    <nav class="nav" id="nav"></nav>
+    <p class="sidebar__rodape" id="sidebarRodape">—</p>
+  </aside>
+
+  <div class="conteudo">
+
+    <header class="topbar">
+      <h1 class="topbar__titulo" id="topbarTitulo">—</h1>
+      <div class="topbar__acoes">
+        <!-- Seletor de período: um botão só na topbar, presets em linhas
+             no painel. Um dropdown em vez do segmentado de antes porque
+             a largura da topbar deixa de depender de quantos presets
+             existem — preset novo custa uma linha em PERIODOS, no JS,
+             e nada de layout. -->
+        <div class="periodo" id="periodo">
+          <button type="button" class="periodo__btn" id="periodoBtn" aria-haspopup="true" aria-expanded="false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="periodoRotulo">Últimos 30 dias</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="periodo__painel" id="periodoPainel" hidden>
+            <div class="periodo__lista" id="periodoLista" role="group" aria-label="Período"></div>
+            <form class="periodo__custom" id="periodoCustom" hidden>
+              <label class="periodo__campo">De <input type="date" id="periodoDe" required></label>
+              <label class="periodo__campo">Até <input type="date" id="periodoAte" required></label>
+              <button type="submit" class="btn btn--accent btn--sm">Aplicar</button>
+            </form>
+          </div>
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" id="btnAtualizar">Atualizar</button>
+
+        <div class="perfil">
+          <button type="button" class="perfil__btn" id="perfilBtn" aria-haspopup="true" aria-expanded="false" aria-label="Menu da conta">
+            <span class="avatar" id="perfilAvatar">—</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="perfil__painel" id="perfilPainel" hidden>
+            <div class="perfil__cabeca">
+              <p id="perfilNome">—</p>
+              <p id="perfilEmail">—</p>
+            </div>
+            <button type="button" class="perfil__item" id="perfilDados">Dados da conta</button>
+            <button type="button" class="perfil__item perfil__item--perigo" id="perfilSair">Sair</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <p class="status" id="status">Carregando dados…</p>
+
+      <!-- ═══ VISÃO GERAL ══════════════════════════════════ -->
+      <section class="view" data-view="visao-geral" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Resumo</h2>
+          <p class="secao__sub">Estado do negócio agora — não depende do filtro de período.</p>
+          <div class="cards" id="resumoCards"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Movimento no período</h2>
+          <p class="secao__sub" id="movimentoSub">—</p>
+          <div class="cards" id="movimentoCards"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Movimento por dia</h2>
+          <p class="secao__sub">
+            Uma linha por KPI do funil, no mesmo eixo de tempo. Cada bloco tem escala
+            própria de propósito — visitas e assinaturas não cabem no mesmo eixo —, então
+            compare o formato das curvas (os picos batem no mesmo dia?), nunca a altura
+            de um bloco com a do outro. Passe o mouse para ver todos os números de um dia.
+          </p>
+          <div id="graficoDias"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Precisa de atenção</h2>
+          <p class="secao__sub">Contas em situação que vale olhar hoje.</p>
+          <div class="tabela-wrap" id="atencaoWrap"></div>
+        </div>
+      </section>
+
+      <!-- ═══ AQUISIÇÃO ════════════════════════════════════ -->
+      <section class="view" data-view="aquisicao" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Topo de funil</h2>
+          <p class="secao__sub" id="aquisicaoSub">—</p>
+          <div class="cards" id="aquisicaoCards"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Funil</h2>
+          <p class="secao__sub">Cada etapa com a taxa de conversão da anterior.</p>
+          <div class="funil" id="funilBarras"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Canais de origem</h2>
+          <p class="secao__sub">utm_source quando existe; senão o host do referrer; senão tráfego direto.</p>
+          <div class="tabela-wrap" id="canaisWrap"></div>
+        </div>
+      </section>
+
+      <!-- ═══ CONTAS GRÁTIS (TRIALS) ═══════════════════════ -->
+      <section class="view" data-view="trials" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Contas em teste grátis</h2>
+          <p class="secao__sub">14 dias, sem cartão. Entrada = criação da conta; saída = fim do teste.</p>
+          <div class="cards" id="trialsCards"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Lista</h2>
+          <div class="filtros" id="trialsFiltros">
+            <button type="button" data-filtro="abertos" class="is-active">Em teste</button>
+            <button type="button" data-filtro="expirados">Expirados sem converter</button>
+            <button type="button" data-filtro="converteram">Converteram</button>
+            <button type="button" data-filtro="todos">Todos</button>
+          </div>
+          <div class="tabela-wrap" id="trialsWrap"></div>
+        </div>
+      </section>
+
+      <!-- ═══ ASSINANTES ═══════════════════════════════════ -->
+      <section class="view" data-view="assinantes" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Assinaturas</h2>
+          <p class="secao__sub">Receita recorrente — snapshot de agora.</p>
+          <div class="cards" id="assinantesCards"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Distribuição por plano</h2>
+          <div class="barra-dist" id="planosDist"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Movimento de assinaturas</h2>
+          <p class="secao__sub" id="assinaturasMovSub">—</p>
+          <div class="cards" id="assinaturasMovCards"></div>
+          <p class="nota" style="margin-top: var(--sp-5)">
+            <strong>Churn mensal e LTV ainda não são calculáveis.</strong> Dependem de
+            histórico de mudança de status, que só começou a ser gravado
+            (<code>activatedAt</code>/<code>canceledAt</code> e a subcoleção
+            <code>statusHistory</code>). Assinantes anteriores a isso não têm os carimbos
+            e não aparecem no movimento do período.
+          </p>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Lista</h2>
+          <div class="filtros" id="assinantesFiltros">
+            <button type="button" data-filtro="active" class="is-active">Ativos</button>
+            <button type="button" data-filtro="past_due">Inadimplentes</button>
+            <button type="button" data-filtro="canceled">Cancelados</button>
+            <button type="button" data-filtro="todos">Todos</button>
+          </div>
+          <div class="tabela-wrap" id="assinantesWrap"></div>
+        </div>
+      </section>
+
+      <!-- ═══ CONTATOS GERADOS ═════════════════════════════ -->
+      <section class="view" data-view="contatos" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Contatos gerados pelos catálogos</h2>
+          <p class="secao__sub" id="contatosSub">—</p>
+          <div class="cards" id="contatosCards"></div>
+          <p class="nota" style="margin-top: var(--sp-5)">
+            <strong>É clique, não contato confirmado.</strong> Abrir o WhatsApp não é o
+            mesmo que enviar a mensagem — parte das pessoas desiste ali. "Pessoas" abaixo
+            é o número deduplicado por visitante e por dia, que é o mais próximo de
+            conversa real que dá pra afirmar sem um formulário. Se algum desses virar
+            copy de marketing, usar esse, não o de cliques.
+          </p>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Por tipo</h2>
+          <div class="barra-dist" id="contatosTipos"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Contatos por dia</h2>
+          <p class="secao__sub">Cliques de contato registrados nos catálogos, dia a dia.</p>
+          <div id="graficoContatos"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Por corretor</h2>
+          <p class="secao__sub">Quem está tirando resultado do produto — e quem não está.</p>
+          <div class="tabela-wrap" id="contatosPorContaWrap"></div>
+        </div>
+      </section>
+
+      <!-- ═══ TODAS AS CONTAS ══════════════════════════════ -->
+      <section class="view" data-view="contas" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Todas as contas</h2>
+          <p class="secao__sub" id="contasSub">—</p>
+          <div class="tabela-wrap" id="contasWrap"></div>
+        </div>
+      </section>
+
+      <!-- ═══ PRODUTO ══════════════════════════════════════ -->
+      <section class="view" data-view="produto" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Uso do produto</h2>
+          <p class="secao__sub">O que as contas existentes realmente fazem — snapshot de agora.</p>
+          <div class="cards" id="produtoCards"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Retenção</h2>
+          <p class="secao__sub">"Vivas" = abriram o painel no período.</p>
+          <div class="cards" id="retencaoCards"></div>
+          <p class="nota" style="margin-top: var(--sp-5)">
+            <strong>É o sinal que antecipa churn.</strong> O <code>status</code> só vira
+            <code>canceled</code> quando a pessoa já desistiu. O carimbo
+            (<code>lastActiveAt</code>) começou a ser gravado agora, no máximo 1× a cada
+            12h por conta: quem não entrou desde então aparece como sem registro, não
+            como inativo.
+          </p>
+        </div>
+      </section>
+
+      <!-- ═══ DADOS DA CONTA (via menu de perfil) ══════════ -->
+      <section class="view" data-view="conta" hidden>
+        <div class="secao">
+          <h2 class="secao__titulo">Dados da conta</h2>
+          <p class="secao__sub">A conta que está logada neste painel agora.</p>
+          <div class="dados" id="contaDados"></div>
+        </div>
+
+        <div class="secao">
+          <h2 class="secao__titulo">Acesso</h2>
+          <p class="secao__sub">Quem pode abrir este painel.</p>
+          <div class="tabela-wrap" id="equipeWrap"></div>
+          <p class="nota" style="margin-top: var(--sp-5)">
+            <strong>A lista vive em dois lugares.</strong> <code>isTeam()</code> em
+            <code>firestore.rules</code> é a que protege os dados de verdade;
+            <code>public/js/equipe.js</code> só decide mostrar o painel ou a tela de
+            acesso restrito. Adicionar alguém exige mudar nas duas — e um deploy de
+            rules. Não há como editar isso pela interface, é de propósito.
+          </p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/interno-metricas.js"></script>
+</body>
+</html>

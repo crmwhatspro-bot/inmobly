@@ -12,6 +12,7 @@ import { db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { tenantIdAtual, carregarPerfilPublico } from './public-tenant.js';
 import { aplicarAccent } from './cores.js';
+import { iniciarEventosContato } from './eventos.js';
 
 const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -29,6 +30,13 @@ const IDIOMAS = {
     cta: 'Hablar por WhatsApp',
     volver: '← Volver al catálogo',
     wa: (nome) => `¡Hola! Me interesa el emprendimiento "${nome}", ¿me podés dar más información?`,
+    com: {
+      piscina: 'Piscina', churrasqueira: 'Parrilla', academia: 'Gimnasio',
+      mobiliado: 'Amoblado', ar: 'Aire acondicionado', varanda: 'Balcón',
+      seguranca: 'Seguridad 24h', elevador: 'Ascensor', pets: 'Pet friendly',
+      lavanderia: 'Lavandería', salao: 'Salón de fiestas', coworking: 'Coworking',
+      jardim: 'Jardín', gerador: 'Generador', playground: 'Playground',
+    },
   },
   pt: {
     pronto: 'Pronto', construcao: 'Em construção', planta: 'Na planta',
@@ -41,6 +49,13 @@ const IDIOMAS = {
     cta: 'Falar no WhatsApp',
     volver: '← Voltar ao catálogo',
     wa: (nome) => `Olá! Tenho interesse no empreendimento "${nome}", pode me passar mais informações?`,
+    com: {
+      piscina: 'Piscina', churrasqueira: 'Churrasqueira', academia: 'Academia',
+      mobiliado: 'Mobiliado', ar: 'Ar-condicionado', varanda: 'Varanda',
+      seguranca: 'Segurança 24h', elevador: 'Elevador', pets: 'Aceita pets',
+      lavanderia: 'Lavanderia', salao: 'Salão de festas', coworking: 'Coworking',
+      jardim: 'Jardim', gerador: 'Gerador', playground: 'Playground',
+    },
   },
   en: {
     pronto: 'Ready', construcao: 'Under construction', planta: 'Pre-construction',
@@ -53,17 +68,20 @@ const IDIOMAS = {
     cta: 'Chat on WhatsApp',
     volver: '← Back to catalog',
     wa: (nome) => `Hi! I'm interested in "${nome}", could you share more details?`,
+    com: {
+      piscina: 'Pool', churrasqueira: 'BBQ area', academia: 'Gym',
+      mobiliado: 'Furnished', ar: 'Air conditioning', varanda: 'Balcony',
+      seguranca: '24h security', elevador: 'Elevator', pets: 'Pet friendly',
+      lavanderia: 'Laundry', salao: 'Party room', coworking: 'Coworking',
+      jardim: 'Garden', gerador: 'Power generator', playground: 'Playground',
+    },
   },
 };
 let STR = IDIOMAS.es;
 
-const COMODIDADE_LABEL = {
-  piscina: 'Piscina', churrasqueira: 'Parrilla', academia: 'Gimnasio',
-  mobiliado: 'Amoblado', ar: 'Aire acondicionado', varanda: 'Balcón',
-  seguranca: 'Seguridad 24h', elevador: 'Ascensor', pets: 'Pet friendly',
-  lavanderia: 'Lavandería', salao: 'Salón de fiestas', coworking: 'Coworking',
-  jardim: 'Jardín', gerador: 'Generador', playground: 'Playground',
-};
+// mesmos rótulos do catálogo (site/js/imoveis.js) — as duas telas leem
+// a mesma lista de chips de admin.html, então precisam bater
+const comLabel = (c) => STR.com?.[c] || c;
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 
 const carregandoEl   = document.getElementById('ep-carregando');
@@ -144,7 +162,7 @@ function aplicarPagina(pg, perfil) {
   const coms = pg.comodidades || [];
   if (coms.length) {
     document.getElementById('emp-comodidades').innerHTML = coms
-      .map(c => `<li>${ICON_CHECK}${esc(COMODIDADE_LABEL[c] || c)}</li>`).join('');
+      .map(c => `<li>${ICON_CHECK}${esc(comLabel(c))}</li>`).join('');
     document.getElementById('emp-comodidades-wrap').hidden = false;
   }
 
@@ -156,6 +174,10 @@ function aplicarPagina(pg, perfil) {
   const waBtn = document.getElementById('emp-whatsapp');
   waBtn.href = waHref;
   waBtn.textContent = STR.cta;
+  // Diz a eventos.js de qual página veio o contato — é o que permite
+  // separar o retorno de uma Página de Empreendimento (produto pago à
+  // parte) do contato vindo do catálogo comum.
+  waBtn.dataset.evPagina = new URLSearchParams(location.search).get('id') || '';
 
   if (pg.tourUrl) {
     const tourEl = document.getElementById('emp-tour');
@@ -193,4 +215,5 @@ async function iniciar() {
   mostrarConteudo();
 }
 
+iniciarEventosContato();
 iniciar();

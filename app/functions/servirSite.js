@@ -28,6 +28,7 @@ const fs = require('fs');
 const { onRequest } = require('firebase-functions/v2/https');
 const { db } = require('./admin');
 const RESERVADOS = require('./reservados');
+const { montarPerfilPublico } = require('./perfilPayload');
 
 const ASSETS_DIR = path.join(__dirname, 'site-assets');
 const LANDING_DIR = path.join(__dirname, 'landing');
@@ -47,6 +48,7 @@ const MIME_POR_EXT = {
   '.jpeg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
 };
 
 // Subdomínio de *.sitemob.app diz o tenant direto (RESERVADOS fica de
@@ -80,22 +82,87 @@ function caminhoArquivo(baseDir, urlPath) {
 }
 
 const PLACEHOLDER_TENANT = '<meta name="pa-tenant" id="meta-pa-tenant" content="">';
+const PLACEHOLDER_PERFIL = '<script type="application/json" id="pa-perfil"></script>';
 
-function enviarArquivo(res, arquivo, tenantId) {
+// ── CSS crítico embutido na resposta ──────────────────────────────
+// O bundle carregava 4 folhas de estilo em <link>, todas bloqueando a
+// renderização: 4 round-trips em SÉRIE antes do primeiro pixel (~910ms
+// no PageSpeed). Embutir tudo num <style> zera esses round-trips ao
+// custo de ~9KB brotli por navegação (o HTML é no-cache).
+//
+// Os <link> continuam no HTML fonte, entre os marcadores abaixo, e são
+// a única fonte de verdade: é o que o preview de meu-site.html usa (ele
+// roda site/index.html servido pelo Hosting, que não passa por aqui e
+// portanto nunca vê esta substituição). Perde-se performance só no
+// preview, onde ela não importa.
+const MARCADOR_CSS = /<!-- pa-css:start -->[\s\S]*?<!-- pa-css:end -->/;
+
+// Instância de function é reaproveitada entre requisições e os arquivos
+// não mudam durante a vida dela — lê do disco uma vez só, no primeiro
+// acesso, e não a cada pageview.
+const cacheCss = new Map();
+function lerCss(href) {
+  if (cacheCss.has(href)) return cacheCss.get(href);
+  const arquivo = caminhoArquivo(ASSETS_DIR, '/' + href.replace(/^\/+/, ''));
+  const conteudo = arquivo ? fs.readFileSync(arquivo, 'utf8') : null;
+  cacheCss.set(href, conteudo);
+  return conteudo;
+}
+
+function inlinarCss(html) {
+  return html.replace(MARCADOR_CSS, (bloco) => {
+    const hrefs = [...bloco.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].map(m => m[1]);
+    const css = hrefs.map(lerCss);
+    // Qualquer arquivo faltando (rename sem atualizar o HTML) e devolve
+    // o bloco original intacto — a página fica mais lenta, nunca sem
+    // estilo nenhum.
+    if (!hrefs.length || css.some(c => c === null)) return bloco;
+    return '<style>' + css.join('\n') + '</style>';
+  });
+}
+
+// `<` vira < pra que nenhum valor do perfil (o "about" do corretor
+// é texto livre) possa fechar a tag <script> e injetar markup na página.
+function jsonSeguro(valor) {
+  return JSON.stringify(valor).replace(/</g, '\\u003c');
+}
+
+function prepararHtml(html, tenantId, perfil) {
+  let saida = inlinarCss(html);
+  if (tenantId) {
+    saida = saida.replace(PLACEHOLDER_TENANT,
+      `<meta name="pa-tenant" id="meta-pa-tenant" content="${tenantId}">`);
+  }
+  if (perfil) {
+    saida = saida.replace(PLACEHOLDER_PERFIL,
+      `<script type="application/json" id="pa-perfil">${jsonSeguro(perfil)}</script>`);
+  }
+  return saida;
+}
+
+// HTML nunca cacheia (o tenant muda por requisição, e a landing pode
+// mudar sem aviso). CSS/JS ficam em 1h porque o nome do arquivo não
+// muda entre deploys — um TTL longo serviria versão velha depois de
+// publicar. Fonte é o caso oposto: o binário de uma versão da família
+// nunca muda, então cacheia pelo ano inteiro. Se um dia trocarmos por
+// outra versão, a troca é pelo NOME do arquivo (fonts.css aponta pro
+// novo), nunca sobrescrevendo o mesmo nome — senão quem já visitou fica
+// com o antigo até o cache expirar.
+function cacheControl(ext) {
+  if (ext === '.html') return 'no-cache';
+  if (ext === '.woff2') return 'public, max-age=31536000, immutable';
+  return 'public, max-age=3600';
+}
+
+function enviarArquivo(res, arquivo, tenantId, perfil) {
   const ext = path.extname(arquivo);
   let conteudo = fs.readFileSync(arquivo);
-  if (ext === '.html' && tenantId) {
-    conteudo = Buffer.from(
-      conteudo.toString('utf8').replace(PLACEHOLDER_TENANT,
-        `<meta name="pa-tenant" id="meta-pa-tenant" content="${tenantId}">`),
-      'utf8'
-    );
+  if (ext === '.html') {
+    conteudo = Buffer.from(prepararHtml(conteudo.toString('utf8'), tenantId, perfil), 'utf8');
   }
 
   res.set('Content-Type', MIME_POR_EXT[ext] || 'application/octet-stream');
-  // HTML nunca cacheia (o tenant muda por requisição, e a landing pode
-  // mudar sem aviso); estático pode.
-  res.set('Cache-Control', ext === '.html' ? 'no-cache' : 'public, max-age=3600');
+  res.set('Cache-Control', cacheControl(ext));
   res.status(200).send(conteudo);
 }
 
@@ -129,6 +196,11 @@ exports.servirSite = onRequest(
       return;
     }
 
-    enviarArquivo(res, arquivo, tenantId);
+    // Este doc já foi lido acima pra decidir se respondemos — o perfil
+    // público sai dele de graça, no mesmo round-trip. Sem isso o
+    // navegador só descobria o nome/cor/WhatsApp do corretor depois de
+    // baixar o bundle e chamar perfilPublico, e a página inteira ficava
+    // no spinner esperando (era ~580ms parados no caminho crítico).
+    enviarArquivo(res, arquivo, tenantId, montarPerfilPublico(brokerSnap.data(), tenantId));
   }
 );

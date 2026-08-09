@@ -16,6 +16,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { db } = require('./admin');
+const { exigirTrialAtivo } = require('./trial');
 
 exports.publicarSite = onCall(
   { region: 'southamerica-east1', memory: '128MiB' },
@@ -29,6 +30,9 @@ exports.publicarSite = onCall(
     if (!broker?.whatsapp) {
       throw new HttpsError('failed-precondition', 'Configure seu WhatsApp antes de publicar.');
     }
+    // Trial vencido não RE-publica. O que já estava publicado continua
+    // no ar — despublicar puniria o visitante, não o corretor.
+    exigirTrialAtivo(broker);
 
     await db.doc('brokers/' + tenantId).update({ published: true, updatedAt: new Date() });
 

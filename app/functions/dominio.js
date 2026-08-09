@@ -38,6 +38,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { db } = require('./admin');
+const { exigirTrialAtivo } = require('./trial');
 
 const CLOUDFLARE_API_TOKEN = defineSecret('CLOUDFLARE_API_TOKEN');
 const CLOUDFLARE_ZONE_ID = '1cf07d69f4d22591a096139670379cc9'; // zona sitemob.app — não é segredo
@@ -110,6 +111,11 @@ exports.conectarDominio = onCall(
     if (!brokerSnap.exists || !brokerSnap.data()?.published) {
       throw new HttpsError('failed-precondition', 'Publique seu site em "Meu Site" antes de conectar um domínio.');
     }
+    // Cada domínio conectado consome um Custom Hostname da nossa zona
+    // na Cloudflare — trial vencido não abre mais nenhum. Os já
+    // conectados continuam servindo normalmente (só verificar/remover
+    // seguem liberados).
+    exigirTrialAtivo(brokerSnap.data());
 
     const token = CLOUDFLARE_API_TOKEN.value();
     let hostname;

@@ -118,6 +118,49 @@
   color: white;
 }
 
+/* ── Linha de comodidades da barra de filtros ──── */
+/* Ocupa a largura toda da barra (quebra a linha do flex no desktop) —
+   são chips de largura variável, espremê-los ao lado dos selects
+   deixava metade fora da tela. */
+.imv-filters__coms {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  width: 100%;
+  flex-basis: 100%;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--clr-border);
+}
+.imv-filters__coms[hidden] { display: none; }
+.imv-filters__coms-label {
+  color: var(--clr-text-muted);
+  flex-shrink: 0;
+}
+.imv-filters__coms .imv-chiprow { flex: 1; min-width: 0; }
+/* chips da barra ficam sobre --clr-surface; --clr-bg dá o contraste
+   que o --clr-surface do .imv-chiprow padrão (usado dentro do modal,
+   que tem outro fundo) não daria aqui */
+.imv-filters__coms .imv-chiprow button {
+  min-height: 36px;
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--clr-bg);
+  font-size: var(--text-xs);
+}
+.imv-filters__coms .imv-chiprow button.active { background: var(--clr-primary); }
+.imv-filters__coms-limpar {
+  background: none;
+  border: none;
+  padding: var(--sp-1) var(--sp-2);
+  color: var(--clr-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.imv-filters__coms-limpar[hidden] { display: none; }
+
 /* ── Botão "Filtros" (abre modal estilo Airbnb) ── */
 .imv-filtros-btn {
   display: inline-flex;
@@ -382,6 +425,33 @@
 }
 .imv-feats svg { width: 15px; height: 15px; color: var(--clr-primary-light); flex-shrink: 0; }
 
+/* comodidades no card — prévia curta (as 3 primeiras + "+N"), a lista
+   completa fica no modal de detalhe */
+.imv-card__coms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  list-style: none;
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+}
+.imv-card__coms li {
+  padding: 2px 10px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-full);
+  background: var(--clr-bg);
+  color: var(--clr-text-2);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.imv-card__coms .imv-card__coms-mais {
+  border-color: transparent;
+  background: none;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+}
+
 /* ── Estados vazio / carregando ───────────────── */
 .imv-empty {
   grid-column: 1 / -1;
@@ -390,6 +460,20 @@
   color: var(--clr-text-muted);
 }
 .imv-empty svg { width: 48px; height: 48px; margin-bottom: var(--sp-4); color: var(--clr-border); }
+.imv-empty__clear {
+  margin-top: var(--sp-4);
+  padding: var(--sp-2) var(--sp-5);
+  min-height: 40px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-full);
+  background: var(--clr-surface);
+  color: var(--clr-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast);
+}
+.imv-empty__clear:hover { border-color: var(--clr-primary); }
 
 .imv-skeleton {
   border-radius: var(--radius-xl);
@@ -512,6 +596,15 @@
 }
 .imv-detail__info .imv-feats { margin-bottom: var(--sp-4); }
 /* comodidades no detalhe */
+.imv-detail__coms-titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--clr-text);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: var(--sp-5);
+}
 .imv-detail__coms {
   display: flex;
   flex-wrap: wrap;
@@ -530,6 +623,7 @@
   font-size: var(--text-xs);
   font-weight: 500;
 }
+.imv-detail__coms-titulo + .imv-detail__coms { margin-top: var(--sp-3); }
 .imv-detail__coms svg { width: 12px; height: 12px; color: var(--clr-success); flex-shrink: 0; }
 
 .imv-detail__ref {

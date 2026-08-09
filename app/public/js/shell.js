@@ -6,10 +6,12 @@
 // de volta { user, tenantId, broker } pra seguir com sua própria
 // lógica de conteúdo.
 // ════════════════════════════════════════════════
-import { db, logout, onAuthChange } from './firebase.js';
-import { tenantIdAtual, buscarBroker, limiteEfetivo } from './tenant.js';
+import { auth, db, logout, onAuthChange } from './firebase.js';
+import { tenantIdAtual, buscarBroker, limiteEfetivo, trialExpirado, diasRestantesTrial } from './tenant.js';
 import { initProductTour } from './product-tour.js';
+import { ehDaEquipe } from './equipe.js';
 import { doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 
 const ICONS = {
   dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
@@ -41,6 +43,9 @@ const NAV = [
 // sidebar. Adicionar um item no topo a cada mudança relevante pro
 // usuário final (não é changelog técnico interno).
 const UPDATES = [
+  { date: '2026-08-09', title: 'Indique e ganhe', desc: 'Indique outros corretores e acumule desconto na sua assinatura (até 50%). Agora dá pra aplicar o cupom de indicação na sua assinatura ativa com um clique, direto pelo painel.' },
+  { date: '2026-08-08', title: 'Sitemob é o novo nome', desc: 'A plataforma mudou de nome — o sistema e seus dados continuam os mesmos, só a marca ficou nova.' },
+  { date: '2026-08-08', title: 'Mais estabilidade no Meu Site', desc: 'Corrigido um caso em que a pré-visualização do site podia ficar carregando pra sempre, e um ajuste no tour de boas-vindas no celular.' },
   { date: '2026-08-07', title: 'Domínio próprio', desc: 'Conecte seu domínio (ex.: catalogo.suaempresa.com.py) ao seu catálogo direto pelo painel.' },
   { date: '2026-08-07', title: 'Páginas de Empreendimento', desc: 'Compre e crie páginas institucionais para seus empreendimentos, com preço de lançamento.' },
   { date: '2026-08-07', title: 'Meu Site', desc: 'Configure seu WhatsApp e publique o catálogo público dos seus imóveis.' },
@@ -79,7 +84,12 @@ function renderSidebar(active) {
             <span>Novidades</span>
           </button>
           <div class="admin-sidebar__updates-panel" id="shellUpdatesPanel" hidden>
-            <h4>Novidades</h4>
+            <div class="admin-sidebar__updates-panel-head">
+              <h4>Novidades</h4>
+              <button type="button" class="admin-sidebar__updates-close" id="shellUpdatesCloseBtn" aria-label="Fechar novidades">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
             ${UPDATES.map(u => `
               <div class="admin-update-item">
                 <p class="admin-update-item__date">${new Date(u.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
@@ -178,22 +188,44 @@ function wireUpdatesCard() {
   const btn = document.getElementById('shellUpdatesBtn');
   const panel = document.getElementById('shellUpdatesPanel');
   const dot = document.getElementById('shellUpdatesDot');
+  const closeBtn = document.getElementById('shellUpdatesCloseBtn');
   if (!btn || !panel) return;
 
   const seen = localStorage.getItem(UPDATES_SEEN_KEY);
   const latest = UPDATES[0]?.date;
   if (latest && seen !== latest) dot.hidden = false;
 
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const abrindo = panel.hidden;
-    panel.hidden = !panel.hidden;
-    if (abrindo && latest) {
+  // position:fixed (a sidebar tem overflow-y:auto e cortaria um
+  // painel absolute que estoura a altura dela) — por isso calculamos
+  // top/left aqui em vez de deixar só no CSS.
+  function posicionar() {
+    const r = btn.getBoundingClientRect();
+    const espacoAcima = r.top - 16;
+    panel.style.left = `${Math.round(r.left)}px`;
+    panel.style.bottom = `${Math.round(window.innerHeight - r.top + 8)}px`;
+    panel.style.maxHeight = `${Math.max(160, Math.round(espacoAcima))}px`;
+  }
+
+  function fechar() {
+    panel.hidden = true;
+    if (latest) {
       localStorage.setItem(UPDATES_SEEN_KEY, latest);
       dot.hidden = true;
     }
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (panel.hidden) {
+      posicionar();
+      panel.hidden = false;
+    } else {
+      fechar();
+    }
   });
-  document.addEventListener('click', () => { panel.hidden = true; });
+  closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); fechar(); });
+  document.addEventListener('click', () => { if (!panel.hidden) fechar(); });
+  window.addEventListener('resize', () => { if (!panel.hidden) posicionar(); });
   panel.addEventListener('click', (e) => e.stopPropagation());
 }
 
@@ -215,6 +247,22 @@ function wireUserMenu() {
   logoutBtn?.addEventListener('click', () => logout().then(() => location.href = 'login.html'));
 }
 
+// "trial · trialing" não dizia nada pro corretor, e o contador de dias
+// só existia em planos.html — página que quem não pensa em assinar
+// nunca abre. Durante o teste o rótulo da sidebar vira o contador, que
+// é o único lugar do painel visto todo dia.
+function rotuloPlano(broker) {
+  if (!broker) return '—';
+  if (broker.status !== 'trialing') return `${broker.plan || 'trial'} · ${broker.status || 'trialing'}`;
+  if (trialExpirado(broker)) return 'Teste grátis encerrado';
+
+  const dias = diasRestantesTrial(broker);
+  if (dias === null) return 'Teste grátis';
+  // dias só chega a 0 quando a data já passou (trialExpirado acima já
+  // pegou esse caso), então 1 é mesmo o último dia.
+  return dias === 1 ? 'Teste grátis · último dia' : `Teste grátis · ${dias} dias`;
+}
+
 function preencherPerfil(user, broker, tenantId) {
   document.getElementById('shellTopAvatarWrap').innerHTML = avatarHTML(user, 'sm');
   document.getElementById('shellSidebarAvatarWrap').innerHTML = avatarHTML(user, 'md');
@@ -222,15 +270,16 @@ function preencherPerfil(user, broker, tenantId) {
   document.getElementById('shellUserEmail').textContent = user.email || '';
 
   document.getElementById('shellBrokerName').textContent = broker?.name || tenantId;
-  const planoLabel = broker ? `${broker.plan || 'trial'} · ${broker.status || 'trialing'}` : '—';
-  document.getElementById('shellBrokerPlan').textContent = planoLabel;
+  document.getElementById('shellBrokerPlan').textContent = rotuloPlano(broker);
 
   // CTA discreto — some quando já é pagante (status active), aparece
   // com texto diferente conforme a urgência do motivo.
   const assinarLink = document.getElementById('shellAssinarLink');
   const assinarTexto = document.getElementById('shellAssinarTexto');
   const textoPorStatus = { past_due: 'Regularizar', canceled: 'Reativar' };
-  assinarTexto.textContent = textoPorStatus[broker?.status] || 'Assinar';
+  assinarTexto.textContent = trialExpirado(broker)
+    ? 'Assinar com 50% OFF'
+    : (textoPorStatus[broker?.status] || 'Assinar');
   assinarLink.hidden = broker?.status === 'active';
 
   atualizarUso(broker);
@@ -280,6 +329,24 @@ const PAGE_SCRIPTS = {
 
 let navToken = 0;
 
+// `cleanUrls: true` no hosting faz o Firebase redirecionar
+// /meu-site.html → /meu-site, então o pathname REAL do documento quase
+// nunca tem extensão — mas os links do menu e as chaves de
+// PAGE_SCRIPTS têm. Normaliza pros dois lados baterem (sem isso, o
+// popstate do botão "voltar" caía sempre no fallback de recarregar a
+// página inteira).
+function nomeDaPagina(pathname) {
+  const nome = pathname.split('/').pop() || 'painel.html';
+  return nome.includes('.') ? nome : `${nome}.html`;
+}
+
+// A página que carregou de verdade já trouxe seu <style> inline no
+// <head>, só que sem marca de origem. Carimba agora pra o router não
+// injetar uma segunda cópia quando o usuário sair e voltar pra ela.
+document.head.querySelectorAll('style').forEach((s) => {
+  if (!s.dataset.pageStyle) s.dataset.pageStyle = nomeDaPagina(location.pathname);
+});
+
 // Algumas páginas (admin.html, meu-site.html) têm markup fora de
 // <main> de propósito — modal-backdrop cobrindo a tela inteira, não
 // pode ficar preso no padding/max-width de .admin-main. Fica dentro
@@ -294,6 +361,66 @@ function swapPageExtra(doc) {
   document.querySelector('.admin-dashboard')?.insertAdjacentElement('afterend', imported);
 }
 
+// Cada página do painel declara suas próprias folhas de estilo no
+// <head> (admin.html/meu-site.html usam admin.css, planos.html e
+// indicacoes.html usam planos.css, em-breve.html não usa nenhuma das
+// duas) — mas o router só troca o <main>, então o <head> continua
+// sendo o da PRIMEIRA página que carregou de verdade. Sem sincronizar,
+// abrir Planos vindo do Dashboard (ou voltar pra Imóveis vindo de
+// Planos) monta o HTML novo sem o CSS dele e a tela aparece crua. Como
+// o usuário entra no painel por páginas diferentes conforme o dia
+// (login manda pro painel, um link do e-mail manda pra planos, o
+// histórico do browser restaura a última visitada), o sintoma parecia
+// aleatório — "às vezes o CSS não carrega".
+//
+// Estratégia: ACUMULAR, nunca remover. As folhas específicas de página
+// não compartilham nenhum seletor entre si, então deixar planos.css
+// carregado enquanto se está em Imóveis é inofensivo — e evita que
+// voltar pra uma página já visitada pisque sem estilo de novo.
+function estilosDaPagina(doc) {
+  return [...doc.querySelectorAll('link[rel="stylesheet"][href]')]
+    // Resolve relativo ao documento atual (e não ao doc do DOMParser,
+    // que não tem base URL própria e devolveria href quebrado).
+    .map((l) => new URL(l.getAttribute('href'), document.baseURI).href);
+}
+
+// Nem todo CSS de página está num arquivo: meu-site.html, dominio.html
+// e em-breve.html declaram o seu num <style> inline no <head>. Esse
+// bloco não tem href pra deduplicar, então cada cópia injetada leva a
+// página de origem no data-attribute — era exatamente o CSS que
+// faltava ao abrir Meu Site ou Domínio pelo menu (e que voltava ao dar
+// F5, porque aí o <head> vinha inteiro do servidor).
+function sincronizarEstilosInline(doc, page) {
+  const jaAplicados = [...document.head.querySelectorAll('style[data-page-style]')]
+    .some((s) => s.dataset.pageStyle === page);
+  if (jaAplicados) return;
+
+  doc.head.querySelectorAll('style').forEach((origem) => {
+    const style = document.createElement('style');
+    style.dataset.pageStyle = page;
+    style.textContent = origem.textContent;
+    document.head.appendChild(style);
+  });
+}
+
+function sincronizarEstilos(doc, page) {
+  sincronizarEstilosInline(doc, page);
+
+  const jaAplicados = new Set(estilosDaPagina(document));
+  const novos = estilosDaPagina(doc).filter((href) => !jaAplicados.has(href));
+
+  return Promise.all(novos.map((href) => new Promise((resolve) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    // Resolve nos dois casos: um CSS que falhou não pode travar a
+    // navegação — página meio torta ainda é melhor que página nenhuma.
+    link.addEventListener('load', resolve, { once: true });
+    link.addEventListener('error', resolve, { once: true });
+    document.head.appendChild(link);
+  })));
+}
+
 function fecharChromeAberto() {
   document.querySelector('.admin-sidebar')?.classList.remove('is-open');
   document.getElementById('shellDrawerBackdrop')?.classList.remove('is-open');
@@ -306,7 +433,7 @@ function fecharChromeAberto() {
 }
 
 async function navigateTo(url, { push }) {
-  const page = url.pathname.split('/').pop();
+  const page = nomeDaPagina(url.pathname);
   const scriptSrc = PAGE_SCRIPTS[page];
   const main = document.querySelector('main.admin-main');
   if (!main || !scriptSrc) { location.href = url.href; return; }
@@ -328,6 +455,11 @@ async function navigateTo(url, { push }) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const newMain = doc.querySelector('main.admin-main');
   if (!newMain) { location.href = url.href; return; }
+
+  // Antes de injetar o markup: com o CSS da página nova já aplicado o
+  // conteúdo nunca chega a aparecer cru nem por um frame.
+  await sincronizarEstilos(doc, page);
+  if (token !== navToken) return; // outra navegação passou na frente enquanto o CSS carregava
 
   fecharChromeAberto();
   main.innerHTML = newMain.innerHTML;
@@ -372,10 +504,13 @@ function initRouter() {
     try { url = new URL(a.href, location.href); } catch { return; }
     if (url.origin !== location.origin) return;
 
-    const page = url.pathname.split('/').pop();
+    const page = nomeDaPagina(url.pathname);
     if (!(page in PAGE_SCRIPTS)) return; // fora do shell (login, criar-conta...) — navegação normal
 
-    if (url.pathname === location.pathname && url.search === location.search) { e.preventDefault(); return; }
+    // Já está nessa página: engole o clique em vez de remontar tudo
+    // (compara normalizado, senão o /meu-site do cleanUrls nunca bate
+    // com o meu-site.html do href e o menu recarregava a própria tela).
+    if (page === nomeDaPagina(location.pathname) && url.search === location.search) { e.preventDefault(); return; }
 
     e.preventDefault();
     navigateTo(url, { push: true });
@@ -482,6 +617,135 @@ function tocarLastActiveAt(tenantId, broker) {
     .catch((err) => console.warn('[shell] não foi possível carimbar lastActiveAt:', err));
 }
 
+/* ── Paywall de trial vencido ─────────────────────────────────
+   Trial vencido tranca o PAINEL, não o catálogo: o site público do
+   corretor continua no ar exatamente como estava (ver limiteEfetivo em
+   tenant.js). O que ele perde é a capacidade de editar.
+
+   Bloqueio de UI só: as regras do Firestore (firestore.rules,
+   trialVencido()) e as functions de escrita (publicarSite,
+   conectarDominio) recusam do lado do servidor mesmo se alguém pular
+   esta tela pelo console.
+
+   Planos fica DE FORA do bloqueio — é a saída. Trancar a página onde se
+   assina seria trancar a porta e jogar a chave dentro. */
+const PAGINA_LIVRE_NO_PAYWALL = 'plano';
+const CUPOM_VITALICIO = '50OFF';
+
+function paywallHTML(broker) {
+  const nome = String(broker?.name || '').split(/\s+/)[0] || '';
+  return `
+  <div class="modal-backdrop open" id="shellPaywall" role="dialog" aria-modal="true" aria-labelledby="shellPaywallTitulo">
+    <div class="modal shell-paywall">
+      <h2 id="shellPaywallTitulo" class="shell-paywall__titulo">${nome ? nome + ', seu' : 'Seu'} teste grátis terminou</h2>
+      <p class="shell-paywall__texto">
+        <strong>Seu catálogo continua no ar</strong> — ninguém que acessar seu site vai notar nada.
+        O que ficou bloqueado é o painel: pra cadastrar, editar ou publicar de novo, é só assinar.
+      </p>
+
+      <div class="shell-paywall__cupom">
+        <div class="shell-paywall__cupom-info">
+          <p class="shell-paywall__cupom-label">50% OFF vitalício</p>
+          <p class="shell-paywall__cupom-codigo">${CUPOM_VITALICIO}</p>
+        </div>
+        <button type="button" class="btn btn--outline btn--sm" id="shellPaywallCopiar">Copiar</button>
+      </div>
+
+      <button type="button" class="btn btn--accent btn--md shell-paywall__cta" id="shellPaywallAssinar">Assinar agora com 50% OFF</button>
+      <a href="planos.html" class="shell-paywall__link" id="shellPaywallPlanos">Ver todos os planos</a>
+
+      <p id="shellPaywallMsg" class="imv-form-msg" role="alert" hidden></p>
+      <button type="button" class="shell-paywall__sair" id="shellPaywallSair">Sair da conta</button>
+    </div>
+  </div>`;
+}
+
+function montarPaywall(broker) {
+  if (document.getElementById('shellPaywall')) return; // já está na tela
+  document.body.insertAdjacentHTML('beforeend', paywallHTML(broker));
+  document.body.style.overflow = 'hidden';
+
+  const msg = document.getElementById('shellPaywallMsg');
+
+  document.getElementById('shellPaywallCopiar').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const original = btn.textContent;
+    try {
+      await navigator.clipboard.writeText(CUPOM_VITALICIO);
+      btn.textContent = 'Copiado!';
+    } catch {
+      btn.textContent = 'Copie manualmente'; // o código já está visível na tela
+    }
+    setTimeout(() => { btn.textContent = original; }, 1800);
+  });
+
+  document.getElementById('shellPaywallAssinar').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Abrindo checkout...';
+    try {
+      const functions = getFunctions(auth.app, 'southamerica-east1');
+      const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo: 'trialExpirado' });
+      location.href = data.url;
+    } catch (err) {
+      msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;
+      msg.className = 'imv-form-msg imv-form-msg--erro';
+      msg.hidden = false;
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
+
+  // Navegação normal (não o router SPA): o paywall precisa sair do DOM
+  // e liberar o scroll do body, e planos.html monta o shell do zero.
+  document.getElementById('shellPaywallPlanos').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    location.href = 'planos.html';
+  });
+
+  document.getElementById('shellPaywallSair')
+    .addEventListener('click', () => logout().then(() => location.href = 'login.html'));
+}
+
+// Sinal de analytics: quem está usando o painel e se é da casa.
+//
+// O GTM dispara o `page_view` lá no <head>, muito antes do Firebase
+// Auth resolver — naquele instante não dá pra saber se quem abriu é
+// cliente ou alguém da Punto Alto testando. Por isso o veredito fica
+// gravado no localStorage e o bloco no <head> das páginas do app lê
+// essa chave de forma SÍNCRONA no carregamento seguinte. O primeiro
+// pageview de um navegador novo escapa; a regra de IP interno do GA4
+// cobre esse caso. Ver docs/ANALYTICS-JORNADA.md.
+//
+// O push daqui não conserta o `page_view` que já saiu, mas classifica
+// todo evento posterior — inclusive os `page_view` das rotas SPA, que
+// só acontecem depois (navigateTo → pushState).
+const CHAVE_SINAL_GA = 'sitemob_ga';
+
+function marcarSinalAnalytics(user, tenantId) {
+  // user_id é o tenantId, NUNCA o e-mail: mandar dado que identifica a
+  // pessoa direto viola a política do Google e a LGPD, e derruba a
+  // propriedade se o Google perceber. O tenantId é opaco pra eles e
+  // casa com `brokers/{tenantId}` do nosso lado.
+  const sinal = {
+    traffic_type: ehDaEquipe(user.email) ? 'internal' : 'external',
+    user_id: tenantId,
+  };
+
+  try {
+    localStorage.setItem(CHAVE_SINAL_GA, JSON.stringify(sinal));
+  } catch {
+    // Modo privado / quota estourada. Analytics não é motivo pra
+    // quebrar o painel — segue sem classificar.
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(sinal);
+}
+
 export function initShell({ active, title }) {
   if (!shellMounted) {
     shellMounted = true;
@@ -508,7 +772,21 @@ export function initShell({ active, title }) {
     if (!broker) { location.href = 'criar-conta.html'; return new Promise(() => {}); }
 
     preencherPerfil(user, broker, tenantId);
+    marcarSinalAnalytics(user, tenantId);
+    // Antes do paywall de propósito: saber que um trial vencido ainda
+    // abre o painel é justamente o sinal de quem está a um empurrão de
+    // assinar (a regra do Firestore libera lastActiveAt sozinho mesmo
+    // com o trial vencido, só pra isso continuar funcionando).
     tocarLastActiveAt(tenantId, broker);
+
+    if (trialExpirado(broker) && active !== PAGINA_LIVRE_NO_PAYWALL) {
+      montarPaywall(broker);
+      // Nunca resolve: o script da página não chega a rodar, então
+      // nenhuma tela do painel monta atrás do backdrop. Mesmo padrão
+      // do redirect de "broker não existe" logo acima.
+      return new Promise(() => {});
+    }
+
     initProductTour({ tenantId, active });
     return { user, tenantId, broker };
   });

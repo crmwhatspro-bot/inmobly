@@ -13,14 +13,40 @@
      desenvolvimento/preview fica vazio e cai no fallback de sempre. -->
 <meta name="pa-tenant" id="meta-pa-tenant" content="">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<!-- Perfil público do corretor (nome, cor, WhatsApp, logo...), injetado
+     por functions/servirSite.js na resposta desta requisição — ele já lê
+     o doc do broker pra decidir se responde, então o payload vem junto
+     de graça e a página pinta sem esperar a function perfilPublico.
+     Fica vazio quando quem serve NÃO é o servirSite (preview dentro de
+     meu-site.html, sites antigos em Hosting); aí site/js/public-tenant.js
+     volta a buscar por fetch, como antes. -->
+<script type="application/json" id="pa-perfil"></script>
 
+<!-- Fontes servidas por nós (ver css/fonts.css) — nada de
+     fonts.googleapis.com, que bloqueava a renderização só pra revelar
+     depois os .woff2 num terceiro domínio. Só os dois subsets latinos
+     que a primeira tela usa entram no preload: DM Sans é o corpo do
+     texto e Plus Jakarta Sans o <h1> do hero. Os demais (latin-ext)
+     ficam a cargo do unicode-range, sob demanda.
+     `crossorigin` é obrigatório mesmo sendo mesma origem: fonte é
+     sempre buscada em modo CORS e, sem o atributo, o preload não casa
+     com a requisição do @font-face e o arquivo baixa duas vezes. -->
+<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/dm-sans-latin.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/plus-jakarta-sans-latin.woff2">
+
+<!-- Estes <link> são a fonte de verdade do CSS, mas no site publicado
+     eles não chegam a virar requisição: servirSite.js troca o bloco
+     inteiro (marcadores incluídos) por um <style> com o conteúdo dos
+     arquivos, matando 4 round-trips que bloqueavam a renderização. Só o
+     preview servido pelo Hosting carrega assim, em <link> mesmo.
+     Mexeu nos marcadores? Confira MARCADOR_CSS em servirSite.js. -->
+<!-- pa-css:start -->
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/imoveis.css">
+<!-- pa-css:end -->
 <style>
   /* Spinner enquanto o perfil de verdade não chegou — sem isso, o
      texto padrão do HTML estático (ex.: "Inmuebles disponibles")
@@ -84,6 +110,15 @@
         <select class="form-select" id="imv-filtro-cidade" aria-label="Ciudad">
           <option value="todas" id="opt-cidade-todas">Todas las ciudades</option>
         </select>
+
+        <!-- Chips montados por site/js/imoveis.js só com as comodidades
+             que aparecem nos imóveis do corretor — some inteiro quando
+             nenhum imóvel tem comodidade marcada. -->
+        <div class="imv-filters__coms" id="imv-filtro-coms-wrap" hidden>
+          <span class="imv-filters__coms-label t-label" id="imv-coms-label">Comodidades</span>
+          <div class="imv-chiprow" id="imv-filtro-comodidades" role="group" aria-labelledby="imv-coms-label"></div>
+          <button type="button" class="imv-filters__coms-limpar" id="imv-coms-limpar" hidden>Limpiar</button>
+        </div>
       </div>
 
       <div class="imv-grid" id="imv-grid" aria-live="polite">

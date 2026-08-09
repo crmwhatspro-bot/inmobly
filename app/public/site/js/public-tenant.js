@@ -24,12 +24,34 @@ export function tenantIdAtual() {
   return new URLSearchParams(location.search).get('t');
 }
 
+// Perfil que o servirSite.js já embutiu na resposta HTML (ele lê o doc
+// do broker de qualquer forma pra decidir se responde, então o payload
+// sai de graça no mesmo round-trip). Quando existe, o catálogo pinta na
+// primeira passada, sem esperar rede nenhuma.
+//
+// Volta null nos caminhos que NÃO passam pelo servirSite e por isso
+// nunca preenchem a tag: o preview dentro de meu-site.html (servido
+// pelo Hosting) e os sites antigos em Hosting multisite. Esses seguem
+// pelo fetch abaixo, como antes.
+function perfilEmbutido() {
+  const tag = document.getElementById('pa-perfil');
+  if (!tag?.textContent.trim()) return null;
+  try {
+    return JSON.parse(tag.textContent);
+  } catch {
+    return null; // payload truncado/corrompido — cai no fetch
+  }
+}
+
 // Retorna null se o tenant não existir ou não estiver publicado —
 // nesses casos o chamador deve mostrar o estado de indisponível.
 // Timeout manual: sem isso, um fetch que nunca resolve (rede de
 // celular instável, por exemplo) deixava a página carregando pra
 // sempre — sem erro, sem fallback, o spinner nunca saía da tela.
 export async function carregarPerfilPublico(tenantId) {
+  const embutido = perfilEmbutido();
+  if (embutido) return embutido;
+
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 12000);
   try {

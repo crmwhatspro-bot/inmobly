@@ -10,15 +10,19 @@
    ------------------------------------------------------
    logVisita — beacon de topo de funil. A landing (functions/landing/
    index.html) chama isso uma vez por pageview e o doc gravado em
-   `analytics_visits/` é a ÚNICA fonte de "quantas visitas o site
-   teve" — não existe GA/GTM na landing (o `gtmId` do schema é do
-   corretor, injetado no catálogo público dele, nada a ver com aqui).
+   `analytics_visits/` é a fonte de "quantas visitas o site teve" PRO
+   PAINEL INTERNO. Desde que o GTM da Sitemob (GTM-MX2GH99M) passou a
+   ser injetado na landing e nas páginas do app, existe uma segunda
+   contagem, no GA/GTM — as duas medem coisas parecidas mas não batem
+   (bloqueador de anúncio derruba o GTM, não este beacon). Nenhuma das
+   duas tem a ver com o `gtmId` do schema, que é o container do próprio
+   corretor, injetado só no catálogo público dele.
 
-   Por que Firestore próprio e não GA4: pra cruzar visita com dado de
-   negócio (a visita virou conta? virou assinante?) o GA4 exigiria
-   export pro BigQuery e um join fora do app. Aqui a mesma query do
-   painel interno lê `analytics_visits` e `brokers` lado a lado —
-   ver public/js/interno-metricas.js.
+   Por que manter Firestore próprio além do GA4: pra cruzar visita com
+   dado de negócio (a visita virou conta? virou assinante?) o GA4
+   exigiria export pro BigQuery e um join fora do app. Aqui a mesma
+   query do painel interno lê `analytics_visits` e `brokers` lado a
+   lado — ver public/js/interno-metricas.js.
 
    POST /logVisita
      { visitorId, sessionId, path, referrer, utm*, lang,

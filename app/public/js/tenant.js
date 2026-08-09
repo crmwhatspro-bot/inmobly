@@ -34,11 +34,46 @@ const LIMITE_TRIAL = 6;
 // template/js/plano.js, mas lê direto do doc do tenant (aqui não
 // existe mais um config/plan sincronizado de outro projeto, o doc
 // já É a fonte da verdade). Ver docs/REGRAS-DE-NEGOCIO.md, seção 4.
+//
+// NÃO olha trialExpirado() de propósito: quando o trial vence, o
+// painel tranca mas o catálogo público continua no ar exatamente como
+// estava (é o que faz o corretor querer voltar). Tirar imóvel do ar
+// puniria o visitante, não o corretor.
 export function limiteEfetivo(broker) {
   if (!broker) return LIMITE_TRIAL;
   if (broker.status === 'active')   return broker.imoveisLimit ?? Infinity;
   if (broker.status === 'trialing') return broker.imoveisLimit ?? LIMITE_TRIAL;
   return LIMITE_TRIAL; // past_due, canceled, ou status desconhecido
+}
+
+// ── Trial ────────────────────────────────────────────────────
+// `status` NUNCA vira 'expired': só o stripeWebhook escreve status, e
+// ele só sabe de assinatura (active/past_due/canceled). Quem passou dos
+// 14 dias sem assinar continua 'trialing' pra sempre no doc — por isso
+// a expiração é SEMPRE derivada de trialEndsAt vs. agora, aqui, e não
+// um campo próprio que alguém teria que virar. Ver a versão CommonJS
+// desta mesma regra em functions/trial.js (não dá pra compartilhar
+// arquivo entre módulo ES do browser e Cloud Function sem build).
+function fimDoTrial(broker) {
+  const bruto = broker?.trialEndsAt;
+  if (!bruto) return null;
+  const data = bruto.toDate?.() ?? new Date(bruto);
+  return Number.isNaN(data.getTime()) ? null : data;
+}
+
+export function diasRestantesTrial(broker) {
+  const fim = fimDoTrial(broker);
+  if (!fim) return null;
+  return Math.max(0, Math.ceil((fim - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
+// Doc sem trialEndsAt (contas criadas antes do campo existir) nunca
+// expira — de propósito: liberar demais é preferível a trancar quem
+// não deveria estar trancado.
+export function trialExpirado(broker) {
+  if (!broker || broker.status !== 'trialing') return false;
+  const fim = fimDoTrial(broker);
+  return !!fim && fim.getTime() <= Date.now();
 }
 
 // Próxima página da jornada pra um usuário já autenticado.
