@@ -84,12 +84,18 @@ banner + badge, e bloqueia criar novos enquanto estiver acima). Edição/exclus�
 imóveis já existentes continua liberada mesmo em `past_due` — bloquear isso também
 faria o corretor não conseguir nem corrigir a própria situação.
 
-## 5. Produtos avulsos — disponíveis para qualquer plano, inclusive Trial
+## 5. Produtos avulsos — exclusivos pra assinante ativo
 
 Recurso avulso ≠ recurso de plano. Qualquer coisa do sistema que não seja "quantos
 imóveis" ou "domínio" entra aqui, não numa tier de assinatura — mantém a estrutura de
 planos simples e permite adicionar novos produtos depois sem reabrir a tabela de
 planos.
+
+**Exige `status: 'active'`** — corretor no trial, com pagamento em atraso
+(`past_due`/`unpaid`) ou cancelado não pode comprar avulso, só quem já é assinante
+pago de verdade. Checado em `criarCheckoutSession` (`functions/checkout.js`), a única
+barreira que importa; o frontend (`paginas.js`) só evita o clique morto escondendo
+o botão de compra atrás de "Assine um plano pra comprar" antes disso.
 
 | Produto | Cobrança | Preço | Por quê |
 |---|---|---|---|
@@ -148,6 +154,33 @@ test e live).
 Coupon `LANCAMENTO50` (`percent_off: 50`) aplicado automaticamente pelo `checkout.js`
 só em `inmobly_emprendimento_page`, enquanto dura o preço de lançamento (ver seção 5).
 Trial não tem produto no Stripe — nunca toca o Stripe, é autogerenciado sem cartão.
+
+## 8. Indique e ganhe
+
+Programa de indicação entre corretores — quem já é cliente indica outro corretor; se o
+indicado converter (virar assinante pago de verdade, não só trial), quem indicou ganha
+um cupom.
+
+- **Link de indicação**: `https://painel.sitemob.app/criar-conta.html?ref=<slug-de-quem-indicou>`
+  — reaproveita o slug já existente do broker, sem gerar um código novo separado.
+  Mostrado em `planos.html`.
+- **Gatilho da recompensa**: a primeira vez que o broker indicado (`referredBy`) tem
+  a assinatura marcada `active` no `stripeWebhook` (`processarSubscription` em
+  `functions/webhook.js`) — nunca em renovação mensal, nem em produto avulso comprado
+  durante o trial. Idempotente via `referralRewarded` no doc do indicado.
+- **Recompensa**: cupom de **10% off, uma fatura** (`percent_off: 10`,
+  `duration: once`) — um Promotion Code novo por indicação premiada
+  (`INDICA-<slug>-<n>`), até **5 códigos por indicador**. Sem data de validade
+  (`expires_at` nunca setado); cada código vale 1 uso. Um código novo por indicação
+  (em vez de ir aumentando o limite de um código só) porque a API do Stripe não
+  permite alterar `max_redemptions` depois que o Promotion Code já foi criado.
+- **Resgate**: o próprio campo de código promocional do Stripe Checkout
+  (`allow_promotion_codes`, já ligado por padrão em `checkout.js` quando não há cupom
+  automático) — o indicador digita o código que ganhou em qualquer checkout futuro
+  (assinar, trocar de plano, reassinar). Nenhuma mudança no fluxo de pagamento em si.
+- **Reembolso/chargeback do indicado**: perda aceitável — o cupom já concedido ao
+  indicador não é revogado. Decisão consciente de manter simples, sem lógica de
+  estorno de recompensa.
 
 ---
 

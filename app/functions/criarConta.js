@@ -20,6 +20,41 @@ const TRIAL_DIAS = 14;
 const TRIAL_LIMITE_IMOVEIS = 6;
 const SLUG_REGEX = /^[a-z0-9-]{3,40}$/;
 
+// Mesmo formato que functions/analytics.js grava em analytics_visits —
+// se não bater, não vai casar com visita nenhuma, então grava null em
+// vez de sujar o doc com um valor inútil.
+const VISITOR_ID_REGEX = /^[a-z0-9]{8,40}$/;
+
+/**
+ * Normaliza o que o client mandou em `atribuicao` (ver
+ * public/js/atribuicao.js). Vem da URL, ou seja, de qualquer um que
+ * saiba editar um query param — daí o corte de tamanho e o regex.
+ * Isso aqui é métrica de aquisição, não permissão: no pior caso um
+ * signup fica atribuído ao canal errado, nada além disso.
+ */
+function normalizarAtribuicao(bruta) {
+  const a = bruta && typeof bruta === 'object' ? bruta : {};
+  const texto = (v) => {
+    const s = String(v ?? '').trim();
+    return s ? s.slice(0, 120) : null;
+  };
+  const id = (v) => {
+    const s = String(v ?? '').trim().toLowerCase();
+    return VISITOR_ID_REGEX.test(s) ? s : null;
+  };
+  return {
+    acquisitionVisitorId: id(a.vid),
+    acquisitionSessionId: id(a.sid),
+    // Espelhado aqui, e não só em analytics_visits, pra o painel
+    // conseguir quebrar contas por canal sem ter que fazer o join com
+    // a visita toda vez (e sem depender da visita ainda existir se um
+    // dia a collection ganhar expiração por TTL).
+    acquisitionUtmSource:   texto(a.utmSource),
+    acquisitionUtmMedium:   texto(a.utmMedium),
+    acquisitionUtmCampaign: texto(a.utmCampaign),
+  };
+}
+
 exports.criarConta = onCall(
   { region: 'southamerica-east1' },
   async (request) => {
@@ -31,6 +66,7 @@ exports.criarConta = onCall(
 
     const nome = String(request.data?.nome || '').trim();
     const slug = String(request.data?.slug || '').trim().toLowerCase();
+    const refSlug = String(request.data?.ref || '').trim().toLowerCase();
 
     if (!nome) throw new HttpsError('invalid-argument', 'Nome é obrigatório.');
     if (!SLUG_REGEX.test(slug)) {
@@ -69,6 +105,24 @@ exports.criarConta = onCall(
       return { tenantId: slugExistente };
     }
 
+    // Indique e ganhe: "ref" vem de um link compartilhado por outro
+    // corretor (ver docs/REGRAS-DE-NEGOCIO.md) — nunca bloqueia o
+    // cadastro se for inválido/inexistente/auto-indicação, só ignora
+    // silenciosamente (o link pode estar velho, digitado errado, ou
+    // ser o próprio slug de quem tá se cadastrando). A recompensa em
+    // si só é decidida depois, quando (e se) esse broker virar pagante
+    // — ver webhook.js.
+    let referredBy = null;
+    if (refSlug && SLUG_REGEX.test(refSlug) && refSlug !== slug) {
+      const refSnap = await db.doc('brokers/' + refSlug).get();
+      if (refSnap.exists) referredBy = refSlug;
+    }
+
+    // De onde veio esse cadastro (?vid= carimbado nos CTAs da landing,
+    // ver public/js/atribuicao.js). Só métrica de topo de funil — nunca
+    // bloqueia nem altera nada do cadastro se vier vazio ou torto.
+    const atribuicao = normalizarAtribuicao(request.data?.atribuicao);
+
     const ref = db.doc('brokers/' + slug);
 
     // Transação: evita dois signups simultâneos pegarem o mesmo slug.
@@ -96,6 +150,10 @@ exports.criarConta = onCall(
           usage: { imoveisCount: 0, imoveisUpdatedAt: agora },
           customDomainStatus: 'none',
           onboardingCompleted: false,
+          referredBy,
+          referralRewarded: false,
+          referral: { codes: [], convertidas: 0 },
+          ...atribuicao,
           createdAt: agora,
           updatedAt: agora,
         });

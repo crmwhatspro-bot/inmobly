@@ -6,6 +6,9 @@
    customer.subscription.created|updated     → grava plan/status
      (chega com o price já resolvido — checkout.session.completed
      em mode:subscription não faz nada, esse evento cobre o caso)
+     Também é aqui que "Indique e ganhe" dispara: na primeira vez que
+     um broker indicado (referredBy) vira active, gera um Promotion
+     Code de 10% off pro indicador (ver recompensarIndicador abaixo).
    customer.subscription.deleted             → status: 'canceled'
 
    Essa lógica é quase idêntica à versão do control-plane/ antigo —
@@ -56,13 +59,97 @@ async function acharSlugPorCustomer(customerId) {
   return snap.empty ? null : snap.docs[0].id;
 }
 
-async function processarSubscription(subscription) {
+// Append-only: uma linha por mudança real de status da assinatura, em
+// brokers/{slug}/statusHistory/. É o que torna churn calculável de
+// verdade mais tarde ("quantos cancelaram no mês X") — activatedAt/
+// canceledAt no doc do broker resolvem o funil básico, mas só guardam
+// a primeira ativação e o último cancelamento, e perdem quem foi e
+// voltou. Ninguém lê isso ainda; o painel interno usa os carimbos do
+// doc. Falha aqui NÃO derruba o webhook: o estado que importa
+// (brokers.status) já foi gravado antes, e um 5xx faria o Stripe
+// reentregar o evento e reprocessar tudo por causa de um log.
+async function registrarTransicao(brokerRef, de, para) {
+  try {
+    await brokerRef.collection('statusHistory').add({ de, para, at: new Date() });
+  } catch (err) {
+    console.error(`[stripeWebhook] falha ao registrar transição ${de} → ${para} em ${brokerRef.path}:`, err);
+  }
+}
+
+// ── Indique e ganhe ─────────────────────────────────────────────
+// Coupon único e compartilhado (percent_off 10, duration 'once' — só
+// desconta a fatura em que for aplicado). O que diferencia cada
+// indicador é o Promotion Code, um por indicação premiada.
+//
+// Por quê um Promotion Code novo a cada indicação, em vez de ir
+// aumentando max_redemptions de um código só: a API do Stripe não
+// permite alterar max_redemptions depois que o Promotion Code já foi
+// criado (só "active" e "metadata" são editáveis). Minerar um código
+// novo por indicação premiada é o jeito nativo de "acumular" — cada
+// código vale 1 uso, sem validade (expires_at nunca setado), até o
+// teto de MAX_INDICACOES_RECOMPENSADAS por indicador.
+const COUPON_AFILIADO_ID = 'AFILIADO10';
+const MAX_INDICACOES_RECOMPENSADAS = 5;
+
+async function garantirCupomAfiliado(stripe) {
+  try {
+    await stripe.coupons.retrieve(COUPON_AFILIADO_ID);
+  } catch (err) {
+    if (err.code !== 'resource_missing') throw err;
+    await stripe.coupons.create({
+      id: COUPON_AFILIADO_ID,
+      percent_off: 10,
+      duration: 'once',
+      name: 'Indique e ganhe',
+    });
+  }
+}
+
+async function recompensarIndicador({ referrerSlug, indicadoSlug, stripe }) {
+  const referrerRef = db.doc('brokers/' + referrerSlug);
+  const referrerSnap = await referrerRef.get();
+  if (!referrerSnap.exists) {
+    console.warn(`[stripeWebhook] indicador "${referrerSlug}" não existe mais — recompensa pela indicação de "${indicadoSlug}" ignorada`);
+    return;
+  }
+
+  const codigosAtuais = referrerSnap.data().referral?.codes || [];
+  if (codigosAtuais.length >= MAX_INDICACOES_RECOMPENSADAS) {
+    console.log(`[stripeWebhook] indicador "${referrerSlug}" já tem os ${MAX_INDICACOES_RECOMPENSADAS} códigos — indicação de "${indicadoSlug}" não gera novo código`);
+    return;
+  }
+
+  await garantirCupomAfiliado(stripe);
+
+  // código previsível (INDICA-<slug>-<n>) — dá pra recriar o mesmo
+  // texto sem precisar guardar/consultar nada além da contagem atual
+  const codigo = `INDICA-${referrerSlug}-${codigosAtuais.length + 1}`.toUpperCase();
+  await stripe.promotionCodes.create({
+    coupon: COUPON_AFILIADO_ID,
+    code: codigo,
+    max_redemptions: 1,
+    metadata: { referrerSlug, indicadoSlug },
+  });
+
+  await referrerRef.set({
+    'referral.codes':       FieldValue.arrayUnion(codigo),
+    'referral.convertidas': FieldValue.increment(1),
+    updatedAt: new Date(),
+  }, { merge: true });
+  console.log(`[stripeWebhook] "${referrerSlug}" ganhou o código ${codigo} pela indicação de "${indicadoSlug}"`);
+}
+
+async function processarSubscription(subscription, stripe) {
   const slug = subscription.metadata?.brokerSlug
     || await acharSlugPorCustomer(subscription.customer);
   if (!slug) {
     console.warn('[stripeWebhook] subscription sem brokerSlug e sem match por customer:', subscription.id);
     return;
   }
+
+  const brokerRef  = db.doc('brokers/' + slug);
+  const brokerSnap = await brokerRef.get();
+  const brokerAntes = brokerSnap.exists ? brokerSnap.data() : null;
 
   const lookupKey = subscription.items?.data?.[0]?.price?.lookup_key;
   const infoPlano = PLANOS[lookupKey];
@@ -80,8 +167,42 @@ async function processarSubscription(subscription) {
   if (infoPlano) Object.assign(atualizacao, infoPlano);
   if (status)    atualizacao.status = status;
 
-  await db.doc('brokers/' + slug).set(atualizacao, { merge: true });
+  // Carimbos de transição — o doc do broker só guarda o status ATUAL,
+  // então sem isso o painel interno só consegue dizer "X assinantes
+  // hoje", nunca "X assinaturas fechadas em julho" nem churn.
+  // subscription.updated chega em qualquer mexida na assinatura (troca
+  // de plano, renovação, cartão novo), quase sempre com o mesmo status
+  // — por isso só carimba quando o status REALMENTE mudou, senão
+  // statusChangedAt viraria "última vez que o Stripe mandou um evento".
+  const statusMudou = status && status !== brokerAntes?.status;
+  if (statusMudou) {
+    atualizacao.statusChangedAt = atualizacao.updatedAt;
+    // Primeira conversão trial → pagante. Só na primeira: se a pessoa
+    // cancelar e voltar, o que interessa pro funil é a data em que ela
+    // virou cliente, não a da reativação (essa fica no statusHistory).
+    if (status === 'active' && !brokerAntes?.activatedAt) {
+      atualizacao.activatedAt = atualizacao.updatedAt;
+    }
+    if (status === 'canceled') atualizacao.canceledAt = atualizacao.updatedAt;
+  }
+
+  await brokerRef.set(atualizacao, { merge: true });
+  if (statusMudou) await registrarTransicao(brokerRef, brokerAntes?.status ?? null, status);
   console.log(`[stripeWebhook] "${slug}" atualizado via subscription: plan=${atualizacao.plan ?? '(sem mudança)'} status=${atualizacao.status ?? '(sem mudança)'}`);
+
+  // Indique e ganhe: dispara a recompensa pro indicador quando o
+  // INDICADO efetua pagamento de verdade (vira assinante pago) — não
+  // em cada renovação mensal. Checa `referralRewarded` (não "status
+  // mudou de X pra active") de propósito: se recompensarIndicador
+  // falhar (erro do Stripe), o flag continua false, e a próxima
+  // reentrega do webhook (Stripe reenvia em erro 5xx) tenta de novo —
+  // uma checagem de transição de status quebraria esse retry, porque
+  // o Firestore já teria sido escrito com status:'active' na tentativa
+  // anterior, mesmo a recompensa tendo falhado.
+  if (status === 'active' && brokerAntes?.referredBy && !brokerAntes?.referralRewarded) {
+    await recompensarIndicador({ referrerSlug: brokerAntes.referredBy, indicadoSlug: slug, stripe });
+    await brokerRef.set({ referralRewarded: true }, { merge: true });
+  }
 }
 
 async function processarCompraAvulsa(session) {
@@ -151,13 +272,23 @@ exports.stripeWebhook = onRequest(
         }
         case 'customer.subscription.created':
         case 'customer.subscription.updated':
-          await processarSubscription(event.data.object);
+          await processarSubscription(event.data.object, stripe);
           break;
         case 'customer.subscription.deleted': {
           const sub = event.data.object;
           const slug = sub.metadata?.brokerSlug || await acharSlugPorCustomer(sub.customer);
           if (slug) {
-            await db.doc('brokers/' + slug).set({ status: 'canceled', updatedAt: new Date() }, { merge: true });
+            const brokerRef = db.doc('brokers/' + slug);
+            const statusAntes = (await brokerRef.get()).data()?.status ?? null;
+            const agora = new Date();
+            await brokerRef.set({ status: 'canceled', updatedAt: agora }, { merge: true });
+            // Mesmo carimbo de transição de processarSubscription — um
+            // cancelamento pode chegar por aqui (deleted) sem nunca
+            // passar por um subscription.updated com status canceled.
+            if (statusAntes !== 'canceled') {
+              await brokerRef.set({ statusChangedAt: agora, canceledAt: agora }, { merge: true });
+              await registrarTransicao(brokerRef, statusAntes, 'canceled');
+            }
             console.log(`[stripeWebhook] "${slug}" cancelado`);
           } else {
             console.warn('[stripeWebhook] subscription.deleted sem match de broker:', sub.id);

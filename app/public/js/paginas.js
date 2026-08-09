@@ -117,11 +117,22 @@ function atualizarAcaoBtn() {
   if (disponiveis > 0) {
     acaoBtn.textContent = '+ Nova página';
     acaoBtn.dataset.acao = 'criar';
+    acaoBtn.disabled = false;
     saldoBanner.hidden = false;
     saldoBanner.textContent = `${disponiveis} página${disponiveis === 1 ? '' : 's'} já paga${disponiveis === 1 ? '' : 's'} aguardando conteúdo.`;
+  } else if (broker?.status !== 'active') {
+    // Avulso exige assinatura ativa (ver checkout.js) — nem deixa
+    // clicar, senão o corretor só descobre depois de abrir o checkout
+    // e tomar erro do backend.
+    acaoBtn.textContent = 'Assine um plano pra comprar';
+    acaoBtn.dataset.acao = 'assinar';
+    acaoBtn.disabled = false;
+    saldoBanner.hidden = false;
+    saldoBanner.textContent = 'Página de Empreendimento é exclusiva pra assinantes ativos.';
   } else {
     acaoBtn.textContent = 'Comprar página — US$ 200';
     acaoBtn.dataset.acao = 'comprar';
+    acaoBtn.disabled = false;
     if (compradas > 0) {
       saldoBanner.hidden = false;
       saldoBanner.textContent = `${criadas} de ${compradas} página${compradas === 1 ? '' : 's'} comprada${compradas === 1 ? '' : 's'} já ${criadas === 1 ? 'tem' : 'têm'} conteúdo criado.`;
@@ -134,6 +145,10 @@ function atualizarAcaoBtn() {
 acaoBtn.addEventListener('click', async () => {
   if (acaoBtn.dataset.acao === 'criar') {
     abrirEditor(null);
+    return;
+  }
+  if (acaoBtn.dataset.acao === 'assinar') {
+    location.href = 'planos.html';
     return;
   }
   acaoBtn.disabled = true;

@@ -7,6 +7,13 @@ import { auth, onAuthChange } from './firebase.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 import { getIdToken } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { tenantIdAtual } from './tenant.js';
+import { capturarAtribuicao, lerAtribuicao } from './atribuicao.js';
+
+// No top-level, antes de qualquer coisa: o guard de auth logo abaixo
+// pode redirecionar pra login.html e o ?vid= da landing morre no
+// caminho. Capturado aqui, ele já está no localStorage quando o
+// usuário voltar do Google e enviar o formulário.
+capturarAtribuicao();
 
 const $ = (id) => document.getElementById(id);
 const form  = $('formConta');
@@ -19,6 +26,16 @@ const slugErro = $('slugError');
 
 const functions = getFunctions(auth.app, 'southamerica-east1');
 const criarConta = httpsCallable(functions, 'criarConta');
+
+// Indique e ganhe: o link de indicação (?ref=<slug-de-quem-indicou>)
+// pode cair aqui direto, mas se quem clicou ainda não tinha login, o
+// fluxo passa por login.html e volta pra cá sem query string — por
+// isso persiste em localStorage assim que aparece, e sempre lê de lá
+// na hora de enviar (funciona nas duas ordens: ref antes ou depois do
+// login).
+const REF_KEY = 'pa-ref';
+const refDaUrl = new URLSearchParams(location.search).get('ref');
+if (refDaUrl) localStorage.setItem(REF_KEY, refDaUrl);
 
 function slugify(s) {
   return String(s).toLowerCase()
@@ -55,7 +72,9 @@ form.addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Criando...';
   try {
-    await criarConta({ nome, slug });
+    const ref = localStorage.getItem(REF_KEY) || undefined;
+    await criarConta({ nome, slug, atribuicao: lerAtribuicao(), ref });
+    localStorage.removeItem(REF_KEY);
     // custom claim acabou de ser setado pela function — força refresh
     // do token antes de seguir, senão a próxima página não enxerga o tenant
     await getIdToken(auth.currentUser, true);
