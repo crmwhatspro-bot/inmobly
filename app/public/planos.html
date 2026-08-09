@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/shell.css">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/planos.css">
 </head>
 <body>
 
@@ -24,8 +24,9 @@
     <div id="shell-topbar-mount"></div>
     <main class="admin-main">
 
-      <div class="planos-wrap" style="padding:0; max-width:none;">
+      <div class="planos-wrap">
         <div class="planos-head">
+          <h1>Escolha o plano ideal pro seu negócio</h1>
           <p id="statusAtual">Carregando seu status...</p>
         </div>
 
@@ -34,27 +35,27 @@
             <h3>Starter</h3>
             <div class="plano-card__preco">USD 79<small>/mês</small></div>
             <ul>
-              <li>Até 40 imóveis</li>
-              <li>Site + catálogo CMS</li>
-              <li>Domínio *.web.app incluído</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Até 40 imóveis</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio *.sitemob.app incluído</li>
             </ul>
-            <button class="btn btn--primary" data-plano="inmobly_starter_monthly">Assinar Starter</button>
+            <button class="btn btn--lg btn--outline-light" data-plano="inmobly_starter_monthly">Assinar Starter</button>
           </div>
 
           <div class="plano-card plano-card--destaque">
-            <span class="plano-card__badge">Mais popular</span>
+            <span class="plano-card__badge">★ Mais popular</span>
             <h3>Pro</h3>
             <div class="plano-card__preco">USD 129<small>/mês</small></div>
             <ul>
-              <li>Imóveis ilimitados</li>
-              <li>Site + catálogo CMS</li>
-              <li>Domínio próprio incluído</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Imóveis ilimitados</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio próprio incluído</li>
             </ul>
-            <button class="btn btn--primary" data-plano="inmobly_pro_monthly">Assinar Pro</button>
+            <button class="btn btn--lg btn--accent" data-plano="inmobly_pro_monthly">Assinar Pro</button>
           </div>
         </div>
 
-        <p style="text-align:center; color:var(--muted); font-size:0.85rem; margin-top:2rem;">
+        <p class="planos-foot">
           Página de Emprendimento sob medida e configuração de domínio próprio (pro plano Starter) são produtos avulsos, comprados quando você precisar — direto do seu painel.
         </p>
 

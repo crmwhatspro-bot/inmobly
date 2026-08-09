@@ -53,7 +53,7 @@ const PROMOS = {
 // `allow_promotion_codes: true` mais abaixo). Nenhum código deste
 // arquivo aplica ele — ver README, seção "Popup de parabéns...".
 
-const BASE_URL = 'https://inmobly-project.web.app'; // atualizar se/quando tiver domínio próprio
+const BASE_URL = 'https://painel.sitemob.app';
 
 // Depois de pagar, manda pra onde faz sentido usar a compra — não
 // sempre pro painel genérico. Só afeta o "Ir pra..." de obrigado.html.

@@ -14,6 +14,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { db, auth } = require('./admin');
+const RESERVADOS = require('./reservados');
 
 const TRIAL_DIAS = 14;
 const TRIAL_LIMITE_IMOVEIS = 6;
@@ -34,6 +35,14 @@ exports.criarConta = onCall(
     if (!nome) throw new HttpsError('invalid-argument', 'Nome é obrigatório.');
     if (!SLUG_REGEX.test(slug)) {
       throw new HttpsError('invalid-argument', 'Endereço inválido — só letras minúsculas, números e hífen, 3 a 40 caracteres.');
+    }
+    // Esses slugs colidem com subdomínios de infraestrutura de
+    // *.sitemob.app (ver functions/servirSite.js) — sem esse bloqueio,
+    // um corretor poderia cadastrar "painel" ou "tenants" e ficar
+    // inacessível pra sempre (o hostname nunca chega a resolver como
+    // tenant dele).
+    if (RESERVADOS.has(slug)) {
+      throw new HttpsError('invalid-argument', 'Esse endereço é reservado — escolha outro.');
     }
 
     // Idempotência por uid: a criação do doc e o custom claim não são

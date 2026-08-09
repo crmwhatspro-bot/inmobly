@@ -35,8 +35,23 @@ const PASSOS = [
   },
 ];
 
-function chaveEstado(tenantId) { return `pa-tour-${tenantId}`; }
+function chaveEstado(tenantId)  { return `pa-tour-${tenantId}`; }
 function chaveMomento(tenantId) { return `pa-tour-ts-${tenantId}`; }
+function chaveVisitas(tenantId) { return `pa-tour-visitas-${tenantId}`; }
+
+// O tour pode retomar de onde parou em até MAX_VISITAS carregamentos do
+// painel — depois disso encerra de vez, mesmo sem ter sido concluído nem
+// pulado. Cada avanço de passo dentro da MESMA sessão (clique em
+// "Próximo") não conta como visita nova — só um carregamento de página
+// de verdade conta, por isso registrarVisitaSeNova() só é chamada uma
+// vez, no topo de initProductTour(), nunca na recursão de handleProximo().
+const MAX_VISITAS = 3;
+
+function registrarVisita(tenantId) {
+  const visitas = (Number(localStorage.getItem(chaveVisitas(tenantId))) || 0) + 1;
+  localStorage.setItem(chaveVisitas(tenantId), String(visitas));
+  return visitas;
+}
 
 // Se o corretor viu um passo e ficou mais que isso sem clicar em "Próximo"
 // (ignorou o card e foi navegar por conta própria), o tour é considerado
@@ -110,6 +125,19 @@ export function initProductTour({ tenantId, active }) {
   const passoAtual = lerPasso(tenantId);
   if (passoAtual === null) return;
 
+  // Conta como visita nova só aqui — no carregamento de página de
+  // verdade, nunca dentro de mostrarPasso() (que também é chamada ao
+  // avançar de passo, mesma sessão). Passou de MAX_VISITAS sem terminar
+  // nem pular? Encerra de vez, mesmo no meio de um passo.
+  if (registrarVisita(tenantId) > MAX_VISITAS) {
+    salvarPasso(tenantId, null);
+    return;
+  }
+
+  mostrarPasso(tenantId, passoAtual);
+}
+
+function mostrarPasso(tenantId, passoAtual) {
   const passo = PASSOS[passoAtual];
   if (!passo) return;
 
@@ -160,6 +188,6 @@ export function initProductTour({ tenantId, active }) {
       return;
     }
     salvarPasso(tenantId, passoAtual + 1);
-    initProductTour({ tenantId, active });
+    mostrarPasso(tenantId, passoAtual + 1); // mesma visita — não conta de novo
   });
 }

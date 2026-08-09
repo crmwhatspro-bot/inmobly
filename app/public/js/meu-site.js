@@ -348,14 +348,14 @@ function atualizarStatusTexto() {
   publicarSwitch.checked = publicado;
   statusTitulo.textContent = publicado ? 'Site publicado' : 'Site não publicado';
   statusSub.textContent = publicado
-    ? `Ao vivo em ${tenantId}.web.app`
+    ? `Ao vivo em ${tenantId}.sitemob.app`
     : broker.whatsapp
       ? 'Seu WhatsApp está configurado — ative pra publicar.'
       : 'Configure seu WhatsApp de contato antes de publicar.';
 
   atualizarBtn.hidden = !publicado;
   verSiteLink.hidden = !publicado;
-  if (publicado) verSiteLink.href = `https://${tenantId}.web.app/`;
+  if (publicado) verSiteLink.href = `https://${tenantId}.sitemob.app/`;
 }
 
 async function alternarPublicacao() {

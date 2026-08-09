@@ -28,7 +28,7 @@
         <div class="metric-card">
           <p class="metric-card__label">Negócio</p>
           <p class="metric-card__value" style="font-size: var(--text-2xl);" id="nomeNegocio">—</p>
-          <p style="color:var(--clr-text-light-2); font-size:var(--text-xs); margin-top:var(--sp-2);"><span id="slugAtual">—</span>.web.app</p>
+          <p style="color:var(--clr-text-light-2); font-size:var(--text-xs); margin-top:var(--sp-2);"><span id="slugAtual">—</span>.sitemob.app</p>
         </div>
         <div class="metric-card">
           <p class="metric-card__label">Plano</p>
@@ -40,14 +40,16 @@
         </div>
       </div>
 
-      <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom: var(--sp-8);">
-        <a href="admin.html" class="btn btn--primary">Gerenciar meus imóveis →</a>
-        <a href="planos.html" class="btn btn--ghost">Ver / trocar plano</a>
+      <div class="admin-quickactions">
+        <div>
+          <p class="admin-quickactions__titulo">Comece por aqui</p>
+          <p class="admin-quickactions__sub">Cadastre seus imóveis e acompanhe seu plano.</p>
+        </div>
+        <div class="admin-quickactions__botoes">
+          <a href="admin.html" class="btn btn--accent btn--md">Gerenciar meus imóveis →</a>
+          <a href="planos.html" class="btn btn--outline-light btn--md">Ver / trocar plano</a>
+        </div>
       </div>
-
-      <p style="color:var(--clr-text-light-2); font-size:0.8rem; max-width:640px; padding-top:var(--sp-6); border-top:1px dashed var(--clr-border-dark);">
-        A página pública do catálogo (o que seus clientes veem) ainda não existe nesse modelo multi-tenant — "Gerenciar meus imóveis" já cadastra de verdade em <code>brokers/{tenantId}/imoveis</code>, falta só a vitrine pública.
-      </p>
 
     </main>
   </div>

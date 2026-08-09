@@ -11,3 +11,4 @@ exports.publicarSite         = require('./publicarSite').publicarSite;
 exports.conectarDominio      = require('./dominio').conectarDominio;
 exports.verificarDominio     = require('./dominio').verificarDominio;
 exports.removerDominio       = require('./dominio').removerDominio;
+exports.servirSite           = require('./servirSite').servirSite;

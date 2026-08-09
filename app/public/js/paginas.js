@@ -163,12 +163,12 @@ const esc = (s) => String(s || '').replace(/[&<>"']/g, c =>
 const ESTAGIO_LABEL = { pronto: 'Pronto', construcao: 'Em construção', planta: 'Na planta' };
 
 // Prefere o domínio próprio quando já está ativo (ver dominio.html) —
-// senão cai no <tenantId>.web.app padrão, que sempre existe depois de
+// senão cai no <tenantId>.sitemob.app padrão, que sempre existe depois de
 // "Publicar site" em Meu Site.
 function linkPublico(paginaId) {
   const host = (broker?.customDomain && broker?.customDomainStatus === 'active')
     ? broker.customDomain
-    : `${tenantId}.web.app`;
+    : `${tenantId}.sitemob.app`;
   return `https://${host}/emprendimiento.html?id=${paginaId}`;
 }
 

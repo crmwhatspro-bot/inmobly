@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitemob — Site e catálogo de imóveis pro corretor, sem programador</title>
+<meta name="description" content="Sitemob é o SaaS pra corretores e imobiliárias: site próprio, catálogo de imóveis e páginas de empreendimento, 100% autoatendimento. Comece grátis por 14 dias, sem cartão.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #111820;
+    --bg-darker: #0B1017;
+    --surface: #1C2633;
+    --surface-2: #243040;
+    --line: #2A3A4A;
+    --text: #F0EDE6;
+    --text-2: #C7D3E2;
+    --muted: #8892A0;
+    --accent: #C8922A;
+    --accent-light: #d0a24a;
+    --accent-glow: rgba(200, 146, 42, .35);
+    --whatsapp: #25D366;
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-body); line-height: 1.6;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  .container { max-width: 1120px; margin: 0 auto; padding: 0 1.5rem; }
+
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; margin: 0; }
+  em { font-style: normal; color: var(--accent-light); }
+
+  .btn {
+    cursor: pointer; border: none; border-radius: 10px; padding: .85rem 1.6rem;
+    font-size: .95rem; font-weight: 700; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn--primary { background: var(--accent); color: #1a1200; }
+  .btn--primary:hover { background: var(--accent-light); }
+  .btn--ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .btn--ghost:hover { border-color: var(--accent); color: var(--accent-light); }
+  .btn--lg { padding: 1rem 2rem; font-size: 1.02rem; }
+
+  .eyebrow {
+    display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent-light); margin-bottom: .9rem;
+  }
+
+  /* ── Nav ─────────────────────────────────── */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(17, 24, 32, .85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav__inner {
+    max-width: 1120px; margin: 0 auto; padding: .9rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  }
+  .logo { display: flex; align-items: center; gap: .5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
+  .logo__dot { color: var(--accent); }
+  .nav__links { display: flex; align-items: center; gap: 1.75rem; font-size: .92rem; color: var(--text-2); }
+  .nav__links a:hover { color: var(--text); }
+  .nav__actions { display: flex; align-items: center; gap: .6rem; }
+  .nav__burger {
+    display: none; flex-direction: column; gap: 4px; background: none; border: none; cursor: pointer; padding: .4rem;
+  }
+  .nav__burger span { width: 20px; height: 2px; background: var(--text); border-radius: 2px; }
+  .nav-mobile { display: none; }
+
+  @media (max-width: 860px) {
+    .nav__links, .nav__actions .btn--ghost { display: none; }
+    .nav__burger { display: flex; }
+    .nav-mobile.is-open {
+      display: block; border-bottom: 1px solid var(--line); background: var(--bg-darker);
+    }
+    .nav-mobile__links { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.5rem 1.5rem; }
+    .nav-mobile__links a {
+      padding: .75rem 0; font-size: .98rem; color: var(--text-2); border-bottom: 1px solid var(--line);
+    }
+    .nav-mobile__links .btn { margin-top: .75rem; width: 100%; }
+  }
+
+  /* ── Hero ────────────────────────────────── */
+  .hero { position: relative; padding: 4.5rem 0 3.5rem; overflow: hidden; }
+  .hero__bg {
+    position: absolute; inset: 0; z-index: -1;
+    background:
+      radial-gradient(600px 400px at 85% 10%, var(--accent-glow), transparent 70%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-darker) 100%);
+  }
+  .hero__inner { display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem;
+    border: 1px solid var(--line); border-radius: 999px; font-size: .82rem; color: var(--text-2);
+    margin-bottom: 1.5rem;
+  }
+  .pill__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--whatsapp); flex-shrink: 0; }
+  .hero__title { font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.15; margin-bottom: 1.1rem; }
+  .hero__sub { font-size: 1.05rem; color: var(--text-2); max-width: 46ch; margin-bottom: 1.75rem; }
+  .hero__ctas { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .hero__trust { font-size: .85rem; color: var(--muted); }
+
+  /* ── Hero mock (site preview fake browser) ── */
+  .mock {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5);
+  }
+  .mock__chrome {
+    display: flex; align-items: center; gap: 6px; padding: .7rem .9rem;
+    background: var(--surface-2); border-bottom: 1px solid var(--line);
+  }
+  .mock__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .mock__url {
+    margin-left: .6rem; font-size: .75rem; color: var(--muted); font-family: monospace;
+  }
+  .mock__body { padding: 1.1rem; }
+  .mock__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .6rem; gap: .5rem; }
+  .mock__head h4 { font-size: .98rem; }
+  .mock__zone { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+  .mock__price { display: flex; align-items: baseline; gap: .5rem; margin-bottom: 1rem; }
+  .mock__price strong { font-size: 1.15rem; color: var(--accent-light); }
+  .mock__price small { font-size: .78rem; color: var(--muted); }
+  .mock__gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 1rem; }
+  .mock__slot {
+    aspect-ratio: 1; border-radius: 8px;
+    background: linear-gradient(135deg, var(--surface-2), var(--line));
+  }
+  .mock__cta {
+    display: flex; align-items: center; justify-content: center; gap: .4rem;
+    background: var(--whatsapp); color: #06210f; font-weight: 700; font-size: .85rem;
+    padding: .7rem; border-radius: 10px;
+  }
+
+  /* ── Stats ───────────────────────────────── */
+  .stats { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-darker); }
+  .stats__inner {
+    max-width: 1120px; margin: 0 auto; padding: 2.5rem 1.5rem;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; text-align: center;
+  }
+  .stat strong { display: block; font-family: var(--font-display); font-size: 1.9rem; color: var(--accent-light); margin-bottom: .25rem; }
+  .stat span { font-size: .85rem; color: var(--text-2); }
+
+  /* ── Sections ────────────────────────────── */
+  .section { padding: 5rem 0; }
+  .section--dark { background: var(--bg-darker); }
+  .section__head { max-width: 620px; margin: 0 auto 3rem; text-align: center; }
+  .section__head h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.25; margin-bottom: .9rem; }
+  .section__head p { color: var(--text-2); font-size: 1rem; }
+
+  .grid { display: grid; gap: 1.25rem; }
+  .grid--2 { grid-template-columns: repeat(2, 1fr); }
+  .grid--4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.75rem;
+  }
+  .card__icon {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center; color: var(--accent-light);
+    margin-bottom: 1rem;
+  }
+  .card__icon svg { width: 20px; height: 20px; }
+  .card h3 { font-size: 1.02rem; margin-bottom: .5rem; line-height: 1.4; }
+  .card p { color: var(--text-2); font-size: .92rem; }
+
+  /* Pillars (produto) */
+  .pillars { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .pillar { position: relative; padding-bottom: 3.5rem; }
+  .pillar p { margin-bottom: 1.1rem; }
+  .pillar__list { display: flex; flex-direction: column; gap: .55rem; margin-bottom: 1.25rem; }
+  .pillar__list li { display: flex; align-items: flex-start; gap: .55rem; font-size: .9rem; color: var(--text-2); }
+  .pillar__list svg { flex-shrink: 0; margin-top: .2rem; color: var(--accent-light); width: 16px; height: 16px; }
+  .pillar__tag {
+    position: absolute; left: 1.75rem; bottom: 1.75rem;
+    font-size: .78rem; color: var(--muted); font-style: normal;
+  }
+
+  /* Como funciona feature grid */
+  .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-top: 3rem; }
+  .feature { text-align: left; }
+  .feature strong { display: block; font-family: var(--font-display); font-size: .98rem; margin-bottom: .4rem; }
+  .feature p { color: var(--text-2); font-size: .88rem; }
+
+  .included {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    margin-top: 2.5rem; font-size: .88rem; color: var(--text-2);
+  }
+  .included__check {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--accent-glow); color: var(--accent-light);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .included strong { color: var(--text); }
+
+  /* Pricing */
+  .plans { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+  .plan {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 2rem;
+    position: relative;
+  }
+  .plan--featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .plan__badge {
+    position: absolute; top: -12px; left: 2rem; background: var(--accent); color: #1a1200;
+    font-size: .72rem; font-weight: 700; padding: .3rem .7rem; border-radius: 999px;
+  }
+  .plan h3 { font-size: 1.05rem; color: var(--text-2); margin-bottom: .6rem; }
+  .plan__price { display: flex; align-items: baseline; gap: .3rem; margin-bottom: 1.25rem; }
+  .plan__price strong { font-family: var(--font-display); font-size: 2.1rem; }
+  .plan__price small { color: var(--muted); font-size: .9rem; }
+  .plan ul { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.5rem; }
+  .plan li { display: flex; align-items: center; gap: .55rem; font-size: .92rem; color: var(--text-2); }
+  .plan li svg { flex-shrink: 0; color: var(--accent-light); width: 16px; height: 16px; }
+  .plan .btn { width: 100%; }
+
+  .addons {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem;
+  }
+  .addon {
+    background: var(--bg-darker); border: 1px solid var(--line); border-radius: 12px; padding: 1.4rem 1.6rem;
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  }
+  .addon h4 { font-size: .92rem; margin-bottom: .25rem; }
+  .addon p { font-size: .82rem; color: var(--muted); }
+  .addon strong { color: var(--accent-light); font-family: var(--font-display); font-size: 1.05rem; white-space: nowrap; }
+
+  /* CTA final */
+  .cta-final { text-align: center; }
+  .cta-final__box {
+    max-width: 640px; margin: 0 auto; background: linear-gradient(160deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--line); border-radius: 20px; padding: 3.5rem 2.5rem;
+  }
+  .cta-final h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin-bottom: .9rem; }
+  .cta-final p { color: var(--text-2); margin-bottom: 1.75rem; }
+  .cta-final__ctas { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .cta-final small { color: var(--muted); font-size: .85rem; }
+
+  /* Footer */
+  .footer { border-top: 1px solid var(--line); padding: 2.5rem 0; }
+  .footer__inner {
+    max-width: 1120px; margin: 0 auto; padding: 0 1.5rem;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .footer__links { display: flex; align-items: center; gap: .6rem; font-size: .88rem; color: var(--text-2); }
+  .footer__links span { color: var(--line); }
+  .footer__links a:hover { color: var(--text); }
+  .footer__copy { width: 100%; font-size: .8rem; color: var(--muted); margin-top: 1.5rem; text-align: center; }
+
+  @media (max-width: 900px) {
+    .hero__inner { grid-template-columns: 1fr; }
+    .mock { max-width: 420px; margin: 0 auto; }
+    .grid--2, .grid--4, .pillars, .features, .plans, .addons { grid-template-columns: 1fr; }
+    .stats__inner { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .section { padding: 3.5rem 0; }
+    .hero { padding: 3rem 0 2.5rem; }
+    .cta-final__box { padding: 2.5rem 1.5rem; }
+  }
+
+  [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+  [data-reveal].is-visible { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────── -->
+<header class="nav">
+  <div class="nav__inner">
+    <a href="#top" class="logo"><span>Sitemob</span><span class="logo__dot">.</span></a>
+    <nav class="nav__links">
+      <a href="#produto">Produto</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#precos">Preços</a>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--ghost" href="https://painel.sitemob.app/login.html">Entrar</a>
+      <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
+      <button class="nav__burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <nav class="nav-mobile__links">
+      <a href="#produto">Produto</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#precos">Preços</a>
+      <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ─── HERO ────────────────────────────────── -->
+<section class="hero">
+  <div class="hero__bg" aria-hidden="true"></div>
+  <div class="container hero__inner">
+    <div>
+      <span class="pill"><span class="pill__dot"></span> Sitemob · Software para corretores de imóveis · 14 dias grátis</span>
+      <h1 class="hero__title">Seu site imobiliário, <em>no ar em minutos.</em></h1>
+      <p class="hero__sub">
+        Monte o catálogo dos seus imóveis e a página do seu empreendimento você mesmo, direto do celular.
+        Sem programador, sem código, sem esperar ninguém.
+      </p>
+      <div class="hero__ctas">
+        <a class="btn btn--primary btn--lg" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
+        <a href="#como-funciona" class="btn btn--ghost btn--lg">Ver como funciona</a>
+      </div>
+      <p class="hero__trust">14 dias grátis · Sem cartão de crédito · Cancele quando quiser</p>
+    </div>
+
+    <div class="mock" data-reveal aria-hidden="true">
+      <div class="mock__chrome">
+        <span class="mock__dot"></span><span class="mock__dot"></span><span class="mock__dot"></span>
+        <span class="mock__url">seuescritorio.sitemob.app</span>
+      </div>
+      <div class="mock__body">
+        <div class="mock__head">
+          <h4>Edifício Las Lomas · 3 dormitórios</h4>
+          <span class="mock__zone">Villa Morra · 95m²</span>
+        </div>
+        <div class="mock__price">
+          <strong>USD 145.000</strong>
+          <small>3 unidades disponíveis</small>
+        </div>
+        <div class="mock__gallery">
+          <div class="mock__slot"></div><div class="mock__slot"></div>
+          <div class="mock__slot"></div><div class="mock__slot"></div>
+        </div>
+        <div class="mock__cta">Agendar visita pelo WhatsApp →</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ───────────────────────────────── -->
+<section class="stats">
+  <div class="stats__inner">
+    <div class="stat" data-reveal><strong>14 dias</strong><span>De teste grátis, sem cartão</span></div>
+    <div class="stat" data-reveal><strong>5 min</strong><span>Pra criar sua conta e seu site</span></div>
+    <div class="stat" data-reveal><strong>100%</strong><span>Autoatendimento: você publica e edita</span></div>
+    <div class="stat" data-reveal><strong>0</strong><span>Programadores ou código necessários</span></div>
+  </div>
+</section>
+
+<!-- ─── DORES ───────────────────────────────── -->
+<section class="section section--dark" id="dores">
+  <div class="container">
+    <div class="section__head">
+      <span class="eyebrow">O problema real</span>
+      <h2 data-reveal>Seu catálogo merece <em>algo melhor</em> que isso.</h2>
+      <p data-reveal>Não falta imóvel bom. Falta um jeito de mostrar ele sem depender de mais ninguém.</p>
+    </div>
+    <div class="grid grid--2">
+      <article class="card" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+        <h3>Você não tem site próprio, ou ele depende de um programador pra qualquer mudança.</h3>
+        <p>Cada atualização vira mensagem, espera e um novo orçamento.</p>
+      </article>
+      <article class="card" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg></div>
+        <h3>Seu catálogo vive numa planilha ou no status do WhatsApp.</h3>
+        <p>O imóvel que já vendeu continua anunciado, e o novo demora semanas pra aparecer.</p>
+      </article>
+      <article class="card" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <h3>Mudar um preço leva dias, não minutos.</h3>
+        <p>Depender de outra pessoa pra algo que você deveria conseguir fazer sozinho, agora mesmo.</p>
+      </article>
+      <article class="card" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 21l-4.35-4.35"/><circle cx="11" cy="11" r="8"/></svg></div>
+        <h3>O comprador não encontra a informação do empreendimento que te interessa.</h3>
+        <p>Ele vai pro concorrente, que tem uma página clara com o que ele procura.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRODUTO (2 pilares) ─────────────────── -->
+<section class="section" id="produto">
+  <div class="container">
+    <div class="section__head">
+      <span class="eyebrow">O que o Sitemob inclui</span>
+      <h2 data-reveal>Duas ferramentas. <em>Um só painel.</em></h2>
+      <p data-reveal>Sem programador, sem ticket de suporte eterno. Você mesmo monta a página que vende seu empreendimento, e o catálogo que nunca fica desatualizado.</p>
+    </div>
+    <div class="pillars">
+      <article class="card pillar" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <h3>Site + catálogo de imóveis</h3>
+        <p>Seu site fica pronto e no ar — logo, cor, textos e contato do seu jeito. Você cadastra os imóveis com fotos, preço e comodidades, e o catálogo aparece na hora.</p>
+        <ul class="pillar__list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Site multilíngue — espanhol, português e inglês</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Logo, cor e textos editáveis, sem sair do painel</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Botão direto pro WhatsApp, sem formulário nenhum</span></li>
+        </ul>
+        <span class="pillar__tag">Um site por corretor, sem depender de ninguém</span>
+      </article>
+      <article class="card pillar" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Páginas de Empreendimento</h3>
+        <p>Uma página de vendas dedicada pra cada lançamento — fotos, valores, tour 3D, comodidades e prazo de entrega, tudo editável por você quando quiser.</p>
+        <ul class="pillar__list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Galeria de fotos e tour 3D — você mesmo carrega</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Preço e unidades disponíveis, editáveis em segundos</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>Link direto pro WhatsApp, sem formulário eterno</span></li>
+        </ul>
+        <span class="pillar__tag">Uma página por empreendimento, sob demanda</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ─── COMO FUNCIONA ────────────────────────── -->
+<section class="section section--dark" id="como-funciona">
+  <div class="container">
+    <div class="section__head">
+      <span class="eyebrow">Como funciona · Mobile first</span>
+      <h2 data-reveal>Você tira a foto no celular. <em>O catálogo se atualiza sozinho.</em></h2>
+      <p data-reveal>Fotografa com o celular, sobe no Sitemob, e em segundos já está no seu site. Sem programador, sem ticket, sem esperar ninguém.</p>
+    </div>
+    <div class="features">
+      <article class="feature" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+        <strong>Fotos otimizadas na hora</strong>
+        <p>Compressão automática antes do upload — cada foto carrega rápido, sem você precisar editar nada antes.</p>
+      </article>
+      <article class="feature" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9s1.3-6.5 3.8-9z"/></svg></div>
+        <strong>Multilíngue de verdade</strong>
+        <p>Seu site sai pronto em espanhol, português e inglês — o comprador escolhe o idioma dele.</p>
+      </article>
+      <article class="feature" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <strong>Domínio no seu nome</strong>
+        <p>Publique em seuescritorio.sitemob.app de graça, ou conecte seu próprio domínio.</p>
+      </article>
+      <article class="feature" data-reveal>
+        <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/></svg></div>
+        <strong>Google Tag Manager integrado</strong>
+        <p>Cole seu ID de GTM e meça suas campanhas sem precisar de programador.</p>
+      </article>
+    </div>
+    <p class="included" data-reveal>
+      <span class="included__check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>
+      Incluído no plano · hospedagem, CDN e otimização de fotos <strong>sem custo adicional</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- ─── PREÇOS ──────────────────────────────── -->
+<section class="section" id="precos">
+  <div class="container">
+    <div class="section__head">
+      <span class="eyebrow">Planos</span>
+      <h2 data-reveal>Comece grátis. Pague só quando estiver convencido.</h2>
+      <p data-reveal>14 dias de teste, sem cartão de crédito — até 6 imóveis pra você conhecer o painel. Depois, escolha o plano do tamanho do seu catálogo.</p>
+    </div>
+
+    <div class="plans">
+      <article class="plan" data-reveal>
+        <h3>Starter</h3>
+        <div class="plan__price"><strong>USD 79</strong><small>/mês</small></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Até 40 imóveis</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio *.sitemob.app incluído</li>
+        </ul>
+        <a class="btn btn--ghost" href="https://painel.sitemob.app/criar-conta.html">Começar com o Starter</a>
+      </article>
+      <article class="plan plan--featured" data-reveal>
+        <span class="plan__badge">★ Mais popular</span>
+        <h3>Pro</h3>
+        <div class="plan__price"><strong>USD 129</strong><small>/mês</small></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Imóveis ilimitados</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio próprio incluído</li>
+        </ul>
+        <a class="btn btn--primary" href="https://painel.sitemob.app/criar-conta.html">Começar com o Pro</a>
+      </article>
+    </div>
+
+    <div class="addons" data-reveal>
+      <div class="addon">
+        <div>
+          <h4>Página de Empreendimento sob medida</h4>
+          <p>Landing page própria por lançamento, comprada quando você precisar</p>
+        </div>
+        <strong>USD 200</strong>
+      </div>
+      <div class="addon">
+        <div>
+          <h4>Configuração de domínio próprio</h4>
+          <p>Pro plano Starter — Pro já inclui</p>
+        </div>
+        <strong>USD 39</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA FINAL ───────────────────────────── -->
+<section class="section cta-final" id="contato">
+  <div class="container">
+    <div class="cta-final__box" data-reveal>
+      <h2>Seu site imobiliário, <em>no ar desde hoje.</em></h2>
+      <p>Crie sua conta grátis, cadastre seu primeiro imóvel e compartilhe no WhatsApp em minutos. Sem cartão, sem compromisso.</p>
+      <div class="cta-final__ctas">
+        <a class="btn btn--primary btn--lg" href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis →</a>
+        <a class="btn btn--ghost btn--lg" href="https://painel.sitemob.app/login.html">Já tenho conta</a>
+      </div>
+      <small>14 dias grátis · Sem cartão de crédito · Cancele quando quiser</small>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ─── FOOTER ──────────────────────────────── -->
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="logo"><span>Sitemob</span><span class="logo__dot">.</span></div>
+    <div class="footer__links">
+      <a href="https://painel.sitemob.app/login.html">Entrar</a>
+      <span>·</span>
+      <a href="https://painel.sitemob.app/criar-conta.html">Criar conta grátis</a>
+    </div>
+    <p class="footer__copy">© 2026 Sitemob. Site e catálogo pra corretores de imóveis.</p>
+  </div>
+</footer>
+
+<script>
+  var burger = document.getElementById('navBurger');
+  var mobileNav = document.getElementById('navMobile');
+  burger.addEventListener('click', function () {
+    var open = mobileNav.classList.toggle('is-open');
+    burger.setAttribute('aria-expanded', String(open));
+  });
+  mobileNav.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A') { mobileNav.classList.remove('is-open'); burger.setAttribute('aria-expanded', 'false'); }
+  });
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { entry.target.classList.add('is-visible'); io.unobserve(entry.target); }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('[data-reveal]').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('is-visible'); });
+  }
+</script>
+
+</body>
+</html>

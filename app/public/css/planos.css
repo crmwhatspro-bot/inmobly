@@ -1,0 +1,134 @@
+/* ════════════════════════════════════════════════
+   PLANOS — seleção de assinatura (planos.html)
+   Usa os tokens/botões do design system (tokens.css +
+   components.css) em vez do app.css antigo — antes as duas folhas
+   redefiniam .btn/.btn--primary com a mesma especificidade e o
+   app.css (carregado por último) ganhava, deixando os botões chatos
+   e sem o hover/shadow do resto do painel.
+   ════════════════════════════════════════════════ */
+
+.planos-wrap { max-width: 1040px; margin: 0 auto; }
+
+.planos-head { text-align: center; margin-bottom: var(--sp-10); }
+.planos-head h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: white;
+  margin-bottom: var(--sp-2);
+}
+.planos-head p {
+  color: var(--clr-text-light-2);
+  font-size: var(--text-base);
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.planos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--sp-6);
+  align-items: stretch;
+}
+
+.plano-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--clr-surface-dark);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-2xl);
+  padding: var(--sp-8);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal) var(--ease-out);
+}
+.plano-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+.plano-card--destaque {
+  background: linear-gradient(180deg, var(--clr-surface-dark-2) 0%, var(--clr-surface-dark) 60%);
+  border-color: var(--clr-accent);
+  box-shadow: var(--shadow-accent);
+}
+.plano-card--destaque:hover { box-shadow: 0 24px 64px rgba(200,146,42,.4), var(--shadow-xl); }
+
+.plano-card__badge {
+  position: absolute;
+  top: 0;
+  right: var(--sp-6);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--clr-accent);
+  color: var(--clr-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-accent);
+}
+
+.plano-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--clr-text-light-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--sp-3);
+}
+.plano-card--destaque h3 { color: var(--clr-accent-light); }
+
+.plano-card__preco {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  color: white;
+  margin-bottom: var(--sp-6);
+}
+.plano-card__preco small {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--clr-text-light-2);
+}
+
+.plano-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  flex: 1;
+}
+.plano-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  color: var(--clr-text-light-2);
+  line-height: 1.4;
+}
+.plano-card li svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--clr-accent-light);
+}
+
+.plano-card .btn { width: 100%; margin-top: auto; }
+
+.planos-foot {
+  text-align: center;
+  color: var(--clr-text-light-2);
+  font-size: var(--text-sm);
+  max-width: 640px;
+  margin: var(--sp-10) auto 0;
+  line-height: 1.6;
+}
+
+.msg { font-size: var(--text-sm); margin-top: var(--sp-4); text-align: center; }
+.msg--ok  { color: #6ee7a0; }
+.msg--err { color: #f87171; }

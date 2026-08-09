@@ -12,6 +12,7 @@ const $ = (id) => document.getElementById(id);
 const form  = $('formConta');
 const slugI = $('slug');
 const preview = $('slugPreview');
+const previewWarn = $('slugPreviewWarn');
 const btn   = $('btnCriar');
 const msg   = $('contaMsg');
 const slugErro = $('slugError');
@@ -28,6 +29,7 @@ function slugify(s) {
 slugI.addEventListener('input', () => {
   const s = slugify(slugI.value);
   preview.textContent = s || 'seu-slug';
+  previewWarn.textContent = s || 'seu-slug';
 });
 
 // Guarda de acesso: precisa estar logado; se já tem tenant, pula direto.

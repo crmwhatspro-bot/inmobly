@@ -77,6 +77,34 @@ body {
   color: var(--clr-text-light-2);
   margin-bottom: var(--sp-3);
 }
+/* ── Quick actions (dashboard) ────────────────── */
+.admin-quickactions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  background: var(--clr-surface-dark);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-8);
+}
+.admin-quickactions__titulo {
+  font-weight: 700;
+  font-size: var(--text-lg);
+  margin-bottom: var(--sp-1);
+}
+.admin-quickactions__sub {
+  font-size: var(--text-sm);
+  color: var(--clr-text-light-2);
+}
+.admin-quickactions__botoes {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
 .metric-card__value {
   font-family: var(--font-mono);
   font-size: var(--text-4xl);
@@ -684,7 +712,12 @@ body {
 /* ── Ajustes mobile gerais do painel ──────────── */
 @media (max-width: 640px) {
   .admin-header { padding: var(--sp-3) var(--sp-4); }
-  .admin-main   { padding: var(--sp-5) var(--sp-4); }
+  /* Mantém a reserva de espaço da bottombar fixa (shell.css) — sem o
+     bottom explícito aqui, este padding: var(--sp-5) var(--sp-4)
+     "achatava" o valor calc(...) do shell.css (mesma especificidade,
+     admin.css carrega depois) e o conteúdo ficava atrás do menu
+     inferior fixo. */
+  .admin-main   { padding: var(--sp-5) var(--sp-4) calc(var(--bottombar-h, 0px) + env(safe-area-inset-bottom) + var(--sp-6)); }
   .admin-tabs   { padding: 0 var(--sp-4); }
   .imv-sec__body { padding: var(--sp-4); }
   .imv-toolbar .btn { width: 100%; justify-content: center; }

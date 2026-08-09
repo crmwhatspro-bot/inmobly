@@ -1,102 +1,92 @@
 /* ══════════════════════════════════════════════════════
    dominio.js — conecta um domínio próprio (ex.: catalogo.suaempresa.com.py)
-   ao site já publicado do tenant (<tenantId>.web.app), usando o recurso
-   sites.domains da Hosting REST API v1beta1 — endpoint diferente do que
-   publicarSite.js usa (aquele publica ARQUIVOS; este associa um DOMÍNIO
-   ao site que já existe). Precisa que o tenant já tenha publicado o site
-   pelo menos uma vez (senão o site do Hosting nem existe ainda).
+   ao catálogo do tenant, via Cloudflare for SaaS (Custom Hostnames) —
+   não mais via Hosting REST API (sites.domains), que amarrava 1 domínio
+   a 1 Hosting site e esbarrava no teto de sites por projeto (ver
+   README, "Limite de sites por projeto"). Agora existe 1 site só
+   (servirSite.js, atrás da zona sitemob.app na Cloudflare) pra
+   qualquer quantidade de corretores.
 
-   Fluxo pro corretor:
-     1. conectarDominio({ dominio }) → cria a associação no Hosting,
-        devolve os registros DNS que ele precisa cadastrar no provedor
-        dele (provisioning.expectedIps — um ou mais IPs pra um
-        registro A; certChallengeDns, se o Hosting pedir um TXT extra
-        pra emitir o certificado).
-     2. O corretor cadastra esses registros no DNS do domínio dele
+   Fluxo pro corretor, bem mais simples que o antigo:
+     1. conectarDominio({ dominio }) → cria o Custom Hostname na
+        Cloudflare, devolve um único valor fixo (cnameTarget,
+        "tenants.sitemob.app") que não muda de corretor pra corretor.
+     2. O corretor cadastra UM CNAME no DNS dele:
+        <dominio> CNAME tenants.sitemob.app
         (fora do nosso controle — provedor de domínio de cada um).
-     3. verificarDominio() → refaz o GET do recurso, atualiza o status
-        cacheado em brokers/{tenantId}.customDomainStatus. Propagação de
-        DNS + emissão do certificado SSL pode levar até 24h segundo a
-        documentação do Firebase Hosting.
-     4. removerDominio() → desfaz a associação, volta a usar só
-        <tenantId>.web.app.
+     3. verificarDominio() → PATCH no mesmo recurso (é o que a doc da
+        Cloudflare pede pra "cutucar" a validação depois que o CNAME já
+        está apontando — sem isso, se o CNAME não existia no momento do
+        POST inicial, a validação pode ficar parada) e devolve o status
+        atualizado, cacheado em brokers/{tenantId}.customDomainStatus.
+     4. removerDominio() → deleta o Custom Hostname, volta a usar só
+        <tenantId>.sitemob.app.
 
-   ⚠️ NÃO TESTADO CONTRA INFRA REAL — a Hosting API v1beta1 pede
-   confirmação de posse do domínio (verificação, historicamente via
-   Search Console/Site Verification) antes de aceitar certos domínios;
-   não está claro pelas fontes disponíveis se o endpoint sites.domains
-   exige isso por fora ou se resolve sozinho pro caso de site
-   multi-tenant como este. Testar com um domínio de verdade antes de
-   oferecer pra cliente — se a Hosting API devolver erro de verificação
-   de posse, esse fluxo credencial extra ainda precisa ser desenhado
-   (Site Verification API, feito manualmente pela equipe Punto Alto por
-   enquanto, não pelo corretor).
+   Diferença estrutural importante em relação ao Hosting: os endpoints
+   de item único (GET/PATCH/DELETE) da API de Custom Hostnames são
+   indexados pelo ID que a Cloudflare gera na criação (um UUID), não
+   pelo nome do domínio — por isso brokers/{tenantId} agora também
+   guarda customDomainId, não só customDomain.
 
-   Mesmo padrão de auth/erro de publicarSite.js: credenciais padrão da
-   function (applicationDefault(), resolvida late — mesmo motivo do
-   comentário em publicarSite.js) e o mesmo papel
-   roles/firebasehosting.admin já concedido pra ela cobre isto também
-   (é a mesma API, só recurso diferente).
+   Usa CLOUDFLARE_API_TOKEN (secret, `firebase functions:secrets:set`)
+   com permissão "Zone → SSL and Certificates → Edit" restrita à zona
+   sitemob.app — validado manualmente contra a API real antes de
+   escrever este arquivo (token ativo, permissão confirmada com
+   HTTP 200 em GET .../custom_hostnames).
    ══════════════════════════════════════════════════════ */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { applicationDefault } = require('firebase-admin/app');
+const { defineSecret } = require('firebase-functions/params');
 const { db } = require('./admin');
 
-const HOSTING_API = 'https://firebasehosting.googleapis.com/v1beta1';
+const CLOUDFLARE_API_TOKEN = defineSecret('CLOUDFLARE_API_TOKEN');
+const CLOUDFLARE_ZONE_ID = '1cf07d69f4d22591a096139670379cc9'; // zona sitemob.app — não é segredo
+const CLOUDFLARE_API = 'https://api.cloudflare.com/client/v4';
 
-let credential = null;
-async function tokenDeAcesso() {
-  if (!credential) credential = applicationDefault();
-  const { access_token } = await credential.getAccessToken();
-  return access_token;
-}
+// Hostname fixo, o mesmo pra qualquer corretor — é o fallback origin
+// configurado no Cloudflare for SaaS da zona, que repassa pro
+// servirSite.js preservando o Host original da requisição.
+const CNAME_TARGET = 'tenants.sitemob.app';
 
-async function chamarApi(url, opcoes = {}) {
-  const token = await tokenDeAcesso();
-  const res = await fetch(url, {
+async function chamarApi(token, caminho, opcoes = {}) {
+  const res = await fetch(`${CLOUDFLARE_API}${caminho}`, {
     ...opcoes,
-    headers: { Authorization: `Bearer ${token}`, ...(opcoes.headers || {}) },
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opcoes.headers || {}) },
   });
-  if (!res.ok) {
-    const texto = await res.text().catch(() => '');
-    const erro = new Error(`${opcoes.method || 'GET'} ${url} → ${res.status}: ${texto}`);
+  const corpo = await res.json().catch(() => null);
+  if (!res.ok || corpo?.success === false) {
+    const erro = new Error(`${opcoes.method || 'GET'} ${caminho} → ${res.status}: ${JSON.stringify(corpo?.errors || corpo)}`);
     erro.status = res.status;
     throw erro;
   }
-  return res.status === 204 ? null : res.json();
+  return corpo.result;
 }
 
 // Bem permissivo de propósito — domínio + subdomínio, sem protocolo,
 // sem caminho. A validação de verdade (se o domínio existe/resolve) é
-// feita pelo próprio Hosting, não por aqui.
+// feita pela própria Cloudflare, não por aqui.
 const DOMINIO_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i;
 
-// Reduz o status bruto da Hosting API (certStatus/dnsStatus/status —
-// nomes de enum não confirmados contra uma resposta real, ver ⚠️ no
-// README) pro estado que brokers/{tenantId}.customDomainStatus grava
-// e que a tela em dominio.html mostra: 'none' (sem domínio),
-// 'requested' (conectado, ainda sem DNS encontrado), 'configuring'
-// (DNS já bate ou o certificado já começou a provisionar) ou 'active'
-// (certificado ativo, servindo de verdade). Fica só nesses 4 valores
-// de propósito — mais simples e estável do que expor os nomes de enum
-// da Hosting API direto pro client.
-function statusResumido(d) {
-  const cert = (d.provisioning?.certStatus || '').toUpperCase();
-  const dns = (d.provisioning?.dnsStatus || '').toUpperCase();
-  if (d.status === 'DOMAIN_ACTIVE' || cert.includes('ACTIVE')) return 'active';
-  if (dns.includes('MATCH') || cert) return 'configuring';
+// Reduz o status bruto do Custom Hostname (status/ssl.status — dezenas
+// de valores possíveis, ver doc da Cloudflare) pro estado que
+// brokers/{tenantId}.customDomainStatus grava e a tela em dominio.html
+// mostra: 'requested' (conectado, cert ainda nem começou), 'configuring'
+// (cert em progresso) ou 'active' (servindo de verdade). Fica só nesses
+// valores de propósito — mais simples e estável do que expor os nomes
+// de enum da Cloudflare direto pro client.
+function statusResumido(h) {
+  const status = (h.status || '').toLowerCase();
+  const sslStatus = (h.ssl?.status || '').toLowerCase();
+  if (status === 'active' && sslStatus === 'active') return 'active';
+  if (sslStatus && sslStatus !== 'initializing') return 'configuring';
   return 'requested';
 }
 
-// Resume o objeto Domain (Hosting API) pro shape que a tela em
-// dominio.html precisa — nunca devolve o objeto cru pro client.
-function resumirDomain(d) {
+function resumirCustomHostname(h) {
   return {
-    dominio: d.domainName,
-    status: statusResumido(d),
-    expectedIps: d.provisioning?.expectedIps || [],
-    discoveredIps: d.provisioning?.discoveredIps || [],
+    dominio: h.hostname,
+    status: statusResumido(h),
+    cnameTarget: CNAME_TARGET,
   };
 }
 
@@ -108,7 +98,7 @@ async function tenantIdDoRequest(request) {
 }
 
 exports.conectarDominio = onCall(
-  { region: 'southamerica-east1', timeoutSeconds: 60, memory: '256MiB' },
+  { region: 'southamerica-east1', timeoutSeconds: 60, memory: '256MiB', secrets: [CLOUDFLARE_API_TOKEN] },
   async (request) => {
     const tenantId = await tenantIdDoRequest(request);
     const dominio = String(request.data?.dominio || '').trim().toLowerCase();
@@ -121,25 +111,23 @@ exports.conectarDominio = onCall(
       throw new HttpsError('failed-precondition', 'Publique seu site em "Meu Site" antes de conectar um domínio.');
     }
 
-    let domain;
+    const token = CLOUDFLARE_API_TOKEN.value();
+    let hostname;
     try {
-      // `site` é obrigatório no corpo, tem que bater com o `parent` da URL —
-      // confirmado contra infra real: sem ele a API rejeita com 400
-      // "Mismatched sites in request" (domain.site vinha vazio).
-      domain = await chamarApi(`${HOSTING_API}/sites/${tenantId}/domains`, {
+      hostname = await chamarApi(token, `/zones/${CLOUDFLARE_ZONE_ID}/custom_hostnames`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domainName: dominio, site: tenantId }),
+        body: JSON.stringify({ hostname: dominio, ssl: { method: 'http', type: 'dv' } }),
       });
     } catch (err) {
-      console.error(`[conectarDominio] falha associando "${dominio}" ao site "${tenantId}":`, err);
+      console.error(`[conectarDominio] falha criando custom hostname "${dominio}" (tenant "${tenantId}"):`, err);
       if (err.status === 409) throw new HttpsError('already-exists', 'Esse domínio já está conectado a outro site.');
       throw new HttpsError('internal', 'Não foi possível conectar o domínio agora. Tente de novo em instantes.');
     }
 
-    const resumo = resumirDomain(domain);
+    const resumo = resumirCustomHostname(hostname);
     await db.doc('brokers/' + tenantId).update({
       customDomain: dominio,
+      customDomainId: hostname.id,
       customDomainStatus: resumo.status,
       updatedAt: new Date(),
     });
@@ -149,47 +137,60 @@ exports.conectarDominio = onCall(
 );
 
 exports.verificarDominio = onCall(
-  { region: 'southamerica-east1', timeoutSeconds: 30, memory: '256MiB' },
+  { region: 'southamerica-east1', timeoutSeconds: 30, memory: '256MiB', secrets: [CLOUDFLARE_API_TOKEN] },
   async (request) => {
     const tenantId = await tenantIdDoRequest(request);
     const brokerSnap = await db.doc('brokers/' + tenantId).get();
-    const dominio = brokerSnap.data()?.customDomain;
-    if (!dominio) throw new HttpsError('failed-precondition', 'Nenhum domínio conectado ainda.');
+    const { customDomain, customDomainId } = brokerSnap.data() || {};
+    if (!customDomain || !customDomainId) {
+      throw new HttpsError('failed-precondition', 'Nenhum domínio conectado ainda.');
+    }
 
-    let domain;
+    const token = CLOUDFLARE_API_TOKEN.value();
+    let hostname;
     try {
-      domain = await chamarApi(`${HOSTING_API}/sites/${tenantId}/domains/${encodeURIComponent(dominio)}`);
+      // PATCH (não GET) de propósito — é o que a doc da Cloudflare pede
+      // pra "cutucar" a revalidação quando o CNAME não estava apontando
+      // ainda no momento do POST inicial (ver comentário no topo do
+      // arquivo). Reenviar a mesma config de ssl é inofensivo quando já
+      // está tudo certo, e é o que reflete o estado mais atual.
+      hostname = await chamarApi(token, `/zones/${CLOUDFLARE_ZONE_ID}/custom_hostnames/${customDomainId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ssl: { method: 'http', type: 'dv' } }),
+      });
     } catch (err) {
-      console.error(`[verificarDominio] falha consultando "${dominio}" no site "${tenantId}":`, err);
+      console.error(`[verificarDominio] falha consultando "${customDomain}" (tenant "${tenantId}"):`, err);
       throw new HttpsError('internal', 'Não foi possível verificar o domínio agora. Tente de novo em instantes.');
     }
 
-    const resumo = resumirDomain(domain);
+    const resumo = resumirCustomHostname(hostname);
     await db.doc('brokers/' + tenantId).update({ customDomainStatus: resumo.status, updatedAt: new Date() });
     return resumo;
   }
 );
 
 exports.removerDominio = onCall(
-  { region: 'southamerica-east1', timeoutSeconds: 30, memory: '256MiB' },
+  { region: 'southamerica-east1', timeoutSeconds: 30, memory: '256MiB', secrets: [CLOUDFLARE_API_TOKEN] },
   async (request) => {
     const tenantId = await tenantIdDoRequest(request);
     const brokerSnap = await db.doc('brokers/' + tenantId).get();
-    const dominio = brokerSnap.data()?.customDomain;
-    if (!dominio) return { ok: true }; // nada pra remover — idempotente
+    const { customDomainId } = brokerSnap.data() || {};
+    if (!customDomainId) return { ok: true }; // nada pra remover — idempotente
 
+    const token = CLOUDFLARE_API_TOKEN.value();
     try {
-      await chamarApi(`${HOSTING_API}/sites/${tenantId}/domains/${encodeURIComponent(dominio)}`, { method: 'DELETE' });
+      await chamarApi(token, `/zones/${CLOUDFLARE_ZONE_ID}/custom_hostnames/${customDomainId}`, { method: 'DELETE' });
     } catch (err) {
-      // 404 = já não existe do lado do Hosting — segue e limpa o Firestore mesmo assim
+      // 404 = já não existe do lado da Cloudflare — segue e limpa o Firestore mesmo assim
       if (err.status !== 404) {
-        console.error(`[removerDominio] falha removendo "${dominio}" do site "${tenantId}":`, err);
+        console.error(`[removerDominio] falha removendo custom hostname (tenant "${tenantId}"):`, err);
         throw new HttpsError('internal', 'Não foi possível remover o domínio agora. Tente de novo em instantes.');
       }
     }
 
     await db.doc('brokers/' + tenantId).update({
       customDomain: null,
+      customDomainId: null,
       customDomainStatus: 'none',
       updatedAt: new Date(),
     });

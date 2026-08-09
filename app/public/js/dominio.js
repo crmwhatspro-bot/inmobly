@@ -1,8 +1,11 @@
 // ════════════════════════════════════════════════
 // dominio.html — conectar/verificar/remover um domínio próprio no
 // catálogo público do tenant, via as functions de functions/dominio.js
-// (conectarDominio/verificarDominio/removerDominio — Hosting REST API
-// v1beta1, recurso sites.domains). broker.customDomain/customDomainStatus
+// (conectarDominio/verificarDominio/removerDominio — Cloudflare for
+// SaaS, recurso Custom Hostnames da zona sitemob.app). Ao contrário do
+// esquema antigo (Hosting REST API, vários IPs de registro A por
+// domínio), agora é sempre o mesmo CNAME fixo (cnameTarget) pra
+// qualquer corretor. broker.customDomain/customDomainStatus
 // (brokers/{tenantId}) são só um CACHE do último status conhecido — a
 // fonte de verdade é sempre a resposta da function, nunca escrita
 // direto pelo client (ver firestore.rules: esses campos não estão na
@@ -64,14 +67,10 @@ function renderConectado(resumo) {
   statusBadgeEl.className = 'dm-status-badge dm-status-badge--' + sit.badge;
   statusExplicEl.textContent = sit.explicacao;
 
-  if (resumo.expectedIps?.length) {
-    dnsTable.hidden = false;
-    dnsBody.innerHTML = resumo.expectedIps.map(ip => `
-      <tr><td>A</td><td>${resumo.dominio}</td><td>${ip}</td></tr>
-    `).join('');
-  } else {
-    dnsTable.hidden = true;
-  }
+  dnsTable.hidden = false;
+  dnsBody.innerHTML = `
+    <tr><td>CNAME</td><td>${resumo.dominio}</td><td>${resumo.cnameTarget}</td></tr>
+  `;
 }
 
 function renderDesconectado() {
@@ -82,7 +81,7 @@ function renderDesconectado() {
 
 function atualizarUrlAtual() {
   const ativo = broker?.customDomain && broker?.customDomainStatus === 'active';
-  const url = ativo ? `https://${broker.customDomain}` : `https://${tenantId}.web.app`;
+  const url = ativo ? `https://${broker.customDomain}` : `https://${tenantId}.sitemob.app`;
   urlAtualEl.href = url;
   urlAtualEl.textContent = url;
 }
@@ -124,7 +123,7 @@ verificarBtn.addEventListener('click', async () => {
 });
 
 removerBtn.addEventListener('click', async () => {
-  if (!confirm(`Remover o domínio "${broker.customDomain}"? Seu catálogo volta a ficar disponível só em ${tenantId}.web.app.`)) return;
+  if (!confirm(`Remover o domínio "${broker.customDomain}"? Seu catálogo volta a ficar disponível só em ${tenantId}.sitemob.app.`)) return;
 
   removerBtn.disabled = true;
   try {
@@ -149,9 +148,9 @@ initShell({ active: 'dominio', title: 'Domínio' }).then((resultado) => {
     renderConectado({
       dominio: broker.customDomain,
       status: broker.customDomainStatus || 'requested',
-      expectedIps: [],
+      cnameTarget: 'tenants.sitemob.app',
     });
-    // busca o status real (os expectedIps não vêm do cache do Firestore)
+    // busca o status real (o cache do Firestore não tem status atualizado)
     verificarDominioFn().then(({ data }) => {
       broker.customDomainStatus = data.status;
       renderConectado(data);
