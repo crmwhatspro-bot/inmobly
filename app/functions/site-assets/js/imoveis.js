@@ -427,9 +427,19 @@ function initDetalhe() {
   }, { passive: true });
 }
 
+// site-carregando também tem display:flex fixo inline no HTML (pro
+// spinner já aparecer centralizado antes do JS carregar) — mesmo motivo
+// do comentário abaixo sobre indisponivelEl, precisa zerar o inline
+// style aqui também, senão o spinner nunca some de verdade, só o
+// [hidden] é setado (sem efeito visual nenhum contra um style inline).
+function esconderCarregando() {
+  carregandoEl.style.display = 'none';
+  carregandoEl.hidden = true;
+}
+
 // ── Indisponível (tenant não existe / não publicado) ──────────
 function mostrarIndisponivel() {
-  carregandoEl.hidden = true;
+  esconderCarregando();
   conteudoEl.hidden = true;
   // display setado aqui, não fixo no HTML — um <div hidden> com
   // display:flex fixo no style continua visível de qualquer jeito,
@@ -443,7 +453,7 @@ function mostrarIndisponivel() {
 // verdade — antes disso fica o spinner, nunca o texto padrão estático
 // do HTML (que já não existe mais, mas por segurança).
 function mostrarConteudo() {
-  carregandoEl.hidden = true;
+  esconderCarregando();
   conteudoEl.hidden = false;
 }
 
