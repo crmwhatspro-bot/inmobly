@@ -15,14 +15,16 @@
 import { db, auth } from './firebase.js';
 import { doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
-import { initShell, pageSignal } from './shell.js';
+import { initShell, pageSignal, atualizarStatusSite } from './shell.js';
 
 const $ = (id) => document.getElementById(id);
 
 // Status / publicação
 const publicarSwitch  = $('msPublicarSwitch');
+const publicarBtn     = $('msPublicarBtn');
 const atualizarBtn    = $('msAtualizarBtn');
 const verSiteLink     = $('msVerSite');
+const statusBloco     = $('msStatus');
 const statusTitulo    = $('msStatusTitulo');
 const statusSub       = $('msStatusSub');
 
@@ -383,6 +385,17 @@ function atualizarStatusTexto() {
   atualizarBtn.hidden = !publicado;
   verSiteLink.hidden = !publicado;
   if (publicado) verSiteLink.href = `https://${tenantId}.sitemob.app/`;
+
+  // Botão explícito ao lado do switch enquanto está offline: o switch
+  // sozinho lia como configuração, e quem não sabia que era ali que o
+  // site ia pro ar não tinha por que mexer nele.
+  statusBloco.classList.toggle('ms-status--offline', !publicado);
+  publicarBtn.hidden = publicado;
+
+  // Selo "Offline" do menu — a sidebar não remonta na navegação SPA,
+  // então sem esta chamada ele continuaria na tela depois de publicar,
+  // até o próximo carregamento de página.
+  atualizarStatusSite(broker);
 }
 
 async function alternarPublicacao() {
@@ -395,6 +408,7 @@ async function alternarPublicacao() {
   }
 
   publicarSwitch.disabled = true;
+  publicarBtn.disabled = true;
   statusTitulo.textContent = querPublicar ? 'Publicando... (pode levar alguns segundos)' : 'Despublicando...';
   statusSub.textContent = '';
 
@@ -411,6 +425,7 @@ async function alternarPublicacao() {
     mostrarMsg(contatoMsg, `Não foi possível ${querPublicar ? 'publicar' : 'despublicar'}: ${err.message}`, 'erro');
   } finally {
     publicarSwitch.disabled = false;
+    publicarBtn.disabled = false;
     atualizarStatusTexto();
   }
 }
@@ -439,6 +454,13 @@ salvarTextosBtn.addEventListener('click', salvarTextos);
 salvarContatoBtn.addEventListener('click', salvarContato);
 salvarGtmBtn.addEventListener('click', salvarGtm);
 publicarSwitch.addEventListener('change', alternarPublicacao);
+// Botão e switch são a MESMA ação — o botão só marca o switch antes,
+// porque alternarPublicacao() decide o que fazer a partir de .checked
+// (inclusive no rollback do catch, que desmarca se der erro).
+publicarBtn.addEventListener('click', () => {
+  publicarSwitch.checked = true;
+  alternarPublicacao();
+});
 atualizarBtn.addEventListener('click', atualizarSitePublicado);
 
 [whatsappInput, nomeInput, headlineInput, subheadlineInput, sobreInput, keywordsInput, emailInput, instagramInput].forEach(el => {

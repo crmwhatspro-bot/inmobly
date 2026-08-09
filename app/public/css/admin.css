@@ -90,6 +90,12 @@ body {
   padding: var(--sp-6);
   margin-bottom: var(--sp-8);
 }
+/* Estado "site não publicado" — borda de alerta pra a chamada não passar
+   como mais um bloco informativo do dashboard. */
+.admin-quickactions--alerta {
+  border-color: rgba(192, 57, 43, 0.5);
+  background: linear-gradient(var(--clr-error-bg), var(--clr-error-bg)), var(--clr-surface-dark);
+}
 .admin-quickactions__titulo {
   font-weight: 700;
   font-size: var(--text-lg);
@@ -105,6 +111,22 @@ body {
   flex-wrap: wrap;
 }
 
+/* "não publicado" ao lado do endereço do catálogo no card Negócio —
+   sem isso o slug aparecia sozinho e passava a impressão de já estar
+   no ar. */
+.metric-card__site-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f1a79c;
+  background: var(--clr-error-bg);
+  border: 1px solid rgba(192, 57, 43, 0.45);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  vertical-align: 1px;
+}
 .metric-card__value {
   font-family: var(--font-mono);
   font-size: var(--text-4xl);
@@ -200,6 +222,23 @@ body {
 .imv-toolbar__count { font-size: var(--text-xs); color: var(--clr-text-light-2); }
 .imv-toolbar .btn svg { flex-shrink: 0; }
 
+/* Nota explicativa neutra — informa o que a tela é, sem a urgência
+   visual do .imv-plano-banner (âmbar), que sinaliza saldo/limite. */
+.imv-nota-contexto {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--text-sm);
+  color: var(--clr-text-light-2);
+  margin-bottom: var(--sp-4);
+}
+.imv-nota-contexto a {
+  color: var(--clr-accent-light);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .imv-plano-banner {
   background: rgba(180, 83, 9, 0.12);
   border: 1px solid rgba(180, 83, 9, 0.35);

@@ -64,7 +64,7 @@ function saldo() {
 // ════════════════════════════════════════════════
 // Gate de acesso
 // ════════════════════════════════════════════════
-initShell({ active: 'paginas', title: 'Páginas de Empreendimento' }).then((resultado) => {
+initShell({ active: 'paginas', title: 'Empreendimentos' }).then((resultado) => {
   tenantId = resultado.tenantId;
   broker = resultado.broker;
   carregarLista();

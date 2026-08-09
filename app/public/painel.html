@@ -54,7 +54,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="metric-card">
           <p class="metric-card__label">Negócio</p>
           <p class="metric-card__value" style="font-size: var(--text-2xl);" id="nomeNegocio">—</p>
-          <p style="color:var(--clr-text-light-2); font-size:var(--text-xs); margin-top:var(--sp-2);"><span id="slugAtual">—</span>.sitemob.app</p>
+          <p style="color:var(--clr-text-light-2); font-size:var(--text-xs); margin-top:var(--sp-2);"><span id="slugAtual">—</span>.sitemob.app <span class="metric-card__site-tag" id="siteOfflineTag" hidden>não publicado</span></p>
         </div>
         <div class="metric-card">
           <p class="metric-card__label">Plano</p>
@@ -71,12 +71,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
       </div>
 
-      <div class="admin-quickactions">
+      <!-- Conteúdo reescrito por painel.js conforme broker.published —
+           o markup abaixo é o estado "site no ar". -->
+      <div class="admin-quickactions" id="quickActions">
         <div>
-          <p class="admin-quickactions__titulo">Comece por aqui</p>
-          <p class="admin-quickactions__sub">Cadastre seus imóveis e acompanhe seu plano.</p>
+          <p class="admin-quickactions__titulo" id="qaTitulo">Comece por aqui</p>
+          <p class="admin-quickactions__sub" id="qaSub">Cadastre seus imóveis e acompanhe seu plano.</p>
         </div>
-        <div class="admin-quickactions__botoes">
+        <div class="admin-quickactions__botoes" id="qaBotoes">
           <a href="admin.html" class="btn btn--accent btn--md">Gerenciar meus imóveis →</a>
           <a href="planos.html" class="btn btn--outline-light btn--md">Ver / trocar plano</a>
         </div>

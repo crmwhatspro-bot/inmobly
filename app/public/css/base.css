@@ -1,6 +1,15 @@
 /* ── Reset ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* O display:none do atributo [hidden] vem do stylesheet do navegador, e
+   QUALQUER `display` declarado por nós vence essa origem — então um
+   `.btn` (display:inline-flex) marcado com hidden continuava na tela.
+   Já tinha acontecido em três lugares (os botões de Ver site/Atualizar
+   do Meu Site, o "Aplicar cupom" de Indicações e o "Voltar" do tour),
+   sempre em silêncio: o JS mandava esconder e nada acontecia.
+   !important é o que faz isso valer contra qualquer classe. */
+[hidden] { display: none !important; }
+
 html {
   font-size: 16px;
   scroll-behavior: smooth;

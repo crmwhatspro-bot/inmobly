@@ -46,9 +46,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     border-radius: var(--radius-lg);
     margin-bottom: var(--sp-5);
   }
+  /* Enquanto o catálogo não está publicado o bloco deixa de ser um
+     campo de configuração e vira aviso: um switch cinza comunica
+     "preferência", não "falta uma ação sua". Ver .ms-status__publicar,
+     que é o botão que aparece junto. */
+  .ms-status--offline {
+    background: var(--clr-error-bg);
+    border-color: rgba(192, 57, 43, 0.5);
+  }
   .ms-status__switch { flex: 1 1 220px; min-width: 0; }
   .ms-status__switch strong { color: white; }
-  .ms-status__actions { margin-left: auto; display: flex; gap: var(--sp-2); flex-shrink: 0; }
+  .ms-status__actions { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+  .ms-status__publicar { flex-shrink: 0; white-space: nowrap; }
   .ms-status__icon-btn {
     width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
@@ -215,6 +224,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </span>
           </label>
           <div class="ms-status__actions">
+            <button type="button" class="btn btn--accent btn--md ms-status__publicar" id="msPublicarBtn" hidden>Publicar meu site</button>
             <a href="#" id="msVerSite" target="_blank" rel="noopener" class="ms-status__icon-btn" hidden title="Abrir site publicado" aria-label="Abrir site publicado">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>

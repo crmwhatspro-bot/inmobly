@@ -27,13 +27,17 @@ const ICONS = {
 
 // `primary: true` marca os itens que também aparecem na bottombar do
 // mobile (só os 4 que já têm UI de verdade — Domínio é stub "Em breve",
-// e Páginas fica só no drawer/sidebar completa por enquanto pra não
-// disputar espaço fixo com os itens de uso diário).
+// e Empreendimentos fica só no drawer/sidebar completa por enquanto pra
+// não disputar espaço fixo com os itens de uso diário).
+//
+// O rótulo é "Empreendimentos", não "Páginas": um testador leu "Páginas"
+// como "as páginas do meu site", concluiu que era ali que o site ia pro
+// ar e achou que estava no ar sem nunca ter passado por Meu Site.
 const NAV = [
   { key: 'dashboard', href: 'painel.html',              label: 'Dashboard',      icon: ICONS.dashboard, primary: true },
   { key: 'imoveis',   href: 'admin.html',                label: 'Meus Imóveis',   icon: ICONS.imoveis,   primary: true },
   { key: 'site',      href: 'meu-site.html',              label: 'Meu Site',       icon: ICONS.site,      primary: true },
-  { key: 'paginas',   href: 'paginas.html',               label: 'Páginas',        icon: ICONS.paginas },
+  { key: 'paginas',   href: 'paginas.html',               label: 'Empreendimentos', icon: ICONS.paginas },
   { key: 'dominio',   href: 'dominio.html',               label: 'Domínio',        icon: ICONS.dominio },
   { key: 'plano',     href: 'planos.html',                label: 'Plano',          icon: ICONS.plano,      primary: true },
   { key: 'indicacoes', href: 'indicacoes.html',            label: 'Indique e ganhe', icon: ICONS.indicacoes },
@@ -43,6 +47,7 @@ const NAV = [
 // sidebar. Adicionar um item no topo a cada mudança relevante pro
 // usuário final (não é changelog técnico interno).
 const UPDATES = [
+  { date: '2026-08-09', title: 'Ficou mais claro quando o site está no ar', desc: 'O menu avisa "Offline" enquanto seu catálogo não estiver publicado, e o Dashboard mostra o caminho pra publicar. A aba "Páginas" agora se chama "Empreendimentos" — o que muda é só o nome.' },
   { date: '2026-08-09', title: 'Indique e ganhe', desc: 'Indique outros corretores e acumule desconto na sua assinatura (até 50%). Agora dá pra aplicar o cupom de indicação na sua assinatura ativa com um clique, direto pelo painel.' },
   { date: '2026-08-08', title: 'Sitemob é o novo nome', desc: 'A plataforma mudou de nome — o sistema e seus dados continuam os mesmos, só a marca ficou nova.' },
   { date: '2026-08-08', title: 'Mais estabilidade no Meu Site', desc: 'Corrigido um caso em que a pré-visualização do site podia ficar carregando pra sempre, e um ajuste no tour de boas-vindas no celular.' },
@@ -65,12 +70,13 @@ function avatarHTML(user, size) {
 
 function renderSidebar(active) {
   const navHTML = NAV.map(item => `
-    <a class="admin-nav__btn${item.key === active ? ' active' : ''}${item.soon ? ' admin-nav__btn--soon' : ''}" href="${item.href}" data-nav-key="${item.key}" data-tour="nav-desktop-${item.key}">
+    <a class="admin-nav__btn${item.key === active ? ' active' : ''}${item.soon ? ' admin-nav__btn--soon' : ''}${item.key === 'site' ? ' admin-nav__btn--tagged' : ''}" href="${item.href}" data-nav-key="${item.key}" data-tour="nav-desktop-${item.key}">
       <span class="admin-nav__btn-main">
         <span class="admin-nav__icon" aria-hidden="true">${item.icon}</span>
         <span class="admin-nav__label">${item.label}</span>
       </span>
       ${item.soon ? '<span class="admin-nav__soon-tag">Em breve</span>' : ''}
+      ${item.key === 'site' ? '<span class="admin-nav__offline-tag" id="shellSiteOfflineTag" hidden>Offline</span>' : ''}
     </a>`).join('');
 
   return `
@@ -150,6 +156,7 @@ function renderBottomBar(active) {
   const itens = NAV.filter(item => item.primary).map(item => `
     <a class="admin-bottombar__btn${item.key === active ? ' active' : ''}" href="${item.href}" data-nav-key="${item.key}" aria-label="${item.label}" data-tour="nav-mobile-${item.key}">
       ${item.icon}
+      ${item.key === 'site' ? '<span class="admin-bottombar__offline-dot" id="shellSiteOfflineDot" hidden></span>' : ''}
     </a>`).join('');
   return `<nav class="admin-bottombar" aria-label="Navegação principal">${itens}</nav>`;
 }
@@ -283,6 +290,23 @@ function preencherPerfil(user, broker, tenantId) {
   assinarLink.hidden = broker?.status === 'active';
 
   atualizarUso(broker);
+  atualizarStatusSite(broker);
+}
+
+// Selo "Offline" no item Meu Site, visível em TODAS as páginas enquanto
+// o catálogo não estiver publicado. Mora no shell de propósito: um aviso
+// dentro de meu-site.html só é visto por quem já entendeu que é ali que
+// o site vai pro ar — e é justamente esse o entendimento que falta.
+//
+// Exportado (como atualizarUso) pra meu-site.js poder chamar logo depois
+// de publicar/despublicar: com o router SPA a sidebar não remonta, então
+// sem isso o selo só sumiria no próximo carregamento de página.
+export function atualizarStatusSite(broker) {
+  const offline = broker?.published !== true;
+  const tag = document.getElementById('shellSiteOfflineTag');
+  const dot = document.getElementById('shellSiteOfflineDot');
+  if (tag) tag.hidden = !offline;
+  if (dot) dot.hidden = !offline;
 }
 
 // Separado de preencherPerfil() pra dar pra chamar de novo depois de

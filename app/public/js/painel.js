@@ -30,4 +30,25 @@ initShell({ active: 'dashboard', title: 'Dashboard' }).then(({ tenantId, broker 
   $('contatosNota').textContent = total
     ? `${total} clique(s) no total, desde sempre`
     : 'ainda sem cliques — publique seu site pra começar a receber';
+
+  mostrarStatusDoSite(broker);
 });
+
+// O dashboard é a primeira tela depois do login, e era onde a confusão
+// nascia: ele exibia `slug.sitemob.app` como se o endereço já estivesse
+// no ar, e o "Comece por aqui" apontava pra Meus Imóveis — publicar o
+// site não aparecia em lugar nenhum. Enquanto broker.published !== true,
+// o endereço vem marcado como não publicado e a chamada principal vira
+// "Publicar meu site".
+function mostrarStatusDoSite(broker) {
+  const publicado = broker.published === true;
+  $('siteOfflineTag').hidden = publicado;
+  if (publicado) return;
+
+  $('quickActions').classList.add('admin-quickactions--alerta');
+  $('qaTitulo').textContent = 'Seu site ainda não está no ar';
+  $('qaSub').textContent = 'Seu catálogo só fica acessível pros seus clientes depois que você publica, na aba Meu Site.';
+  $('qaBotoes').innerHTML = `
+    <a href="meu-site.html" class="btn btn--accent btn--md">Publicar meu site →</a>
+    <a href="admin.html" class="btn btn--outline-light btn--md">Gerenciar meus imóveis</a>`;
+}
