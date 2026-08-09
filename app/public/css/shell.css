@@ -472,6 +472,16 @@ body {
   border-radius: var(--radius-lg);
   animation: pa-tour-pulse 1.6s ease-in-out infinite;
 }
+/* Passo 1 do tour mira a .admin-bottombar inteira (não um botão de
+   dentro dela) — como as duas classes têm a mesma especificidade, o
+   "position: relative" acima ganhava do "position: fixed" dela por
+   vir depois no arquivo, tirando a bottombar do lugar fixo no rodapé
+   e derrubando ela pro fim do documento (fora da tela, "vazando"
+   embaixo). z-index já funciona em position:fixed, então não precisa
+   do relative aqui — só restaura o fixed. */
+.admin-bottombar.pa-tour-highlight {
+  position: fixed;
+}
 @keyframes pa-tour-pulse {
   0%, 100% { box-shadow: 0 0 0 3px var(--clr-accent), 0 0 20px 2px var(--clr-accent-glow); }
   50%      { box-shadow: 0 0 0 5px var(--clr-accent), 0 0 28px 6px var(--clr-accent-glow); }
