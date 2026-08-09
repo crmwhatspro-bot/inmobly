@@ -24,8 +24,9 @@ function renderIndicacoes(broker, tenantId) {
 
   const codigos = broker.referral?.codes || [];
   const convertidas = broker.referral?.convertidas || 0;
+  const economiaAcumulada = codigos.length * 10;
   indicacoesStatusEl.textContent = codigos.length
-    ? `${convertidas} de ${MAX_INDICACOES_RECOMPENSADAS} indicações premiadas — você tem ${codigos.length} cupom(ns) de 10% pra usar, sem prazo.`
+    ? `${convertidas} de ${MAX_INDICACOES_RECOMPENSADAS} indicações premiadas — você tem ${codigos.length} cupom(ns) de 10% pra usar (um por vez, sem prazo), até ${economiaAcumulada}% de economia acumulada.`
     : 'Ainda sem indicações premiadas. Compartilhe seu link — o cupom aparece aqui assim que quem você indicou assinar um plano pago.';
 
   if (!codigos.length) return;
