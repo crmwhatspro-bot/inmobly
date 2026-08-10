@@ -61,8 +61,9 @@ public/inmobiliario.html (puntoalto/v1, outro repo)
                           location.hostname (?t=slug só serve de fallback
                           pra testar sem ter publicado ainda)
         │
-  planos.html (Plano), em-breve.html (Leads / Domínio / Perfil /
-  Configurações — stubs honestos, sem funcionalidade ainda)
+  planos.html (Plano), perfil.html (Dados do perfil — no menu da foto,
+  não na sidebar), em-breve.html (Leads / Configurações — stubs
+  honestos, sem funcionalidade ainda)
 ```
 
 Um usuário que já tem tenant e já fez o tour pula direto pra `painel.html` —
@@ -94,9 +95,10 @@ elas — só dava pra "descobrir" outra página por um botão específico.
   quando `status === 'active'`, texto muda conforme o motivo) e o avatar
   (foto do Google se existir, senão iniciais do nome).
 - `em-breve.html`/`js/em-breve.js` — placeholder genérico pros itens do
-  menu sem UI ainda; `?f=perfil|configuracoes` decide o título/texto
-  mostrado (Leads virou Páginas, Domínio ganhou página própria — nenhum
-  dos dois usa mais esse stub).
+  menu sem UI ainda; `?f=configuracoes` decide o título/texto mostrado
+  (Leads virou Páginas, Domínio ganhou página própria e o perfil ganhou
+  `perfil.html` — nenhum dos três usa mais esse stub; `?f=` desconhecido
+  cai no texto genérico "Em breve").
 - **Bug real corrigido: campos de `meu-site.html`/`dominio.html`
   renderizavam como formulário de tema claro dentro do painel escuro**
   — `.form-label`/`.form-input`/`.form-select`/`.form-textarea` de
@@ -539,6 +541,45 @@ acima do input, já que a maioria dos corretores nunca mexeu nisso.
   (`#pa-gtm-script`) caso `aplicarPerfil()` seja chamado mais de uma
   vez.
 
+### Dados do perfil (`perfil.html`)
+
+Cadastro do CLIENTE — o que "Meu Site" não é. Sai do menu da foto no
+canto superior direito (antes ia pro stub `em-breve.html?f=perfil`) e
+mora fora da sidebar de propósito: é uma tela que se abre uma vez e
+raramente se volta, não uma área de uso diário.
+
+- **Divisão entre público e privado é a regra que organiza a página.**
+  `meu-site.html` edita o que o VISITANTE vê (nome da empresa, WhatsApp,
+  logo, `contactEmail`); `perfil.html` edita o que só a gente vê
+  (`ownerName`, `contactPhone`, `accountEmail`, documento, registro,
+  cidade/país). Cada campo novo daqui ficou **fora** de
+  `functions/perfilPayload.js`, que é a whitelist do que vaza pro
+  catálogo.
+- **`accountEmail` existe separado de `contactEmail`** justamente por
+  causa disso. O pedido era "puxar o Gmail do login como e-mail de
+  contato do cliente" — e o campo já pré-preenchido com `user.email` só
+  é seguro porque é privado: fazer o mesmo com `contactEmail`
+  publicaria o Gmail pessoal do corretor no site dele no primeiro
+  "Salvar". O e-mail do login (`email`) continua read-only, só exibido.
+- **Bloco "Sua conta" é leitura pura** — foto e e-mail vêm do Google
+  (não dá pra editar sem trocar de conta), plano/`tenantId`/"cliente
+  desde" vêm da assinatura, nome da empresa tem link pra Meu Site. Um
+  formulário com campos que não salvam seria pior que uma lista.
+- **`rotuloPlano()` virou export do `shell.js`** pra a página mostrar
+  exatamente o mesmo texto de plano da sidebar (inclusive o contador
+  regressivo do trial), em vez de uma segunda versão da regra.
+- **`ownerName` passa na frente do `displayName` do Google** no nome
+  exibido no menu da conta: é o nome que o corretor digitou, contra um
+  que pode ser apelido ou de quem criou a conta pela equipe.
+- **`maxlength` no HTML espelha o teto das rules** (`textoOpcional`) —
+  sem isso o único aviso de "passou do tamanho" seria um
+  `permission-denied` no salvar, que não explica nada.
+
+⚠️  Depende de `firebase deploy --only firestore:rules`: os 9 campos
+novos estão no `hasOnly` do update de `brokers/{tenantId}`, e sem as
+regras novas em produção **todo salvamento do perfil falha em
+`permission-denied`**.
+
 ### Product tour — abandono expira
 
 `js/product-tour.js` mostrava o passo salvo (`localStorage`,
@@ -573,8 +614,8 @@ normal (nova Checkout Session) em vez de travar o usuário.
 avulsa) foi testado contra o Stripe real ainda. Antes de testar com
 cartão de teste: confirmar que `STRIPE_SECRET_KEY` é uma chave de
 **test mode** (`sk_test_...`), que os Prices existem no Stripe com os
-`lookup_key` exatos usados no código (`inmobly_starter_monthly`,
-`inmobly_pro_monthly`, `inmobly_emprendimento_page`), e que o webhook
+`lookup_key` exatos usados no código (`sitemob_starter_monthly`,
+`sitemob_pro_monthly`, `sitemob_emprendimento_page`), e que o webhook
 endpoint em Stripe Dashboard → Developers → Webhooks aponta pra
 `stripeWebhook` desse projeto com os 4 eventos certos e o
 `STRIPE_WEBHOOK_SECRET` correspondente configurado.
@@ -591,7 +632,7 @@ por empreendimento, US$ 400 de tabela / US$ 200 de lançamento (cupom
 
 - **Compra é pré-paga, criação é separada** — clicar em "Comprar
   página" abre o checkout do Stripe (`priceLookupKey:
-  'inmobly_emprendimento_page'`, `mode: 'payment'`). Quando o webhook
+  'sitemob_emprendimento_page'`, `mode: 'payment'`). Quando o webhook
   processa o `checkout.session.completed`, credita
   `brokers/{tenantId}.usage.paginasCompradas` (+1, protegido contra
   reentrega do mesmo evento — só incrementa se o doc de `purchases/`
@@ -1031,6 +1072,21 @@ brokers/{tenantId}                // doc id = slug escolhido no signup
 │                                              site público (além do whatsapp) —
 │                                              contactEmail e não `email` de propósito,
 │                                              ver nota acima
+├─ ownerName, contactPhone, accountEmail: string
+│                                             ← novo — perfil.html, cadastro do
+│                                              corretor. PRIVADOS: nenhum entra em
+│                                              perfilPayload.js. accountEmail é o
+│                                              TERCEIRO e-mail do doc (login =
+│                                              `email`, público = `contactEmail`) —
+│                                              é o canal nosso→corretor, e nasce
+│                                              pré-preenchido com o e-mail do login
+├─ businessType: '' | 'autonomo' | 'imobiliaria' | 'construtora' | 'outro'
+├─ documentType: '' | 'ci' | 'ruc' | 'cpf' | 'cnpj' | 'dni' | 'passaporte'
+├─ documentId, licenseId, city: string        ← novo — perfil.html, cadastrais
+├─ country: '' | 'PY' | 'BR' | 'AR' | 'UY' | 'BO' | 'CL' | 'outro'
+│                                             ← novo — perfil.html. Os campos de
+│                                              lista fechada são validados contra a
+│                                              mesma lista na regra do Firestore
 ├─ language: 'es' | 'pt' | 'en'               ← novo — meu-site.html, padrão 'es'
 ├─ gtmId: string                              ← novo — meu-site.html (Google Tag
 │                                              Manager), formato "GTM-XXXXXXX" ou

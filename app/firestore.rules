@@ -54,6 +54,16 @@ service cloud.firestore {
       return trialVencido(get(/databases/$(database)/documents/brokers/$(tenantId)).data);
     }
 
+    // Campo de texto curto, opcional. O default do .get() cobre o doc
+    // que ainda não tem o campo (acessar campo ausente direto faz a
+    // regra INTEIRA falhar, mesmo numa escrita que nem mexe nele), e o
+    // teto de tamanho evita que um cliente use o doc do próprio tenant
+    // como depósito de texto arbitrário — esses campos são de cadastro,
+    // nenhum deles tem motivo pra passar de algumas dezenas de chars.
+    function textoOpcional(dados, chave, max) {
+      return dados.get(chave, '') is string && dados.get(chave, '').size() <= max;
+    }
+
     match /brokers/{tenantId} {
       allow read: if isTeam() || isTenantAdmin(tenantId);
       allow create, delete: if isTeam();
@@ -71,6 +81,14 @@ service cloud.firestore {
       //   contactEmail, instagramUrl — meu-site.html (contato, além do whatsapp)
       //                         — NÃO confundir com `email` (login/conta, setado
       //                         por criarConta.js, nunca editável pelo tenant)
+      //   ownerName, contactPhone, accountEmail, businessType, documentType,
+      //   documentId, licenseId, city, country
+      //                         — perfil.html (cadastro do próprio corretor).
+      //                         PRIVADOS: nenhum deles entra em
+      //                         functions/perfilPayload.js, então não vazam pro
+      //                         catálogo público — é justamente por isso que
+      //                         accountEmail existe separado de contactEmail
+      //                         (aquele É publicado no site)
       //   language              — meu-site.html, idioma do site público (es/pt/en)
       //   gtmId                 — meu-site.html (seção Google Tag Manager),
       //                         container do GTM do próprio corretor injetado
@@ -95,7 +113,9 @@ service cloud.firestore {
                         .hasOnly(['usage', 'onboardingCompleted', 'whatsapp', 'published',
                                   'name', 'logo', 'accentColor', 'headline', 'subheadline',
                                   'about', 'keywords', 'contactEmail', 'instagramUrl',
-                                  'language', 'gtmId', 'lastActiveAt', 'updatedAt']) &&
+                                  'language', 'gtmId', 'lastActiveAt', 'updatedAt',
+                                  'ownerName', 'contactPhone', 'accountEmail', 'businessType',
+                                  'documentType', 'documentId', 'licenseId', 'city', 'country']) &&
                       request.resource.data.usage.imoveisCount is int &&
                       request.resource.data.usage.imoveisCount >= 0 &&
                       request.resource.data.onboardingCompleted is bool &&
@@ -114,6 +134,21 @@ service cloud.firestore {
                       request.resource.data.get('contactEmail', '') is string &&
                       request.resource.data.get('instagramUrl', '') is string &&
                       request.resource.data.get('language', 'es') in ['es', 'pt', 'en'] &&
+                      // Cadastro do corretor (perfil.html) — todos texto livre
+                      // curto, exceto os dois que a UI oferece como <select> e
+                      // que por isso podem ser fechados numa lista.
+                      textoOpcional(request.resource.data, 'ownerName', 120) &&
+                      textoOpcional(request.resource.data, 'contactPhone', 30) &&
+                      textoOpcional(request.resource.data, 'accountEmail', 120) &&
+                      textoOpcional(request.resource.data, 'documentId', 40) &&
+                      textoOpcional(request.resource.data, 'licenseId', 40) &&
+                      textoOpcional(request.resource.data, 'city', 80) &&
+                      request.resource.data.get('businessType', '')
+                        in ['', 'autonomo', 'imobiliaria', 'construtora', 'outro'] &&
+                      request.resource.data.get('documentType', '')
+                        in ['', 'ci', 'ruc', 'cpf', 'cnpj', 'dni', 'passaporte'] &&
+                      request.resource.data.get('country', '')
+                        in ['', 'PY', 'BR', 'AR', 'UY', 'BO', 'CL', 'outro'] &&
                       // serverTimestamp() chega aqui já como request.time —
                       // o default do .get() usa o mesmo tipo pra regra não
                       // reprovar quem ainda não tem o campo no doc.

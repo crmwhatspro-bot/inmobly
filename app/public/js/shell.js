@@ -7,7 +7,10 @@
 // lógica de conteúdo.
 // ════════════════════════════════════════════════
 import { auth, db, logout, onAuthChange } from './firebase.js';
-import { tenantIdAtual, buscarBroker, limiteEfetivo, trialExpirado, diasRestantesTrial } from './tenant.js';
+import {
+  tenantIdAtual, buscarBroker, limiteEfetivo, trialExpirado,
+  diasRestantesTrial, diasDecorridosTrial, textoRestanteTrial,
+} from './tenant.js';
 import { initProductTour } from './product-tour.js';
 import { ehDaEquipe } from './equipe.js';
 import { doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -47,6 +50,9 @@ const NAV = [
 // sidebar. Adicionar um item no topo a cada mudança relevante pro
 // usuário final (não é changelog técnico interno).
 const UPDATES = [
+  { date: '2026-08-09', title: 'Dados do perfil', desc: 'No menu da sua foto, em "Dados do perfil", agora dá pra preencher seu nome, telefone de contato, documento e cidade — é por esses dados que falamos com você sobre cobrança e suporte.' },
+  { date: '2026-08-09', title: 'Você no controle da sua assinatura', desc: 'Na página Plano dá pra cancelar sozinho (o acesso continua até o fim do período já pago, e dá pra voltar atrás), trocar o cartão e baixar suas faturas.' },
+  { date: '2026-08-09', title: 'Contador do teste grátis agora é regressivo', desc: 'O prazo no menu lateral desconta sozinho enquanto você usa o painel — e passa a contar em horas nos últimos dois dias, pra não ser surpresa quando acabar.' },
   { date: '2026-08-09', title: 'Ficou mais claro quando o site está no ar', desc: 'O menu avisa "Offline" enquanto seu catálogo não estiver publicado, e o Dashboard mostra o caminho pra publicar. A aba "Páginas" agora se chama "Empreendimentos" — o que muda é só o nome.' },
   { date: '2026-08-09', title: 'Indique e ganhe', desc: 'Indique outros corretores e acumule desconto na sua assinatura (até 50%). Agora dá pra aplicar o cupom de indicação na sua assinatura ativa com um clique, direto pelo painel.' },
   { date: '2026-08-08', title: 'Sitemob é o novo nome', desc: 'A plataforma mudou de nome — o sistema e seus dados continuam os mesmos, só a marca ficou nova.' },
@@ -141,7 +147,7 @@ function renderTopbar(title) {
             <p id="shellUserName">—</p>
             <p id="shellUserEmail">—</p>
           </div>
-          <a href="em-breve.html?f=perfil" class="admin-user-menu__item">Meu perfil</a>
+          <a href="perfil.html" class="admin-user-menu__item">Dados do perfil</a>
           <a href="em-breve.html?f=configuracoes" class="admin-user-menu__item">Configurações</a>
           <button type="button" class="admin-user-menu__item admin-user-menu__item--danger" id="shellLogoutBtn">Sair</button>
         </div>
@@ -258,22 +264,76 @@ function wireUserMenu() {
 // só existia em planos.html — página que quem não pensa em assinar
 // nunca abre. Durante o teste o rótulo da sidebar vira o contador, que
 // é o único lugar do painel visto todo dia.
-function rotuloPlano(broker) {
+// Exportado pra perfil.html mostrar o mesmo rótulo de plano do menu
+// lateral — dois textos diferentes pro mesmo status seria o tipo de
+// divergência que ninguém nota até um corretor perguntar qual dos dois
+// está certo.
+export function rotuloPlano(broker) {
   if (!broker) return '—';
   if (broker.status !== 'trialing') return `${broker.plan || 'trial'} · ${broker.status || 'trialing'}`;
   if (trialExpirado(broker)) return 'Teste grátis encerrado';
 
-  const dias = diasRestantesTrial(broker);
-  if (dias === null) return 'Teste grátis';
-  // dias só chega a 0 quando a data já passou (trialExpirado acima já
-  // pegou esse caso), então 1 é mesmo o último dia.
-  return dias === 1 ? 'Teste grátis · último dia' : `Teste grátis · ${dias} dias`;
+  const restante = textoRestanteTrial(broker);
+  if (restante === null) return 'Teste grátis';
+  return `Teste grátis · ${restante}`;
 }
+
+/* ── Relógio do trial ─────────────────────────────────────────
+   O rótulo era calculado uma única vez, quando a página montava. Numa
+   aba deixada aberta (o normal: o corretor volta ao painel horas
+   depois) o número congelava no valor da montagem — de fora, um
+   contador que "não anda". Agora um tick reescreve o rótulo a partir do
+   MESMO broker em memória: trialEndsAt não muda, só o "agora" muda, então
+   não custa leitura nenhuma no Firestore.
+
+   Meio minuto porque a última hora é exibida em minutos; acima disso o
+   texto simplesmente repete o mesmo valor, sem custo perceptível. */
+const TICK_TRIAL_MS = 30 * 1000;
+let brokerAtual = null;
+let relogioTrial = null;
+
+function tickTrial() {
+  const alvo = document.getElementById('shellBrokerPlan');
+  if (!alvo || !brokerAtual) return;
+  alvo.textContent = rotuloPlano(brokerAtual);
+
+  // O trial pode vencer com a aba aberta. Quando isso acontece, o
+  // paywall precisa aparecer na hora — senão o corretor segue clicando
+  // num painel que o servidor já está recusando, e o erro que ele vê é
+  // "permission denied" em vez da tela que explica o que houve.
+  if (trialExpirado(brokerAtual)) {
+    pararRelogioTrial();
+    if (paginaAtualLivreNoPaywall) return;
+    montarPaywall(brokerAtual);
+  }
+}
+
+function pararRelogioTrial() {
+  if (relogioTrial) { clearInterval(relogioTrial); relogioTrial = null; }
+}
+
+function iniciarRelogioTrial() {
+  pararRelogioTrial();
+  if (brokerAtual?.status !== 'trialing' || trialExpirado(brokerAtual)) return;
+  relogioTrial = setInterval(tickTrial, TICK_TRIAL_MS);
+}
+
+// Aba em segundo plano: o browser estrangula o setInterval (e o celular
+// costuma congelar a página inteira). Voltar pra aba é justamente o
+// momento em que o número velho estaria na cara do usuário — recalcula
+// antes que ele leia.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') tickTrial();
+});
 
 function preencherPerfil(user, broker, tenantId) {
   document.getElementById('shellTopAvatarWrap').innerHTML = avatarHTML(user, 'sm');
   document.getElementById('shellSidebarAvatarWrap').innerHTML = avatarHTML(user, 'md');
-  document.getElementById('shellUserName').textContent = user.displayName || broker?.name || 'Minha conta';
+  // ownerName na frente do displayName do Google: é o nome que o
+  // próprio corretor digitou em perfil.html, então ganha do que veio da
+  // conta Google (que pode ser um apelido, ou o nome de outra pessoa da
+  // equipe que criou a conta).
+  document.getElementById('shellUserName').textContent = broker?.ownerName || user.displayName || broker?.name || 'Minha conta';
   document.getElementById('shellUserEmail').textContent = user.email || '';
 
   document.getElementById('shellBrokerName').textContent = broker?.name || tenantId;
@@ -291,6 +351,7 @@ function preencherPerfil(user, broker, tenantId) {
 
   atualizarUso(broker);
   atualizarStatusSite(broker);
+  iniciarRelogioTrial();
 }
 
 // Selo "Offline" no item Meu Site, visível em TODAS as páginas enquanto
@@ -348,6 +409,7 @@ const PAGE_SCRIPTS = {
   'dominio.html':  'js/dominio.js',
   'planos.html':   'js/planos.js',
   'indicacoes.html': 'js/indicacoes.js',
+  'perfil.html':   'js/perfil.js',
   'em-breve.html': 'js/em-breve.js',
 };
 
@@ -656,6 +718,11 @@ function tocarLastActiveAt(tenantId, broker) {
 const PAGINA_LIVRE_NO_PAYWALL = 'plano';
 const CUPOM_VITALICIO = '50OFF';
 
+// Qual página o initShell mais recente montou — o relógio do trial
+// precisa saber disso pra decidir se pode subir o paywall quando o
+// prazo vence com a aba aberta (em Planos, nunca).
+let paginaAtualLivreNoPaywall = false;
+
 function paywallHTML(broker) {
   const nome = String(broker?.name || '').split(/\s+/)[0] || '';
   return `
@@ -711,7 +778,7 @@ function montarPaywall(broker) {
     try {
       const functions = getFunctions(auth.app, 'southamerica-east1');
       const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
-      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo: 'trialExpirado' });
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'sitemob_starter_monthly', promo: 'trialExpirado' });
       location.href = data.url;
     } catch (err) {
       msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;
@@ -732,6 +799,165 @@ function montarPaywall(broker) {
 
   document.getElementById('shellPaywallSair')
     .addEventListener('click', () => logout().then(() => location.href = 'login.html'));
+}
+
+/* ── Lembrete de conversão durante o trial ────────────────────
+   A cada 4 dias de teste o corretor vê uma vez o convite pra assinar
+   com o 50OFF — os mesmos 50% vitalícios do paywall e dos popups de
+   imóvel (ver PROMOS em functions/checkout.js). Num trial de 14 dias
+   isso dá três aparições, nos dias 4, 8 e 12: a última cai já com o
+   prazo curto o bastante pra a urgência ser real.
+
+   Diferente do paywall, este é DISPENSÁVEL — nada está bloqueado
+   ainda, e um modal que não fecha durante o teste faria o corretor
+   fugir do painel em vez de assinar.
+
+   O ciclo já mostrado fica no localStorage por tenant (mesmo padrão do
+   "Novidades visto" e dos popups de admin-imoveis.js). Consequência
+   assumida: é por navegador, então quem troca de máquina pode ver o
+   mesmo ciclo duas vezes — preferível a gastar uma escrita no doc do
+   broker a cada exibição. */
+const PROMO_INTERVALO_DIAS = 4;
+const promoVistaKey = (tenantId) => `sitemob-promo-trial-${tenantId}`;
+
+function cicloPromoAtual(broker) {
+  const decorridos = diasDecorridosTrial(broker);
+  if (decorridos === null) return 0;
+  return Math.floor(decorridos / PROMO_INTERVALO_DIAS);
+}
+
+function lerCicloPromoVisto(tenantId) {
+  try {
+    return Number(localStorage.getItem(promoVistaKey(tenantId))) || 0;
+  } catch {
+    return 0; // modo privado / quota — trata como "nunca viu"
+  }
+}
+
+function marcarCicloPromoVisto(tenantId, ciclo) {
+  try {
+    localStorage.setItem(promoVistaKey(tenantId), String(ciclo));
+  } catch {
+    // Sem persistência o popup voltaria a cada carregamento de página,
+    // que é pior do que não aparecer — por isso a exibição também é
+    // travada em memória (promoMostradaNaSessao) logo abaixo.
+  }
+}
+
+let promoMostradaNaSessao = false;
+
+function verificarPromoTrial(broker, tenantId, active) {
+  if (promoMostradaNaSessao) return;
+  if (broker?.status !== 'trialing' || trialExpirado(broker)) return;
+  if (active === PAGINA_LIVRE_NO_PAYWALL) return; // já está na página de assinar
+  // Tour de boas-vindas na tela: dois cards disputando atenção no
+  // primeiro acesso não converte ninguém — o tour termina primeiro.
+  if (document.querySelector('.pa-tour-card')) return;
+  if (document.querySelector('.modal-backdrop.open')) return;
+
+  const ciclo = cicloPromoAtual(broker);
+  if (ciclo < 1) return; // ainda nos 4 primeiros dias
+  if (ciclo <= lerCicloPromoVisto(tenantId)) return;
+
+  promoMostradaNaSessao = true;
+  marcarCicloPromoVisto(tenantId, ciclo);
+  montarPromoTrial(broker);
+}
+
+// Reusa o visual do paywall (.shell-paywall) de propósito: é o mesmo
+// cartão de conversão, com o mesmo cupom. O que muda é o tom — aqui
+// ainda não há nada bloqueado — e o botão de dispensar.
+function promoTrialHTML(broker) {
+  const nome = String(broker?.name || '').split(/\s+/)[0] || '';
+  const restante = textoRestanteTrial(broker) || 'poucos dias';
+  const dias = diasRestantesTrial(broker);
+  return `
+  <div class="modal-backdrop open" id="shellPromoTrial" role="dialog" aria-modal="true" aria-labelledby="shellPromoTitulo">
+    <div class="modal shell-paywall shell-promo">
+      <p class="shell-promo__prazo">Faltam ${restante} de teste grátis</p>
+      <h2 id="shellPromoTitulo" class="shell-paywall__titulo">${nome ? nome + ', garanta' : 'Garanta'} 50% OFF vitalício</h2>
+      <p class="shell-paywall__texto">
+        ${dias !== null && dias <= PROMO_INTERVALO_DIAS
+          ? 'Quando o teste acabar, o painel trava e você não consegue mais cadastrar nem editar imóveis.'
+          : 'Assinando agora você não perde nada do que já montou — e trava o desconto pra sempre.'}
+        O cupom <strong>${CUPOM_VITALICIO}</strong> dá 50% de desconto em todas as mensalidades, enquanto a assinatura durar.
+      </p>
+
+      <div class="shell-paywall__cupom">
+        <div class="shell-paywall__cupom-info">
+          <p class="shell-paywall__cupom-label">50% OFF vitalício</p>
+          <p class="shell-paywall__cupom-codigo">${CUPOM_VITALICIO}</p>
+        </div>
+        <button type="button" class="btn btn--outline btn--sm" id="shellPromoCopiar">Copiar</button>
+      </div>
+
+      <button type="button" class="btn btn--accent btn--md shell-paywall__cta" id="shellPromoAssinar">Assinar agora com 50% OFF</button>
+      <a href="planos.html" class="shell-paywall__link" id="shellPromoPlanos">Ver todos os planos</a>
+
+      <p id="shellPromoMsg" class="imv-form-msg" role="alert" hidden></p>
+      <button type="button" class="shell-promo__dispensar" id="shellPromoDispensar">Continuar no teste grátis</button>
+    </div>
+  </div>`;
+}
+
+function montarPromoTrial(broker) {
+  if (document.getElementById('shellPromoTrial')) return;
+  document.body.insertAdjacentHTML('beforeend', promoTrialHTML(broker));
+  document.body.style.overflow = 'hidden';
+
+  const modal = document.getElementById('shellPromoTrial');
+  const msg = document.getElementById('shellPromoMsg');
+
+  const fechar = () => {
+    modal.remove();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onEsc);
+  };
+  const onEsc = (e) => { if (e.key === 'Escape') fechar(); };
+
+  document.getElementById('shellPromoDispensar').addEventListener('click', fechar);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fechar(); });
+  document.addEventListener('keydown', onEsc);
+
+  document.getElementById('shellPromoCopiar').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const original = btn.textContent;
+    try {
+      await navigator.clipboard.writeText(CUPOM_VITALICIO);
+      btn.textContent = 'Copiado!';
+    } catch {
+      btn.textContent = 'Copie manualmente'; // o código já está visível na tela
+    }
+    setTimeout(() => { btn.textContent = original; }, 1800);
+  });
+
+  document.getElementById('shellPromoAssinar').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Abrindo checkout...';
+    try {
+      const functions = getFunctions(auth.app, 'southamerica-east1');
+      const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'sitemob_starter_monthly', promo: 'trialEmAndamento' });
+      location.href = data.url;
+    } catch (err) {
+      msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;
+      msg.className = 'imv-form-msg imv-form-msg--erro';
+      msg.hidden = false;
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
+
+  // Fecha o modal antes de sair da página: o router SPA não recarrega o
+  // documento, então sem isso o backdrop ficaria por cima de Planos.
+  document.getElementById('shellPromoPlanos').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fechar();
+    location.href = 'planos.html';
+  });
 }
 
 // Sinal de analytics: quem está usando o painel e se é da casa.
@@ -791,9 +1017,15 @@ export function initShell({ active, title }) {
     setTopbarTitle(title);
   }
 
+  paginaAtualLivreNoPaywall = active === PAGINA_LIVRE_NO_PAYWALL;
+
   return getAuthState().then(async ({ user, tenantId }) => {
     const broker = await buscarBroker(tenantId);
     if (!broker) { location.href = 'criar-conta.html'; return new Promise(() => {}); }
+
+    // Guardado pro relógio do trial poder reescrever o rótulo sem
+    // precisar reler o Firestore (ver tickTrial).
+    brokerAtual = broker;
 
     preencherPerfil(user, broker, tenantId);
     marcarSinalAnalytics(user, tenantId);
@@ -812,6 +1044,9 @@ export function initShell({ active, title }) {
     }
 
     initProductTour({ tenantId, active });
+    // Depois do tour de propósito: verificarPromoTrial() checa se um
+    // card do tour está na tela e se cala quando está.
+    verificarPromoTrial(broker, tenantId, active);
     return { user, tenantId, broker };
   });
 }

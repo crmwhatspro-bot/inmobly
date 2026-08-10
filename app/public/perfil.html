@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<!-- Sinal de analytics — vem ANTES do GTM de propósito: o page_view sai
+     antes do Firebase Auth resolver, então quem já se identificou numa
+     visita anterior é classificado por esta chave, gravada por
+     marcarSinalAnalytics() em js/shell.js. Ver docs/ANALYTICS-JORNADA.md. -->
+<script>
+(function () {
+  window.dataLayer = window.dataLayer || [];
+  try {
+    var sinal = JSON.parse(localStorage.getItem('sitemob_ga') || '{}');
+    if (sinal.traffic_type) window.dataLayer.push({ traffic_type: sinal.traffic_type });
+    if (sinal.user_id) window.dataLayer.push({ user_id: sinal.user_id });
+  } catch (e) { /* localStorage bloqueado — segue sem classificar */ }
+})();
+</script>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MX2GH99M');</script>
+<!-- End Google Tag Manager -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dados do perfil — Sitemob</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/admin.css">
+<style>
+  .pf-max { max-width: 720px; }
+  /* .imv-sec não tem margin própria (em admin.html quem dá o gap é o
+     flex do formulário) — sem isso as seções ficam coladas. */
+  .pf-max > .imv-sec { margin-bottom: var(--sp-5); }
+
+  /* Título + descrição empilhados no header da seção. Sem isto o
+     `p` herda o `margin-left:auto; text-align:right` de
+     `.imv-sec__head p` (que existe pro caso de a descrição ficar na
+     mesma LINHA do título, como em admin.html) e a descrição
+     encostaria na borda direita do card. */
+  .pf-sec-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .pf-sec-title p { margin-left: 0; text-align: left; }
+
+  .pf-field-stack { display: flex; flex-direction: column; gap: var(--sp-5); }
+  /* Duas colunas só onde os campos são curtos (documento, cidade/país) —
+     colapsa pra uma no celular. */
+  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+  @media (max-width: 640px) { .pf-grid { grid-template-columns: 1fr; } }
+
+  .pf-conta { display: flex; align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-5); }
+  .pf-conta__avatar {
+    width: 60px; height: 60px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--clr-accent-ghost);
+    color: var(--clr-accent-light);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+  }
+  .pf-conta__avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .pf-conta__info { min-width: 0; }
+  .pf-conta__nome { color: white; font-weight: 600; }
+  .pf-conta__email { color: var(--clr-text-light-2); font-size: var(--text-sm); overflow-wrap: anywhere; }
+
+  /* Dados que o corretor não edita aqui (vêm do Google, da assinatura
+     ou de Meu Site) — lista, não formulário, pra ficar claro que são
+     leitura. */
+  .pf-dados { display: flex; flex-direction: column; gap: var(--sp-3); margin: 0 0 var(--sp-4); }
+  .pf-dados__row {
+    display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+    padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--clr-border-dark);
+  }
+  .pf-dados__row:last-child { border-bottom: none; padding-bottom: 0; }
+  .pf-dados dt { color: var(--clr-text-muted); font-size: var(--text-sm); flex: 0 0 150px; }
+  .pf-dados dd { color: var(--clr-text-light); font-size: var(--text-sm); margin: 0; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .pf-dados dd a { color: var(--clr-accent-light); }
+
+  .pf-obrigatorio { color: var(--clr-accent-light); }
+</style>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MX2GH99M"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<div class="admin-dashboard visible">
+  <div id="shell-sidebar-mount"></div>
+  <div class="admin-content">
+    <div id="shell-topbar-mount"></div>
+    <main class="admin-main">
+
+      <div class="pf-max">
+
+        <section class="imv-sec">
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <h3>Sua conta</h3>
+          </header>
+          <div class="imv-sec__body">
+            <div class="pf-conta">
+              <span class="pf-conta__avatar" id="pfAvatar" aria-hidden="true"></span>
+              <div class="pf-conta__info">
+                <p class="pf-conta__nome" id="pfContaNome">—</p>
+                <p class="pf-conta__email" id="pfContaEmail">—</p>
+              </div>
+            </div>
+
+            <dl class="pf-dados">
+              <div class="pf-dados__row">
+                <dt>Endereço do site</dt>
+                <dd id="pfSite">—</dd>
+              </div>
+              <div class="pf-dados__row">
+                <dt>Plano</dt>
+                <dd id="pfPlano">—</dd>
+              </div>
+              <div class="pf-dados__row">
+                <dt>Cliente desde</dt>
+                <dd id="pfDesde">—</dd>
+              </div>
+              <div class="pf-dados__row">
+                <dt>Nome da empresa</dt>
+                <dd><span id="pfEmpresa">—</span> · <a href="meu-site.html">editar em Meu Site</a></dd>
+              </div>
+            </dl>
+
+            <p class="imv-hint">Foto e e-mail de login vêm da sua conta Google — pra trocar, é preciso entrar com outra conta.</p>
+          </div>
+        </section>
+
+        <section class="imv-sec">
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
+            <div class="pf-sec-title">
+              <h3>Dados para contato</h3>
+              <p>Como falamos com você sobre a sua conta — não aparece no site público.</p>
+            </div>
+          </header>
+          <div class="imv-sec__body">
+            <div class="pf-field-stack">
+
+              <div class="form-group">
+                <label class="form-label" for="pf-nome">Nome completo <span class="pf-obrigatorio" aria-hidden="true">*</span></label>
+                <!-- maxlength espelha o teto das firestore.rules
+                     (textoOpcional em brokers/{tenantId}): sem ele, um
+                     texto longo demais só falharia no salvar, com um
+                     permission-denied que não explica nada. -->
+                <input class="form-input" type="text" id="pf-nome" autocomplete="name" maxlength="120" aria-required="true" placeholder="Ex.: Ana Maria Rodríguez">
+                <p class="imv-hint">Seu nome como pessoa — o nome da empresa que aparece no site fica em Meu Site.</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pf-telefone">Telefone para contato <span class="pf-obrigatorio" aria-hidden="true">*</span></label>
+                <input class="form-input" type="tel" id="pf-telefone" autocomplete="tel" maxlength="30" aria-required="true" placeholder="+595 981 123456">
+                <p class="imv-hint">Inclua o código do país. É por aqui que falamos com você sobre cobrança e suporte — não é o WhatsApp que aparece no seu site.</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pf-email">E-mail para contato</label>
+                <input class="form-input" type="email" id="pf-email" autocomplete="email" maxlength="120" placeholder="voce@email.com">
+                <p class="imv-hint" id="pfEmailHint">Preenchemos com o e-mail da sua conta Google — troque se preferir receber em outro. Ele não aparece no seu site público.</p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <section class="imv-sec">
+          <header class="imv-sec__head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="2.5"/><line x1="14" y1="10" x2="19" y2="10"/><line x1="14" y1="14" x2="19" y2="14"/></svg>
+            <div class="pf-sec-title">
+              <h3>Dados cadastrais</h3>
+              <p>Usados na emissão de comprovantes e no suporte. Todos opcionais.</p>
+            </div>
+          </header>
+          <div class="imv-sec__body">
+            <div class="pf-field-stack">
+
+              <div class="form-group">
+                <label class="form-label" for="pf-atuacao">Como você atua</label>
+                <select class="form-select" id="pf-atuacao">
+                  <option value="">Prefiro não informar</option>
+                  <option value="autonomo">Corretor(a) autônomo(a)</option>
+                  <option value="imobiliaria">Imobiliária</option>
+                  <option value="construtora">Construtora / incorporadora</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+
+              <div class="pf-grid">
+                <div class="form-group">
+                  <label class="form-label" for="pf-doc-tipo">Tipo de documento</label>
+                  <select class="form-select" id="pf-doc-tipo">
+                    <option value="">—</option>
+                    <option value="ci">CI (Paraguai)</option>
+                    <option value="ruc">RUC (Paraguai)</option>
+                    <option value="cpf">CPF (Brasil)</option>
+                    <option value="cnpj">CNPJ (Brasil)</option>
+                    <option value="dni">DNI</option>
+                    <option value="passaporte">Passaporte</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pf-doc-numero">Número do documento</label>
+                  <input class="form-input" type="text" id="pf-doc-numero" maxlength="40" placeholder="Ex.: 4123456-7">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pf-registro">Registro profissional</label>
+                <input class="form-input" type="text" id="pf-registro" maxlength="40" placeholder="Ex.: CRECI 12345-F">
+                <p class="imv-hint">Se você tem matrícula de corretor, ela pode ser exibida em documentos e propostas.</p>
+              </div>
+
+              <div class="pf-grid">
+                <div class="form-group">
+                  <label class="form-label" for="pf-cidade">Cidade de atuação</label>
+                  <input class="form-input" type="text" id="pf-cidade" autocomplete="address-level2" maxlength="80" placeholder="Ex.: Asunción">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pf-pais">País</label>
+                  <select class="form-select" id="pf-pais">
+                    <option value="">—</option>
+                    <option value="PY">Paraguai</option>
+                    <option value="BR">Brasil</option>
+                    <option value="AR">Argentina</option>
+                    <option value="UY">Uruguai</option>
+                    <option value="BO">Bolívia</option>
+                    <option value="CL">Chile</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- Um salvar só pros dois formulários: são poucos campos e
+             gravam no mesmo doc — dois botões separados só multiplicariam
+             estados de erro sem ganhar nada. -->
+        <div>
+          <p id="pfMsg" class="imv-form-msg" role="alert" hidden></p>
+          <button type="button" class="btn btn--accent btn--md" id="pfSalvarBtn">Salvar perfil</button>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/perfil.js"></script>
+</body>
+</html>
