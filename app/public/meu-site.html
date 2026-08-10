@@ -144,32 +144,39 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   /* Modal de preview — mais largo que o padrão de 620px, precisa
      mostrar um site inteiro dentro. */
-  .ms-preview-modal .modal { max-width: 1060px; background: var(--clr-bg-darker); }
-  .ms-preview-modal .modal__close { position: absolute; top: var(--sp-3); right: var(--sp-3); z-index: 2; background: rgba(255,255,255,.1); color: white; }
-  .ms-preview-modal .modal__close:hover { background: rgba(255,255,255,.2); color: white; }
+  /* A faixa escura no topo é feita com padding-top no próprio .modal:
+     sem ela, a toolbar e o X ficavam sobrepostos ao iframe — ícones
+     brancos translúcidos em cima da navbar branca do site do corretor,
+     praticamente invisíveis. Agora eles têm fundo escuro próprio. */
+  .ms-preview-modal .modal { max-width: 1060px; background: var(--clr-bg-darker); padding-top: 46px; }
+  .ms-preview-modal .modal__close { position: absolute; top: 8px; right: var(--sp-3); z-index: 2; background: rgba(255,255,255,.12); color: white; }
+  .ms-preview-modal .modal__close:hover { background: rgba(255,255,255,.24); color: white; }
 
   /* Seletor de dispositivo — canto superior direito, antes do X */
   .ms-preview-toolbar {
-    position: absolute; top: var(--sp-3); right: 56px; z-index: 2;
+    position: absolute; top: 8px; right: 56px; z-index: 2;
     display: flex; gap: 2px;
-    background: rgba(255,255,255,.08);
+    background: rgba(255,255,255,.12);
     border-radius: var(--radius-full);
     padding: 3px;
   }
   .ms-preview-device {
     width: 30px; height: 30px;
     display: flex; align-items: center; justify-content: center;
-    border: none; background: transparent; color: rgba(255,255,255,.55);
+    border: none; background: transparent; color: rgba(255,255,255,.72);
     border-radius: 50%;
     cursor: pointer;
     transition: background var(--dur-fast), color var(--dur-fast);
   }
-  .ms-preview-device:hover { color: white; }
+  .ms-preview-device:hover { background: rgba(255,255,255,.14); color: white; }
   .ms-preview-device.active { background: white; color: var(--clr-bg-darker); }
+  .ms-preview-device:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 2px; }
 
   .ms-preview-frame-wrap {
     position: relative;
-    width: 100%; height: 78vh;
+    /* Os 46px são a faixa da toolbar; o min() garante que ela + o
+       iframe caibam nos 90vh de max-height do .modal em telas baixas. */
+    width: 100%; height: min(78vh, calc(88vh - 46px));
     display: flex; align-items: stretch; justify-content: center;
     background: #e5e9ee;
     overflow: auto;

@@ -193,3 +193,144 @@
   color: var(--clr-text-light-2);
   letter-spacing: .03em;
 }
+
+/* ── Card da assinatura existente (planos.js#montarAssinatura) ──
+   Fica acima da grade e segue a paleta escura da página, não a do
+   .modal claro que o cancelamento usa: aqui é conteúdo da página,
+   lá é diálogo em cima dela. */
+.assinatura-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  background: var(--clr-surface-dark);
+  border: 1px solid var(--clr-border-dark);
+  border-radius: var(--radius-2xl);
+  padding: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--sp-8);
+}
+.assinatura-card__info { min-width: 0; flex: 1 1 280px; }
+.assinatura-card__label {
+  font-size: var(--text-xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--clr-text-light-2);
+  margin-bottom: 2px;
+}
+.assinatura-card__estado {
+  color: white;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.assinatura-card__acoes {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+/* Cancelar é link discreto, não botão: a ação destrutiva não pode
+   competir visualmente com "pagamento e faturas", que é o que a
+   maioria vem fazer aqui. */
+.assinatura-card__cancelar {
+  background: none; border: none; padding: 0;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--clr-text-light-2);
+  text-decoration: underline;
+}
+.assinatura-card__cancelar:hover { color: white; }
+
+/* ── Modal de cancelamento ─────────────────────────────────── */
+.cancel-modal { max-width: 520px; padding: var(--sp-8); }
+.cancel-modal__titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--clr-text);
+}
+.cancel-modal__texto {
+  color: var(--clr-text-2);
+  margin: var(--sp-3) 0 var(--sp-5);
+  line-height: 1.55;
+}
+.cancel-modal__motivos {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.cancel-motivo {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--clr-text);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.cancel-motivo:hover { background: var(--clr-bg-alt); }
+.cancel-motivo:has(input:checked) {
+  border-color: var(--clr-accent);
+  background: var(--clr-bg-alt);
+}
+.cancel-motivo input { accent-color: var(--clr-accent); flex-shrink: 0; }
+
+.cancel-modal__comentario {
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--clr-text);
+  resize: vertical;
+}
+
+.cancel-modal__oferta {
+  background: var(--clr-bg-alt);
+  border: 1.5px dashed var(--clr-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  margin: var(--sp-4) 0 var(--sp-5);
+}
+.cancel-modal__oferta-titulo { font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-1); }
+.cancel-modal__oferta-texto {
+  font-size: var(--text-sm); color: var(--clr-text-2);
+  line-height: 1.5; margin-bottom: var(--sp-3);
+}
+
+.cancel-modal__consequencias {
+  list-style: none; padding: 0;
+  margin: var(--sp-4) 0 var(--sp-5);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.cancel-modal__consequencias li {
+  position: relative;
+  padding-left: var(--sp-5);
+  font-size: var(--text-sm);
+  color: var(--clr-text-2);
+  line-height: 1.5;
+}
+.cancel-modal__consequencias li::before {
+  content: '·';
+  position: absolute; left: var(--sp-2);
+  font-weight: 700; color: var(--clr-accent);
+}
+
+.cancel-modal__acoes {
+  display: flex; gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+.cancel-modal__acoes .btn { flex: 1; }
+/* Confirmar/continuar em tom neutro-destrutivo: o botão que MANTÉM a
+   assinatura é o de destaque visual, não o que cancela. */
+.cancel-modal__seguir,
+.cancel-modal__confirmar {
+  background: var(--clr-danger, #C0392B);
+  color: white;
+  border: none;
+}
+.cancel-modal__seguir:disabled { opacity: .5; cursor: not-allowed; }
+.cancel-modal #cancelMsg { margin-top: var(--sp-4); }
+
+@media (max-width: 640px) {
+  .cancel-modal { padding: var(--sp-6) var(--sp-5); }
+  .cancel-modal__acoes { flex-direction: column-reverse; }
+  .assinatura-card__acoes { width: 100%; }
+}

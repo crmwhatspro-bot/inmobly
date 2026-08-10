@@ -56,6 +56,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <p id="statusAtual">Carregando seu status...</p>
         </div>
 
+        <!-- Só aparece pra quem já tem (ou já teve) assinatura — ver
+             planos.js#montarAssinatura. Fica ACIMA da grade de propósito:
+             quem já é assinante vem aqui pra mexer no que tem, não pra
+             escolher plano de novo. -->
+        <section class="assinatura-card" id="assinaturaCard" hidden>
+          <div class="assinatura-card__info">
+            <p class="assinatura-card__label">Sua assinatura</p>
+            <p class="assinatura-card__estado" id="assinaturaEstado">—</p>
+          </div>
+          <div class="assinatura-card__acoes">
+            <button type="button" class="btn btn--outline btn--sm" id="btnPortal">Pagamento e faturas</button>
+            <button type="button" class="btn btn--accent btn--sm" id="btnReativar" hidden>Reativar assinatura</button>
+            <button type="button" class="assinatura-card__cancelar" id="btnCancelar">Cancelar assinatura</button>
+          </div>
+        </section>
+
         <div class="planos-grid">
           <div class="plano-card">
             <h3>Starter</h3>
@@ -65,7 +81,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio *.sitemob.app incluído</li>
             </ul>
-            <button class="btn btn--lg btn--outline-light" data-plano="inmobly_starter_monthly">Assinar Starter</button>
+            <button class="btn btn--lg btn--outline-light" data-plano="sitemob_starter_monthly">Assinar Starter</button>
           </div>
 
           <div class="plano-card plano-card--destaque">
@@ -77,7 +93,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Site + catálogo CMS</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Domínio próprio incluído</li>
             </ul>
-            <button class="btn btn--lg btn--accent" data-plano="inmobly_pro_monthly">Assinar Pro</button>
+            <button class="btn btn--lg btn--accent" data-plano="sitemob_pro_monthly">Assinar Pro</button>
           </div>
         </div>
 
@@ -91,6 +107,81 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </main>
   </div>
 </div>
+
+<!-- Fora do <main> porque o backdrop cobre a tela inteira e não pode
+     herdar o padding/max-width de .admin-main — e dentro de #page-extra
+     porque é só esse wrapper que o roteador SPA sabe trocar junto do
+     <main> (ver swapPageExtra em shell.js). Sem ele, abrir Planos pelo
+     menu carregaria a página sem o modal, e planos.js quebraria inteiro
+     no primeiro addEventListener em cima de um id inexistente. -->
+<div id="page-extra">
+
+<!-- Cancelamento em dois passos: motivo primeiro, confirmação depois.
+     O motivo é perguntado ANTES porque depois de confirmar ninguém
+     responde pesquisa — e é o único momento em que dá pra saber por que
+     o corretor está saindo. Os values batem com o enum
+     cancellation_details.feedback do Stripe (ver functions/assinatura.js);
+     mudar um deles aqui sem mudar lá derruba o motivo pra 'other'. -->
+<div class="modal-backdrop" id="cancelModal" role="dialog" aria-modal="true" aria-labelledby="cancelTitulo">
+  <div class="modal cancel-modal">
+
+    <div id="cancelPasso1">
+      <h2 id="cancelTitulo" class="cancel-modal__titulo">Antes de você ir</h2>
+      <p class="cancel-modal__texto">O que te levou a cancelar? Uma resposta só — ela muda o que a gente constrói em seguida.</p>
+
+      <div class="cancel-modal__motivos">
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="too_expensive"><span>Ficou caro pro meu momento</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="missing_features"><span>Falta algo que eu preciso</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="unused"><span>Não estou usando</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="switched_service"><span>Fui pra outra ferramenta</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="too_complex"><span>Achei complicado de usar</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="customer_service"><span>Atendimento deixou a desejar</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="low_quality"><span>Não ficou bom como eu esperava</span></label>
+        <label class="cancel-motivo"><input type="radio" name="cancelMotivo" value="other"><span>Outro motivo</span></label>
+      </div>
+
+      <textarea id="cancelComentario" class="cancel-modal__comentario" rows="3" maxlength="500"
+                placeholder="Quer detalhar? (opcional)"></textarea>
+
+      <div class="cancel-modal__acoes">
+        <button type="button" class="btn btn--outline btn--md" id="cancelVoltar1">Continuar assinante</button>
+        <button type="button" class="btn btn--md cancel-modal__seguir" id="cancelSeguir" disabled>Continuar</button>
+      </div>
+    </div>
+
+    <div id="cancelPasso2" hidden>
+      <h2 class="cancel-modal__titulo">Confirmar cancelamento</h2>
+
+      <!-- Alternativa contextual: quem sai do Pro por preço tem pra onde
+           descer antes de sair de vez, e a troca de plano já é um caminho
+           testado (checkout.js troca o item da assinatura direto). Pra
+           quem já está no Starter não existe degrau abaixo, então o bloco
+           nem aparece. -->
+      <div class="cancel-modal__oferta" id="cancelOfertaDowngrade" hidden>
+        <p class="cancel-modal__oferta-titulo">Que tal descer pro Starter em vez de sair?</p>
+        <p class="cancel-modal__oferta-texto">USD 79/mês, até 40 imóveis. Seu site continua no ar e a cobrança é ajustada proporcionalmente já na próxima fatura.</p>
+        <button type="button" class="btn btn--accent btn--sm" id="cancelTrocarStarter">Mudar para o Starter</button>
+      </div>
+
+      <ul class="cancel-modal__consequencias">
+        <li id="cancelAteQuando">Você continua com acesso total até o fim do período já pago.</li>
+        <li>Seu catálogo público sai do ar quando o período terminar.</li>
+        <li>Nada é apagado — seus imóveis e textos ficam guardados.</li>
+        <li>Dá pra voltar atrás a qualquer momento antes dessa data.</li>
+      </ul>
+
+      <p id="cancelMsg" class="imv-form-msg" role="alert" hidden></p>
+
+      <div class="cancel-modal__acoes">
+        <button type="button" class="btn btn--outline btn--md" id="cancelVoltar2">Continuar assinante</button>
+        <button type="button" class="btn btn--md cancel-modal__confirmar" id="cancelConfirmar">Cancelar assinatura</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /#page-extra -->
 
 <script type="module" src="js/planos.js"></script>
 </body>

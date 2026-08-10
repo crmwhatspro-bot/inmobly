@@ -24,6 +24,8 @@ const formMsg      = $('dmFormMsg');
 const conectarBtn  = $('dmConectarBtn');
 
 const statusSec       = $('dmStatusSec');
+const statusSanfona   = $('dmStatusSanfona');
+const statusToggle    = $('dmStatusToggle');
 const dominioTituloEl = $('dmDominioTitulo');
 const statusBadgeEl   = $('dmStatusBadge');
 const statusExplicEl  = $('dmStatusExplicacao');
@@ -83,9 +85,41 @@ function partesDominio(dominio) {
   };
 }
 
+// ── Sanfona do bloco de status ──────────────────────────────────
+// Domínio ativo = nada a fazer aqui: as instruções de DNS, o
+// diagnóstico e os botões são material de quem ainda está configurando.
+// Então ela nasce recolhida nesse caso (sobram o endereço do site, logo
+// acima, e o selo "Ativo") e nasce aberta enquanto o status for
+// pendente, que é exatamente quando o conteúdo lá dentro importa.
+function definirSanfona(aberta) {
+  statusSanfona.dataset.aberta = String(aberta);
+  statusToggle.setAttribute('aria-expanded', String(aberta));
+  statusSec.classList.toggle('dm-sec--fechada', !aberta);
+  // overflow:hidden esconde, mas não tira do Tab: sem o inert, quem
+  // navega por teclado cairia nos botões "Copiar"/"Remover" dentro de um
+  // painel de altura zero, sem ver onde está o foco.
+  statusSanfona.querySelector('.dm-sanfona__inner').inert = !aberta;
+}
+
+statusToggle.addEventListener('click', () => {
+  definirSanfona(statusSanfona.dataset.aberta !== 'true');
+});
+
+// renderConectado roda várias vezes na mesma visita (cache do Firestore,
+// depois a resposta real da function, depois cada "Verificar novamente")
+// e não pode fechar na cara de quem acabou de abrir a sanfona na mão. O
+// padrão só é reaplicado quando o STATUS muda — aí a tela tem assunto
+// novo e recolher/expandir volta a ser informação, não interrupção.
+let statusRenderizado = null;
+
 function renderConectado(resumo) {
   formSec.hidden = true;
   statusSec.hidden = false;
+
+  if (resumo.status !== statusRenderizado) {
+    definirSanfona(resumo.status !== 'active');
+    statusRenderizado = resumo.status;
+  }
 
   dominioTituloEl.textContent = resumo.dominio;
   const sit = SITUACAO[resumo.status] || SITUACAO.requested;
@@ -107,6 +141,9 @@ function renderDesconectado() {
   statusSec.hidden = true;
   diagEl.hidden = true;
   dominioInput.value = '';
+  // Zera o padrão da sanfona: se o corretor conectar outro domínio na
+  // mesma visita, ela precisa abrir de novo no status pendente.
+  statusRenderizado = null;
 }
 
 // Copiar host/valor — sem isso o corretor tem que selecionar texto

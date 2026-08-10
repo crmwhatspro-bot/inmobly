@@ -1,6 +1,6 @@
 // ════════════════════════════════════════════════
 // PÁGINAS DE EMPREENDIMENTO — pré-pagas (checkout.js, produto
-// inmobly_emprendimento_page, USD 400 de tabela / USD 200 de
+// sitemob_emprendimento_page, USD 400 de tabela / USD 200 de
 // lançamento via cupom LANCAMENTO50 aplicado automaticamente pelo
 // backend). Cada compra credita usage.paginasCompradas em
 // brokers/{tenantId} (ver webhook.js) — só dá pra criar conteúdo
@@ -158,7 +158,7 @@ acaoBtn.addEventListener('click', async () => {
   try {
     const functions = getFunctions(auth.app, 'southamerica-east1');
     const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
-    const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_emprendimento_page' });
+    const { data } = await criarCheckoutSession({ priceLookupKey: 'sitemob_emprendimento_page' });
     location.href = data.url;
   } catch (err) {
     acaoMsg.textContent = 'Não foi possível abrir o checkout: ' + err.message;

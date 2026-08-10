@@ -154,6 +154,12 @@ function carregarPreviewFrame() {
   // ?r= muda a URL a cada tentativa: reatribuir um src idêntico nem
   // sempre força recarga, e um "tentar de novo" que não tenta nada é
   // pior que não ter o botão.
+  //
+  // O Hosting responde isto com um 301 pra /site (cleanUrls tira o
+  // .html e trailingSlash:false tira a barra), então o documento roda
+  // numa URL sem barra final — é por isso que site/index.html injeta um
+  // <base> logo no começo do <head>. Sem ele, todo caminho relativo do
+  // bundle aponta pra raiz do painel e o preview vem sem CSS nem JS.
   previewFrame.src = `site/index.html?preview=1&t=${encodeURIComponent(tenantId)}&r=${Date.now()}`;
 
   clearTimeout(previewTimeout);

@@ -58,6 +58,8 @@ const IDIOMAS = {
     sobreDe: (n) => `Sobre ${n}`,
     derechos: 'Todos los derechos reservados.',
     comodidades: 'Comodidades',
+    comsSelecionadas: (n) => (n === 1 ? '1 comodidad' : `${n} comodidades`),
+    comsPronto: 'Listo',
     limparComodidades: 'Limpiar',
     maisComodidades: (n) => `+${n} más`,
     com: {
@@ -95,6 +97,8 @@ const IDIOMAS = {
     sobreDe: (n) => `Sobre ${n}`,
     derechos: 'Todos os direitos reservados.',
     comodidades: 'Comodidades',
+    comsSelecionadas: (n) => (n === 1 ? '1 comodidade' : `${n} comodidades`),
+    comsPronto: 'Pronto',
     limparComodidades: 'Limpar',
     maisComodidades: (n) => `+${n} mais`,
     com: {
@@ -132,6 +136,8 @@ const IDIOMAS = {
     sobreDe: (n) => `About ${n}`,
     derechos: 'All rights reserved.',
     comodidades: 'Amenities',
+    comsSelecionadas: (n) => (n === 1 ? '1 amenity' : `${n} amenities`),
+    comsPronto: 'Done',
     limparComodidades: 'Clear',
     maisComodidades: (n) => `+${n} more`,
     com: {
@@ -362,10 +368,10 @@ function montarFiltroCidade(lista) {
   });
 }
 
-// Chips de comodidade da barra de filtros — montados a partir das
+// Opções do dropdown de comodidades — montadas a partir das
 // comodidades que os imóveis do corretor realmente têm, igual ao filtro
-// de cidade. Um catálogo sem nenhuma comodidade marcada não ganha a
-// linha (e um filtro que nunca acha nada é pior do que filtro nenhum).
+// de cidade. Um catálogo sem nenhuma comodidade marcada não ganha o
+// dropdown (e um filtro que nunca acha nada é pior do que filtro nenhum).
 function montarFiltroComodidades(lista) {
   const wrap = document.getElementById('imv-filtro-coms-wrap');
   const row = document.getElementById('imv-filtro-comodidades');
@@ -375,12 +381,13 @@ function montarFiltroComodidades(lista) {
   lista.forEach(i => comodidadesDe(i).forEach(c => presentes.add(c)));
 
   // seleção que não existe mais no catálogo atual sai junto, senão o
-  // grid ficaria vazio por causa de um chip que nem está mais na tela
+  // grid ficaria vazio por causa de uma opção que nem está mais na lista
   filtros.comodidades.forEach(c => { if (!presentes.has(c)) filtros.comodidades.delete(c); });
 
   if (!presentes.size) {
     row.innerHTML = '';
     wrap.hidden = true;
+    fecharComodidades();
     return;
   }
 
@@ -390,32 +397,60 @@ function montarFiltroComodidades(lista) {
   ];
   row.innerHTML = ordenadas.map(c => {
     const ativa = filtros.comodidades.has(c);
-    return `<button type="button" data-com="${esc(c)}" aria-pressed="${ativa}"
-      class="${ativa ? 'active' : ''}">${esc(comLabel(c))}</button>`;
+    return `<label class="imv-drop__opt"><input type="checkbox" data-com="${esc(c)}"
+      ${ativa ? 'checked' : ''}><span>${esc(comLabel(c))}</span></label>`;
   }).join('');
   wrap.hidden = false;
   atualizarComodidadesUI();
 }
 
-// Textos que dependem do idioma + visibilidade do "limpar" (que só faz
-// sentido com algum chip marcado).
+// Textos que dependem do idioma + estado do botão e do "limpar", que só
+// faz sentido com algo marcado.
+//
+// Fechado, o botão precisa responder sozinho "esse filtro está ligado e
+// pega quantas coisas?" — daí o próprio rótulo virar "2 comodidades" em
+// vez de "Comodidades" + um selo numérico ao lado. Listar os nomes das
+// escolhidas não cabe: são até 15, de largura variável, e o botão tem
+// 220px no desktop; a contagem cabe sempre, em qualquer idioma.
 function atualizarComodidadesUI() {
+  const n = filtros.comodidades.size;
   const label = document.getElementById('imv-coms-label');
-  if (label) label.textContent = STR.comodidades;
+  if (label) label.textContent = n ? STR.comsSelecionadas(n) : STR.comodidades;
+  const toggle = document.getElementById('imv-coms-toggle');
+  if (toggle) toggle.classList.toggle('imv-drop__toggle--ativo', !!n);
+  // Cabeçalho da folha do celular: título fixo (o do botão vira contagem)
+  const titulo = document.getElementById('imv-coms-titulo');
+  if (titulo) titulo.textContent = STR.comodidades;
+  const pronto = document.getElementById('imv-coms-pronto');
+  if (pronto) pronto.textContent = STR.comsPronto;
   const limpar = document.getElementById('imv-coms-limpar');
   if (limpar) {
     limpar.textContent = STR.limparComodidades;
-    limpar.hidden = !filtros.comodidades.size;
+    limpar.hidden = !n;
   }
+  const foot = document.getElementById('imv-coms-foot');
+  if (foot) foot.hidden = !n;
 }
 
-// Usado pelo "limpar" da barra e pelo atalho do estado vazio.
+// Abrir/fechar move menu e backdrop juntos. O backdrop só é visível no
+// celular (@media em css/imoveis.css), mas alternar sempre mantém uma
+// verdade só — nada de checar largura de tela em JS pra decidir isso.
+function definirComodidadesAberto(aberto) {
+  const menu = document.getElementById('imv-coms-menu');
+  const backdrop = document.getElementById('imv-coms-backdrop');
+  const toggle = document.getElementById('imv-coms-toggle');
+  if (menu) menu.hidden = !aberto;
+  if (backdrop) backdrop.hidden = !aberto;
+  if (toggle) toggle.setAttribute('aria-expanded', String(aberto));
+}
+
+function fecharComodidades() { definirComodidadesAberto(false); }
+
+// Usado pelo "limpar" do dropdown e pelo atalho do estado vazio.
 function limparComodidades() {
   filtros.comodidades.clear();
-  document.querySelectorAll('#imv-filtro-comodidades button[data-com]').forEach(b => {
-    b.classList.remove('active');
-    b.setAttribute('aria-pressed', 'false');
-  });
+  document.querySelectorAll('#imv-filtro-comodidades input[data-com]')
+    .forEach(i => { i.checked = false; });
   atualizarComodidadesUI();
   renderGrid();
 }
@@ -465,20 +500,50 @@ function initFiltros() {
   tipo?.addEventListener('change', () => { filtros.tipo = tipo.value; renderGrid(); });
   cidade?.addEventListener('change', () => { filtros.cidade = cidade.value; renderGrid(); });
 
-  // delegado: os chips só existem depois de montarFiltroComodidades()
+  // delegado: as opções só existem depois de montarFiltroComodidades()
   const coms = document.getElementById('imv-filtro-comodidades');
-  coms?.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-com]');
-    if (!btn) return;
-    const v = btn.dataset.com;
-    if (filtros.comodidades.has(v)) filtros.comodidades.delete(v);
-    else filtros.comodidades.add(v);
-    btn.classList.toggle('active', filtros.comodidades.has(v));
-    btn.setAttribute('aria-pressed', String(filtros.comodidades.has(v)));
+  coms?.addEventListener('change', e => {
+    const input = e.target.closest('input[data-com]');
+    if (!input) return;
+    const v = input.dataset.com;
+    if (input.checked) filtros.comodidades.add(v);
+    else filtros.comodidades.delete(v);
     atualizarComodidadesUI();
     renderGrid();
   });
   document.getElementById('imv-coms-limpar')?.addEventListener('click', limparComodidades);
+
+  // abre/fecha; fica aberto enquanto o visitante marca várias
+  // comodidades e fecha no backdrop, no "Listo", em clique fora ou Esc.
+  const comsToggle = document.getElementById('imv-coms-toggle');
+  const comsMenu = document.getElementById('imv-coms-menu');
+  const comsWrap = document.getElementById('imv-filtro-coms-wrap');
+  const comsBackdrop = document.getElementById('imv-coms-backdrop');
+  comsToggle?.addEventListener('click', () => {
+    definirComodidadesAberto(comsMenu.hidden);
+  });
+
+  // O backdrop mora DENTRO de .imv-drop (pra ficar junto do resto do
+  // componente), então o "clique fora" abaixo não o alcança — precisa
+  // do seu próprio fechamento.
+  comsBackdrop?.addEventListener('click', fecharComodidades);
+  document.getElementById('imv-coms-pronto')?.addEventListener('click', () => {
+    fecharComodidades();
+    comsToggle?.focus();
+  });
+
+  // pointerdown, não click: no Safari do iOS um toque em elemento que
+  // não é interativo NÃO gera clique que borbulhe até o document, e o
+  // menu ficava sem jeito de fechar tocando fora. pointerdown chega em
+  // todo navegador atual e ainda fecha um quadro antes.
+  document.addEventListener('pointerdown', e => {
+    if (comsWrap && !comsWrap.contains(e.target)) fecharComodidades();
+  });
+  comsWrap?.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || comsMenu.hidden) return;
+    fecharComodidades();
+    comsToggle.focus();
+  });
 }
 
 // ── Modal de detalhe ──────────────────────────────

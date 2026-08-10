@@ -175,7 +175,7 @@ function initCupomModal({ modalId, fecharId, copiarId, assinarId, msgId, promo }
     try {
       const functions = getFunctions(auth.app, 'southamerica-east1');
       const criarCheckoutSession = httpsCallable(functions, 'criarCheckoutSession');
-      const { data } = await criarCheckoutSession({ priceLookupKey: 'inmobly_starter_monthly', promo });
+      const { data } = await criarCheckoutSession({ priceLookupKey: 'sitemob_starter_monthly', promo });
       location.href = data.url;
     } catch (err) {
       msg.textContent = 'Não foi possível abrir o checkout: ' + err.message;

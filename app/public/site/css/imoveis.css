@@ -92,6 +92,7 @@
     padding: var(--sp-4) var(--sp-5);
   }
   .imv-filters .form-select { max-width: 200px; }
+  .imv-filters .imv-drop { max-width: 220px; flex: 1; }
   .imv-filters .imv-filters__search { flex: 1; min-width: 200px; }
 }
 
@@ -118,37 +119,119 @@
   color: white;
 }
 
-/* ── Linha de comodidades da barra de filtros ──── */
-/* Ocupa a largura toda da barra (quebra a linha do flex no desktop) —
-   são chips de largura variável, espremê-los ao lado dos selects
-   deixava metade fora da tela. */
-.imv-filters__coms {
+/* ── Dropdown de comodidades da barra de filtros ── */
+/* Antes era uma linha de chips que ocupava a barra inteira; como são
+   até 15 comodidades de largura variável, isso empurrava o grid pra
+   baixo da dobra. Agora é um dropdown de checkboxes que fecha e cabe
+   na mesma linha dos selects. */
+.imv-drop { position: relative; flex-shrink: 0; }
+.imv-drop[hidden] { display: none; }
+.imv-drop__toggle {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-3);
+  gap: var(--sp-2);
   width: 100%;
-  flex-basis: 100%;
-  padding-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  background: var(--clr-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--clr-text);
+  cursor: pointer;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.imv-drop__toggle:hover { border-color: var(--clr-primary); }
+.imv-drop__toggle:focus-visible,
+.imv-drop__toggle[aria-expanded="true"] {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px var(--clr-primary-ghost);
+  outline: none;
+}
+.imv-drop__toggle-txt {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Filtro ligado — o rótulo já virou "2 comodidades"; a cor só confirma,
+   pra quem bate o olho na barra, que este campo não está no padrão.
+   Vem depois do :hover de propósito: mesma especificidade, e o estado
+   ativo não pode sumir só porque o mouse passou por cima. */
+.imv-drop__toggle--ativo {
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
+  font-weight: 600;
+}
+.imv-drop__caret {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--clr-text-muted);
+  transition: transform var(--dur-fast);
+}
+.imv-drop__toggle[aria-expanded="true"] .imv-drop__caret { transform: rotate(180deg); }
+
+.imv-drop__menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + var(--sp-2));
+  /* ancorado à direita: é o último campo da barra, e com min-width maior
+     que o botão o alinhamento pela esquerda vazaria pra fora do card */
+  right: 0;
+  min-width: 240px;
+  max-width: min(320px, calc(100vw - 2 * var(--sp-4)));
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.imv-drop__menu[hidden] { display: none; }
+
+/* Cabeçalho e backdrop existem só na folha do celular (ver o @media
+   mais abaixo) — no desktop o popup se explica sozinho. */
+.imv-drop__head,
+.imv-drop__backdrop { display: none; }
+
+.imv-drop__list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--sp-2);
+  /* rolagem da lista não vira rolagem da página ao chegar no fim */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.imv-drop__opt {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--clr-text-2);
+  cursor: pointer;
+  user-select: none;
+}
+.imv-drop__opt:hover { background: var(--clr-bg); }
+.imv-drop__opt input {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--clr-primary);
+  cursor: pointer;
+}
+.imv-drop__opt input:checked + span { color: var(--clr-text); font-weight: 600; }
+.imv-drop__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--sp-2) var(--sp-3);
   border-top: 1px solid var(--clr-border);
 }
-.imv-filters__coms[hidden] { display: none; }
-.imv-filters__coms-label {
-  color: var(--clr-text-muted);
-  flex-shrink: 0;
-}
-.imv-filters__coms .imv-chiprow { flex: 1; min-width: 0; }
-/* chips da barra ficam sobre --clr-surface; --clr-bg dá o contraste
-   que o --clr-surface do .imv-chiprow padrão (usado dentro do modal,
-   que tem outro fundo) não daria aqui */
-.imv-filters__coms .imv-chiprow button {
-  min-height: 36px;
-  padding: var(--sp-1) var(--sp-3);
-  background: var(--clr-bg);
-  font-size: var(--text-xs);
-}
-.imv-filters__coms .imv-chiprow button.active { background: var(--clr-primary); }
-.imv-filters__coms-limpar {
+.imv-drop__foot[hidden] { display: none; }
+.imv-drop__limpar {
   background: none;
   border: none;
   padding: var(--sp-1) var(--sp-2);
@@ -157,9 +240,72 @@
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
-  flex-shrink: 0;
 }
-.imv-filters__coms-limpar[hidden] { display: none; }
+.imv-drop__limpar[hidden] { display: none; }
+
+/* ── Celular: o menu vira folha ancorada no rodapé da tela ──
+   `position: fixed` é o ponto todo — ancorado ao campo (absolute), o
+   menu abria abaixo da dobra conforme o scroll e parecia que o botão
+   estava quebrado. Fixo no rodapé ele aparece sempre no mesmo lugar,
+   sempre inteiro, e o backdrop deixa claro que abriu. */
+@media (max-width: 767px) {
+  .imv-drop__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(11, 16, 23, 0.5);
+  }
+  .imv-drop__backdrop[hidden] { display: none; }
+
+  .imv-drop__menu {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 101;
+    min-width: 0;
+    max-width: none;
+    border: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
+    /* barra de gestos do iPhone não pode comer o "Limpiar" */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .imv-drop__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    border-bottom: 1px solid var(--clr-border);
+  }
+  .imv-drop__head-txt {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--clr-text);
+  }
+  .imv-drop__pronto {
+    background: none;
+    border: 0;
+    padding: var(--sp-2);
+    margin: calc(var(--sp-2) * -1);
+    color: var(--clr-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .imv-drop__list { max-height: min(52vh, 360px); }
+  /* alvo de toque: 24px de checkbox + linha de 48px de altura */
+  .imv-drop__opt { padding: var(--sp-3); min-height: 48px; }
+  .imv-drop__opt input { width: 20px; height: 20px; }
+  .imv-drop__foot { padding: var(--sp-3) var(--sp-4); }
+}
 
 /* ── Botão "Filtros" (abre modal estilo Airbnb) ── */
 .imv-filtros-btn {

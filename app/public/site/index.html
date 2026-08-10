@@ -3,6 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Reancora os caminhos relativos no diretório do próprio documento,
+     ANTES do primeiro <link>/<script> ser lido.
+     Motivo: o preview de meu-site.html aponta o iframe pra
+     site/index.html, mas o Hosting (cleanUrls: true, trailingSlash:
+     false) redireciona pra /site — sem barra no fim. A partir daí
+     "css/fonts.css" resolveria pra /css/fonts.css, na RAIZ do painel,
+     onde não existe nada disso: o 404 do Hosting volta como text/html,
+     o navegador recusa o stylesheet e o preview aparece sem estilo
+     nenhum e sem js/imoveis.js.
+     Em produção o site é servido na raiz por servirSite.js, e tanto "/"
+     quanto "/emprendimiento.html" caem no early return abaixo — nada
+     muda lá. -->
+<script>
+  (function () {
+    const caminho = location.pathname;
+    const corte = caminho.lastIndexOf('/');
+    // Último segmento com ponto = nome de arquivo; sem ponto = a URL
+    // limpa de um diretório, à qual falta só a barra final.
+    const dir = caminho.slice(corte + 1).includes('.')
+      ? caminho.slice(0, corte + 1)
+      : caminho.replace(/\/?$/, '/');
+    if (dir === '/') return;
+    document.head.appendChild(Object.assign(document.createElement('base'), { href: dir }));
+  })();
+</script>
+
 <title>Inmuebles</title>
 <meta name="description" id="meta-description" content="Catálogo de inmuebles disponibles.">
 <meta name="keywords" id="meta-keywords" content="">
@@ -111,13 +138,39 @@
           <option value="todas" id="opt-cidade-todas">Todas las ciudades</option>
         </select>
 
-        <!-- Chips montados por site/js/imoveis.js só com as comodidades
-             que aparecem nos imóveis do corretor — some inteiro quando
-             nenhum imóvel tem comodidade marcada. -->
-        <div class="imv-filters__coms" id="imv-filtro-coms-wrap" hidden>
-          <span class="imv-filters__coms-label t-label" id="imv-coms-label">Comodidades</span>
-          <div class="imv-chiprow" id="imv-filtro-comodidades" role="group" aria-labelledby="imv-coms-label"></div>
-          <button type="button" class="imv-filters__coms-limpar" id="imv-coms-limpar" hidden>Limpiar</button>
+        <!-- Dropdown de comodidades (múltipla escolha). A lista é montada
+             por site/js/imoveis.js só com as comodidades que aparecem nos
+             imóveis do corretor — some inteiro quando nenhum imóvel tem
+             comodidade marcada. Fica fechado por padrão pra barra caber
+             em uma linha só. -->
+        <div class="imv-drop" id="imv-filtro-coms-wrap" hidden>
+          <button type="button" class="imv-drop__toggle" id="imv-coms-toggle"
+                  aria-expanded="false" aria-haspopup="true" aria-controls="imv-coms-menu">
+            <!-- Com algo marcado este texto vira "2 comodidades" (ver
+                 atualizarComodidadesUI em site/js/imoveis.js) — é o que
+                 diz, de botão fechado, que o filtro está ligado. -->
+            <span class="imv-drop__toggle-txt" id="imv-coms-label">Comodidades</span>
+            <svg class="imv-drop__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <!-- No celular o menu deixa de ser popup e vira uma folha
+               ancorada no rodapé da TELA (position: fixed — ver o
+               @media de css/imoveis.css). Pendurado abaixo do campo ele
+               abria fora da área visível dependendo do scroll, e o
+               visitante concluía que o botão não fazia nada. O backdrop
+               e o "Listo" só existem nesse modo: sem eles não haveria
+               onde tocar pra fechar, já que o Safari do iOS não entrega
+               clique em elemento não interativo. -->
+          <div class="imv-drop__backdrop" id="imv-coms-backdrop" hidden></div>
+          <div class="imv-drop__menu" id="imv-coms-menu" hidden>
+            <div class="imv-drop__head">
+              <span class="imv-drop__head-txt" id="imv-coms-titulo">Comodidades</span>
+              <button type="button" class="imv-drop__pronto" id="imv-coms-pronto">Listo</button>
+            </div>
+            <div class="imv-drop__list" id="imv-filtro-comodidades" role="group" aria-labelledby="imv-coms-titulo"></div>
+            <div class="imv-drop__foot" id="imv-coms-foot" hidden>
+              <button type="button" class="imv-drop__limpar" id="imv-coms-limpar" hidden>Limpiar</button>
+            </div>
+          </div>
         </div>
       </div>
 

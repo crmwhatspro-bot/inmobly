@@ -30,6 +30,12 @@ const { defineSecret } = require('firebase-functions/params');
 const { FieldValue, FieldPath } = require('firebase-admin/firestore');
 const Stripe = require('stripe');
 const { db } = require('./admin');
+// Mesma leitura defensiva de current_period_end usada ao cancelar — o
+// campo mudou de lugar entre versões da API do Stripe. Importado de lá
+// em vez de duplicado: os dois arquivos são CommonJS na mesma pasta,
+// nada obriga a ter duas cópias (diferente de trial.js × tenant.js,
+// que são linguagens/ambientes diferentes).
+const { fimDoPeriodo } = require('./assinatura');
 
 const STRIPE_SECRET_KEY     = defineSecret('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
@@ -38,8 +44,8 @@ const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 // plano/preço muda de verdade, o que já é um evento de deploy) — não
 // vale a pena tornar isso dinâmico via Firestore por enquanto.
 const PLANOS = {
-  inmobly_starter_monthly: { plan: 'starter', imoveisLimit: 40,   domainIncluded: false },
-  inmobly_pro_monthly:     { plan: 'pro',      imoveisLimit: null, domainIncluded: true  },
+  sitemob_starter_monthly: { plan: 'starter', imoveisLimit: 40,   domainIncluded: false },
+  sitemob_pro_monthly:     { plan: 'pro',      imoveisLimit: null, domainIncluded: true  },
 };
 
 // nosso trial nunca passa pelo Stripe (sem cartão, autogerenciado) —
@@ -179,6 +185,16 @@ async function processarSubscription(subscription, stripe) {
   if (infoPlano) Object.assign(atualizacao, infoPlano);
   if (status)    atualizacao.status = status;
 
+  // Cancelamento agendado não mexe no status: a assinatura segue
+  // 'active' até a virada do período, e só então chega o
+  // subscription.deleted que marca 'canceled'. Sem persistir estes dois
+  // campos o painel não teria como saber que existe um cancelamento a
+  // caminho — nem mostrar "sua assinatura vai até X", nem oferecer
+  // reativação. Ver functions/assinatura.js.
+  atualizacao.cancelAtPeriodEnd = subscription.cancel_at_period_end === true;
+  const fimPeriodo = fimDoPeriodo(subscription);
+  if (fimPeriodo) atualizacao.currentPeriodEnd = fimPeriodo;
+
   // Carimbos de transição — o doc do broker só guarda o status ATUAL,
   // então sem isso o painel interno só consegue dizer "X assinantes
   // hoje", nunca "X assinaturas fechadas em julho" nem churn.
@@ -299,7 +315,11 @@ exports.stripeWebhook = onRequest(
             const brokerRef = db.doc('brokers/' + slug);
             const statusAntes = (await brokerRef.get()).data()?.status ?? null;
             const agora = new Date();
-            await brokerRef.set({ status: 'canceled', updatedAt: agora }, { merge: true });
+            // cancelAtPeriodEnd volta a false: o cancelamento deixou de
+            // ser "agendado" e virou fato. Se ficasse true, o painel
+            // mostraria "sua assinatura vai até <data já passada>" em
+            // cima de uma conta que já está cancelada.
+            await brokerRef.set({ status: 'canceled', cancelAtPeriodEnd: false, updatedAt: agora }, { merge: true });
             // Mesmo carimbo de transição de processarSubscription — um
             // cancelamento pode chegar por aqui (deleted) sem nunca
             // passar por um subscription.updated com status canceled.

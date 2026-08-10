@@ -680,3 +680,26 @@ body {
   .shell-paywall { padding: var(--sp-6) var(--sp-5); }
   .shell-paywall__cupom { flex-wrap: wrap; }
 }
+
+/* ── Lembrete de conversão durante o trial ────────────────────
+   (shell.js#montarPromoTrial) Mesmo cartão do paywall — mesmo cupom,
+   mesma oferta — com duas diferenças que vêm daqui: o prazo em cima,
+   que é o motivo do popup existir, e o botão de dispensar, que o
+   paywall não pode ter porque lá nada está liberado. */
+#shellPromoTrial { z-index: calc(var(--z-modal) + 10); }
+
+.shell-promo__prazo {
+  font-size: var(--text-xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--clr-accent);
+  margin-bottom: var(--sp-2);
+}
+.shell-promo__dispensar {
+  display: block; margin: var(--sp-5) auto 0;
+  background: none; border: none; cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--clr-text-muted);
+  padding: 0;
+}
+.shell-promo__dispensar:hover { color: var(--clr-text-2); text-decoration: underline; }
+.shell-promo #shellPromoMsg { margin-top: var(--sp-4); }

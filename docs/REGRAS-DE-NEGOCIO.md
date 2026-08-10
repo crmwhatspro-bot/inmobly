@@ -146,13 +146,13 @@ test e live).
 
 | Produto | Tipo | Preço | `lookup_key` |
 |---|---|---|---|
-| Sitemob Starter | Recorrente, mensal | USD 79,00 | `inmobly_starter_monthly` |
-| Sitemob Pro | Recorrente, mensal | USD 129,00 | `inmobly_pro_monthly` |
-| Página de Emprendimento | Única | USD 400,00 (valor de tabela) | `inmobly_emprendimento_page` |
-| Configuração de Domínio Próprio | Única | USD 39,00 | `inmobly_domain_setup` |
+| Sitemob Starter | Recorrente, mensal | USD 79,00 | `sitemob_starter_monthly` |
+| Sitemob Pro | Recorrente, mensal | USD 129,00 | `sitemob_pro_monthly` |
+| Página de Emprendimento | Única | USD 400,00 (valor de tabela) | `sitemob_emprendimento_page` |
+| Configuração de Domínio Próprio | Única | USD 39,00 | `sitemob_domain_setup` |
 
 Coupon `LANCAMENTO50` (`percent_off: 50`) aplicado automaticamente pelo `checkout.js`
-só em `inmobly_emprendimento_page`, enquanto dura o preço de lançamento (ver seção 5).
+só em `sitemob_emprendimento_page`, enquanto dura o preço de lançamento (ver seção 5).
 Trial não tem produto no Stripe — nunca toca o Stripe, é autogerenciado sem cartão.
 
 ## 8. Indique e ganhe
@@ -201,6 +201,37 @@ um cupom.
   indicador não é revogado. Decisão consciente de manter simples, sem lógica de
   estorno de recompensa.
 
+## 9. Cancelamento e gestão da assinatura
+
+Self-service, na página Plano (`planos.html`, functions em `functions/assinatura.js`).
+
+- **Cancelamento é sempre agendado pro fim do período pago** (`cancel_at_period_end`),
+  nunca imediato. O mês já foi cobrado; derrubar o catálogo no meio dele criaria uma
+  conversa de reembolso sem necessidade. Consequência técnica: o Stripe manda
+  `customer.subscription.updated` com `status` ainda `active` — quem marca `canceled`
+  é o `subscription.deleted` na virada do período. Por isso o doc tem
+  `cancelAtPeriodEnd` e `currentPeriodEnd` separados do `status`.
+- **Reativação até a virada** — enquanto o período não terminou, um clique desfaz
+  (`cancel_at_period_end: false`). Depois disso é assinatura nova.
+- **Pesquisa de motivo antes de confirmar**, em dois passos: primeiro o motivo, só
+  então a tela de confirmação. Depois de confirmar ninguém responde pesquisa, e esse é
+  o único momento em que dá pra saber por que o corretor está saindo. Usa o enum do
+  próprio Stripe (`cancellation_details.feedback`: `too_expensive`, `missing_features`,
+  `switched_service`, `unused`, `customer_service`, `low_quality`, `too_complex`,
+  `other`) em vez de uma lista nossa, pra o motivo entrar também no relatório de churn
+  do Stripe. Fica gravado no doc do broker (`cancellationFeedback`,
+  `cancellationComment`, `cancellationRequestedAt`).
+- **Retenção**: hoje só o degrau Pro → Starter, oferecido quando o motivo é
+  `too_expensive` e o plano é Pro — reaproveita a troca de plano que
+  `criarCheckoutSession` já faz. Oferta de desconto na saída ainda **não** está
+  definida: aplicar o `50OFF` a quem ameaça cancelar é decisão de negócio em aberto
+  (ver Pendências).
+- **Portal do Stripe** (`criarPortalSession`) pra trocar cartão, ver e baixar faturas.
+  Não é conveniência: a carência de inadimplência da seção 4 pressupõe que o corretor
+  consiga corrigir o cartão durante as tentativas de recobrança, e sem o portal a
+  única saída dele seria cancelar e assinar de novo. Exige uma configuração salva em
+  Settings → Billing → Customer portal, **por modo** (test e live são separadas).
+
 ---
 
 ## Pendências em aberto (não bloqueiam o build atual)
@@ -213,6 +244,10 @@ um cupom.
       Cloud Function de sync documentados em `control-plane/README.md`).
 - [ ] Politica de reembolso / cancelamento de "Página de Emprendimento" já paga mas
       não entregue.
+- [ ] Oferta de retenção na saída: aplicar o `50OFF` (ou um cupom mais curto) pra quem
+      cancela por `too_expensive`? Hoje o fluxo só oferece o degrau Pro → Starter. Dar
+      50% vitalício a quem ameaça sair cria um incentivo ruim — mas perder o cliente
+      inteiro é pior. Decidir antes de o volume de cancelamentos crescer.
 - [x] ~~Webhook do Stripe em si~~ — resolvido: `control-plane/functions/checkout.js`
       (`criarCheckoutSession`) e `webhook.js` (`stripeWebhook`) escritos e revisados.
 - [ ] Botão/UI de upgrade no `/admin` de cada broker que efetivamente chama

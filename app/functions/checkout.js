@@ -23,7 +23,7 @@ const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 // de Emprendimento, enquanto dura o preço de lançamento (ver
 // docs/REGRAS-DE-NEGOCIO.md, seção 5) — nunca nos planos recorrentes.
 const COUPON_LANCAMENTO = {
-  inmobly_emprendimento_page: 'LANCAMENTO50',
+  sitemob_emprendimento_page: 'LANCAMENTO50',
 };
 
 // Promoções que o CLIENT pode pedir, mas só por um nome fixo — nunca
@@ -50,10 +50,17 @@ const COUPON_LANCAMENTO = {
 //   deixou o trial vencer é exatamente o público que a promo existe pra
 //   converter, e cobrar mais caro de quem hesitou seria o incentivo ao
 //   contrário.
+//   trialEmAndamento — lembrete que aparece a cada 4 dias DURANTE o
+//   teste (shell.js#verificarPromoTrial), antes de qualquer bloqueio.
+//   Mesmo cupom por decisão de produto: se quem deixa vencer paga 50%
+//   off, cobrar mais de quem assinou antes puniria o cliente melhor.
+//   Chave separada de trialExpirado só pra dar pra medir qual das duas
+//   telas converte (a promo entra na metadata da sessão).
 const PROMOS = {
-  primeiroImovel: { coupon: '50OFF', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
-  limiteImoveis:  { coupon: '50OFF', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
-  trialExpirado:  { coupon: '50OFF', planos: ['inmobly_starter_monthly', 'inmobly_pro_monthly'] },
+  primeiroImovel:   { coupon: '50OFF', planos: ['sitemob_starter_monthly', 'sitemob_pro_monthly'] },
+  limiteImoveis:    { coupon: '50OFF', planos: ['sitemob_starter_monthly', 'sitemob_pro_monthly'] },
+  trialExpirado:    { coupon: '50OFF', planos: ['sitemob_starter_monthly', 'sitemob_pro_monthly'] },
+  trialEmAndamento: { coupon: '50OFF', planos: ['sitemob_starter_monthly', 'sitemob_pro_monthly'] },
 };
 
 const BASE_URL = 'https://painel.sitemob.app';
@@ -61,7 +68,7 @@ const BASE_URL = 'https://painel.sitemob.app';
 // Depois de pagar, manda pra onde faz sentido usar a compra — não
 // sempre pro painel genérico. Só afeta o "Ir pra..." de obrigado.html.
 const PROXIMA_PAGINA = {
-  inmobly_emprendimento_page: 'paginas.html',
+  sitemob_emprendimento_page: 'paginas.html',
 };
 
 exports.criarCheckoutSession = onCall(
@@ -86,7 +93,14 @@ exports.criarCheckoutSession = onCall(
 
     // mode vem do tipo real do Price, não do que o cliente manda
     const mode = price.type === 'recurring' ? 'subscription' : 'payment';
-    const produto = priceLookupKey.replace(/^inmobly_/, '').replace(/_monthly$/, '');
+    // ⚠️  O prefixo daqui TEM que acompanhar o das lookup_keys. O
+    // resultado é comparado com o literal 'emprendimento_page' em
+    // webhook.js#processarCompraAvulsa pra creditar a página comprada —
+    // se os dois deixarem de bater, o pagamento entra, o doc de
+    // purchases/ é gravado e o crédito nunca acontece, sem erro em
+    // lugar nenhum. Foi exatamente o que quase aconteceu quando as
+    // chaves passaram de "inmobly_" pra "sitemob_".
+    const produto = priceLookupKey.replace(/^sitemob_/, '').replace(/_monthly$/, '');
 
     // Produto avulso (Página de Emprendimento, Domínio próprio) exige
     // assinatura ativa — não dá pra comprar avulso estando só no trial
@@ -145,10 +159,21 @@ exports.criarCheckoutSession = onCall(
     // PROMOS — nunca aceita um coupon cru do client) ou o automático
     // por produto — nunca os dois, e nunca por confiar no que o client
     // manda além do nome.
-    const promoPedida = PROMOS[String(request.data?.promo || '')];
-    const cupom = (promoPedida && promoPedida.planos.includes(priceLookupKey))
-      ? promoPedida.coupon
-      : COUPON_LANCAMENTO[priceLookupKey];
+    const nomePromo = String(request.data?.promo || '');
+    const promoPedida = PROMOS[nomePromo];
+    const promoAplicada = !!promoPedida && promoPedida.planos.includes(priceLookupKey);
+    const cupom = promoAplicada ? promoPedida.coupon : COUPON_LANCAMENTO[priceLookupKey];
+
+    // Carimba QUAL tela ofereceu o cupom (só quando ele foi mesmo
+    // aplicado). Todas usam o mesmo 50OFF, então sem isso não dá pra
+    // separar no Stripe a conversão do paywall de trial vencido da do
+    // lembrete que aparece durante o teste. Campo extra na metadata —
+    // o webhook lê brokerSlug e ignora o resto.
+    if (promoAplicada) {
+      const metadata = mode === 'subscription' ? params.subscription_data.metadata : params.metadata;
+      metadata.promo = nomePromo;
+    }
+
     if (cupom) {
       params.discounts = [{ coupon: cupom }];
     } else {

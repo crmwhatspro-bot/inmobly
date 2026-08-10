@@ -6,6 +6,9 @@
 exports.criarConta           = require('./criarConta').criarConta;
 exports.criarCheckoutSession = require('./checkout').criarCheckoutSession;
 exports.stripeWebhook        = require('./webhook').stripeWebhook;
+exports.cancelarAssinatura   = require('./assinatura').cancelarAssinatura;
+exports.reativarAssinatura   = require('./assinatura').reativarAssinatura;
+exports.criarPortalSession   = require('./assinatura').criarPortalSession;
 exports.perfilPublico        = require('./perfilPublico').perfilPublico;
 exports.publicarSite         = require('./publicarSite').publicarSite;
 exports.conectarDominio      = require('./dominio').conectarDominio;

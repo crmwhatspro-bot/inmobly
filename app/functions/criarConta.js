@@ -16,6 +16,9 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { db, auth } = require('./admin');
 const RESERVADOS = require('./reservados');
 
+// Espelhado em public/js/tenant.js#TRIAL_DIAS, que usa o número só pra
+// exibir o contador (teto e dias já corridos) — mudar aqui sem mudar lá
+// faz o painel mostrar um prazo que não é o gravado no doc.
 const TRIAL_DIAS = 14;
 const TRIAL_LIMITE_IMOVEIS = 6;
 const SLUG_REGEX = /^[a-z0-9-]{3,40}$/;

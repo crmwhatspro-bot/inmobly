@@ -109,6 +109,51 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .dm-atual a { color: var(--clr-accent, #1D9E75); text-decoration: underline; word-break: break-all; }
 
   .dm-actions-row { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-5); }
+
+  /* ── Sanfona do bloco de status ───────────────────────────────
+     Com o domínio ATIVO não há nada a fazer nesta tela: as instruções
+     de DNS, o diagnóstico e os botões só interessam a quem ainda está
+     configurando. Então ela abre recolhida nesse caso — sobram o
+     endereço do site (card acima) e o selo "Ativo" —, e continua aberta
+     enquanto o status for pendente, que é quando o corretor precisa
+     justamente do que está lá dentro. Ver definirSanfona() em
+     js/dominio.js. */
+  .dm-head { position: relative; cursor: pointer; }
+  .dm-head .dm-status-badge { margin-left: auto; }
+  /* Vence o `.imv-sec__head svg { color: accent }` do admin.css por
+     especificidade — a seta é cromo, não ícone de destaque. */
+  .dm-head .dm-caret {
+    color: var(--clr-text-muted);
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .dm-head:hover .dm-caret { color: white; }
+  .dm-sec--fechada .dm-caret { transform: rotate(-90deg); }
+  /* Some com o separador quando não há corpo visível embaixo dele. */
+  .dm-sec--fechada .imv-sec__head { border-bottom-color: transparent; }
+
+  /* Área de clique cobrindo o header inteiro — o título e o selo não
+     são interativos, então podem ficar por baixo. É um <button> de
+     verdade (e não um onclick no <header>) pra chegar por teclado. */
+  .dm-head-btn {
+    position: absolute; inset: 0;
+    background: none; border: 0; padding: 0;
+    cursor: pointer;
+  }
+  .dm-head-btn:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: -2px; }
+
+  /* 1fr → 0fr anima a altura sem precisar saber quanto o conteúdo mede.
+     O overflow:hidden mora no filho porque o padding do .imv-sec__body
+     continuaria aparecendo se a faixa de 0fr fosse aplicada nele. */
+  .dm-sanfona {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows var(--dur-normal) var(--ease-out);
+  }
+  .dm-sanfona[data-aberta="false"] { grid-template-rows: 0fr; }
+  .dm-sanfona__inner { overflow: hidden; min-height: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .dm-sanfona { transition: none; }
+  }
 </style>
 </head>
 <body>
@@ -151,11 +196,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <!-- Domínio já conectado — status + instruções de DNS -->
         <section class="imv-sec" id="dmStatusSec" hidden>
-          <header class="imv-sec__head">
+          <header class="imv-sec__head dm-head">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
             <h3 id="dmDominioTitulo">—</h3>
             <span class="dm-status-badge" id="dmStatusBadge">Verificando</span>
+            <svg class="dm-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            <button type="button" class="dm-head-btn" id="dmStatusToggle"
+                    aria-expanded="true" aria-controls="dmStatusSanfona"
+                    aria-label="Configuração de DNS do domínio"></button>
           </header>
+          <div class="dm-sanfona" id="dmStatusSanfona" data-aberta="true">
+          <div class="dm-sanfona__inner">
           <div class="imv-sec__body">
             <p class="imv-hint" id="dmStatusExplicacao">Configure este registro no painel de DNS do seu domínio. A propagação e a emissão do certificado podem levar algumas horas — em casos raros, até 24h.</p>
 
@@ -193,6 +244,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <button type="button" class="imv-btn-excluir" id="dmRemoverBtn">Remover domínio</button>
             </div>
           </div>
+          </div><!-- /.dm-sanfona__inner -->
+          </div><!-- /.dm-sanfona -->
         </section>
 
       </div>
